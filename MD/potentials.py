@@ -7,7 +7,7 @@ def calc_gpaw(calculator_params):
     calc.calculate()
     return calc
 
-def lj(epsilon, sigma, r, derivative=False):
+def potentials(epsilon, sigma, r, derivative=False):
     if derivative:
         return 48 * epsilon * ((sigma / r) ** 12 - 0.5 * (sigma / r) ** 6) / r
     else:

@@ -1,6 +1,13 @@
 from gpaw import GPAW
+from ase import Atoms
 
-def potentials(epsilon, sigma, r, derivative=False):
+def calc_gpaw(calculator_params):
+    """Calculate the potential energy using GPAW."""
+    calc = GPAW(**calculator_params)
+    calc.calculate()
+    return calc
+
+def lj(epsilon, sigma, r, derivative=False):
     if derivative:
         return 48 * epsilon * ((sigma / r) ** 12 - 0.5 * (sigma / r) ** 6) / r
     else:

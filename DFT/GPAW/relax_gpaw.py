@@ -95,7 +95,7 @@ def relax(atoms: Atoms,
 
     # Create optimizer
     opt = BFGS(opt_atoms, 
-               logfile=logname, 
+               logfile=logname,
                trajectory=trajname)
         
     # Run relaxation
@@ -115,7 +115,7 @@ def relax(atoms: Atoms,
     except Exception as e:
         print(f"Warning: Could not save final state: {e}")
     
-    # Get final forces for reporting
+    # Get final forces f or reporting
     if hasattr(opt_atoms, 'get_forces'):
         forces = opt_atoms.get_forces()
         max_force = np.max(np.linalg.norm(forces, axis=1))
@@ -202,7 +202,7 @@ calculator_params = {
     "mode": {"ecut": 520,
             "name": "pw"},
     "nbands":"nao",
-    "occupations": {"name": "fermi-dirac",
+    "occwupations": {"name": "fermi-dirac",
                     "width": 0.01},
     "setups": {"Ni": ':d, 6.2'},
     "symmetry":"off",

@@ -34,8 +34,8 @@ class MinimizeEnergy(Measurements):
             self.atoms_positions = self.atoms_positions \
                 + forces/init_MaxF*self.displacement
             # Recalculate the energy
-            trial_Epot = self.compute_potential()
-            
+            #trial_Epot = self.compute_lj()
+            trial_Epot = self.compute_gpaw()
             # Keep the more favorable energy
             if trial_Epot < init_Epot: # accept new position
                 self.Epot = trial_Epot

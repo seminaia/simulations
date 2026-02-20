@@ -1,4 +1,4 @@
-from potentials import potentials
+from potentials import lj, calc_gpaw
 import numpy as np
 from MDAnalysis.analysis import distances
 
@@ -12,7 +12,7 @@ class Utilities:
         self.box_dimensions = box_dimensions
         self.initial_positions = initial_positions
 
-    def compute_potential(self):
+    def compute_lj(self):
         """Compute the potential energy by summing up all pair contributions."""
         energy_potential = 0
         for Ni in np.arange(np.sum(self.number_atoms)-1):
@@ -25,23 +25,39 @@ class Utilities:
             # Measure potential using pre-calculated cross coefficients
             sigma_ij = self.sigma_ij_list[Ni]
             epsilon_ij = self.epsilon_ij_list[Ni]
-            energy_potential += np.sum(potentials(epsilon_ij, sigma_ij, rij))
+            energy_potential += np.sum(lj(epsilon_ij, sigma_ij, rij))
         return energy_potential
-
-    def compute_potential(self):
-        """Compute the potential energy by summing up all pair contributions."""
+    def compute_gpaw(self):
+        """Compute the potential energy using GPAW."""
         energy_potential = 0
         for Ni in np.arange(np.sum(self.number_atoms)-1):
-            # Read neighbor list
-            neighbor_of_i = self.neighbor_lists[Ni]
-            # Measure distance
-            rij = self.compute_distance(self.atoms_positions[Ni],
-                                        self.atoms_positions[neighbor_of_i],
-                                        self.box_size)
-            # Measure potential using pre-calculated cross coefficients
-            sigma_ij = self.sigma_ij_list[Ni]
-            epsilon_ij = self.epsilon_ij_list[Ni]
-            energy_potential += np.sum(potentials(epsilon_ij, sigma_ij, rij))
+            calculator_params = {calculator_params = {
+                "convergence": {"density": 1e-4,
+                                "eigenstates": 1e-8,
+                                "energy": 1e-6,
+                                "forces": 1e-4},
+                "eigensolver": {"name": "cg",
+                                "niter":5},
+                "kpts": {"gamma": True,
+                        "size": [2, 2, 1]},
+                "maxiter": 500,
+                "mixer":{"backend": "pulay",
+                        "beta": 0.1,
+                        "method": "fullspin",
+                        "nmaxold": 5,
+                        "weight":100},
+                "mode": {"ecut": 520,
+                        "name": "pw"},
+                "nbands":"nao",
+                "occupations": {"name": "fermi-dirac",
+                                "width": 0.01},
+                "setups": {"Ni": ':d, 6.2'},
+                "symmetry":"off",
+                "txt": "rlx.txt",
+                "xc": "PBE"
+                }
+
+            energy_potential += np.sum(calc_gpaw(calculator_params))
         return energy_potential
     
     def compute_distance(self,position_i, positions_j, box_size, only_norm = True):

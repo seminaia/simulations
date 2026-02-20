@@ -123,11 +123,17 @@ def relax(atoms: Atoms,
     return opt_atoms
 # Structure setup
 a0 = 3.80
+a_al = 4.05
 c0 = 12.45
 conv_cell = [
     [a0, 0, 0],
     [0, a0, 0],
     [0, 0, c0]
+]
+al_conv_cell = [
+    [a_al, 0, 0],
+    [0, a_al, 0],
+    [0, 0, a_al]
 ]
 prim_cell = [
     [a0, 0, 0],
@@ -135,6 +141,7 @@ prim_cell = [
     [-a0, -a0, c0]
 ]
 symbols = ('La','La','La','La','Ni','Ni','O','O','O','O','O','O','O','O')
+al_symbol = ('Al','Al','Al','Al')
 conv_frac_positions = [  
     (0.50,  0.50,  0.14),
     (0.00,  0.00,  0.36),
@@ -150,7 +157,12 @@ conv_frac_positions = [
     (0.00,  0.50,  0.50),
     (0.50,  0.50,  0.68),
     (0.00,  0.00,  0.82)]
-
+al_conv_frac_coordinates = [
+    (0.00, 0.00, 0.00),
+    (0.00, 0.50, 0.50),
+    (0.50, 0.00, 0.50),
+    (0.50, 0.50, 0.00)
+]
 prim_frac_positions = [
     (0.36, 0.36, 0.36),
     (0.36, 0.36, 0.86),
@@ -167,21 +179,26 @@ prim_frac_positions = [
     (0.00, 0.50, 0.00),
     (0.00, 0.50, 0.50)]
 magmoms = [0.6, -0.6, 0.6, -0.6, 2.0, -2.0, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6]
-
-conv_atoms = Atoms(symbols=symbols,
-              scaled_positions=conv_frac_positions,
-              cell=conv_cell,
+al_conv_atoms = Atoms(symbols=al_symbol,
+              scaled_positions=al_conv_frac_coordinates,
+              cell=al_conv_cell,
               pbc=True)
-conv_atoms.set_initial_magnetic_moments(magmoms)
-conv_atoms.write('La2NiO4_conv.cif', format='cif')
-view(conv_atoms, repeat=(2, 2, 1))
-
-prim_atoms = Atoms(symbols=symbols,
-                scaled_positions=prim_frac_positions,
-                cell=prim_cell,
-                pbc=True)
-prim_atoms.set_initial_magnetic_moments(magmoms)
-prim_atoms.write('La2NiO4_prim.cif', format='cif')
+al_conv_atoms.write('Al_conv.cif', format='cif')
+view(al_conv_atoms, repeat=(2, 2, 2))
+#conv_atoms = Atoms(symbols=symbols,
+#              scaled_positions=conv_frac_positions,
+#              cell=conv_cell,
+#              pbc=True)
+#conv_atoms.set_initial_magnetic_moments(magmoms)
+#conv_atoms.write('La2NiO4_conv.cif', format='cif')
+#view(conv_atoms, repeat=(2, 2, 1))
+#
+#prim_atoms = Atoms(symbols=symbols,
+#                scaled_positions=prim_frac_positions,
+#                cell=prim_cell,
+#                pbc=True)
+#prim_atoms.set_initial_magnetic_moments(magmoms)
+#prim_atoms.write('La2NiO4_prim.cif', format='cif')
 #view(prim_atoms, repeat=(2, 2, 1))
 
 calculator_params = {
@@ -189,10 +206,10 @@ calculator_params = {
                     "eigenstates": 1e-8,
                     "energy": 1e-6,
                     "forces": 1e-4},
-    "eigensolver": {"name": "cg",
+    "eigensolver": {"name": "dav",
                     "niter":5},
     "kpts": {"gamma": True,
-            "size": [2, 2, 1]},
+            "size": [2, 2, 2]},
     "maxiter": 500,
     "mixer":{"backend": "pulay",
             "beta": 0.1,
@@ -204,21 +221,21 @@ calculator_params = {
     "nbands":"nao",
     "occwupations": {"name": "fermi-dirac",
                     "width": 0.01},
-    "setups": {"Ni": ':d, 6.2'},
-    "symmetry":"off",
+    #"setups": {"Ni": ':d, 6.2'},
+    #"symmetry":"off",
     "txt": "rlx.txt",
     "xc": "PBE"
 }
 
 # Run relaxation
-conv_relaxed_atoms = relax(conv_atoms, 
+conv_relaxed_atoms = relax(al_conv_atoms, 
                            calculator_params,
-                      fmax=0.01,
-                      fixcell=False, 
-                      logname='La2NiO4_conv_opt.log',
-                      trajname='La2NiO4_conv_opt.traj',
-                      gpwname='La2NiO4_conv_rlx.gpw')
-#view(conv_relaxed_atoms, repeat=(2, 2, 1))
+                           fmax=0.01,
+                           fixcell=False, 
+                           logname='al_conv_opt.log',
+                           trajname='al_conv_opt.traj',
+                           gpwname='al_conv_rlx.gpw')
+view(conv_relaxed_atoms, repeat=(2, 2, 2))
 if isinstance(conv_relaxed_atoms, FrechetCellFilter):
     conv_relaxed_atoms = conv_relaxed_atoms.atoms
 
@@ -252,89 +269,89 @@ print(conv_pos)
 #print("All positions (Angstrom):")
 #print(prim_positions)
 # Lattice constant scan
-print("\nStarting lattice constant scan...")
-eps = 0.03
-# Reopen or create new trajectory for scan results
-scan_traj = Trajectory('La2NiO4_conv_scan.traj', 'w')
-for a in a0 * np.linspace(1-eps, 1+eps, 3):
-    for c in c0 * np.linspace(1-3*eps, 1+3*eps, 5):
-        scan_atoms = conv_relaxed_atoms.copy()
-        scan_atoms.set_cell([[a, 0, 0], [0, a, 0], [0, 0, c]], scale_atoms=True)
-        #magmoms = conv_relaxed_atoms.get_magnetic_moments()
-        scan_params = dict(calculator_params)  
-        scan_params["txt"] = f"lat_scan.txt"
-        scan_atoms.calc = GPAW(**scan_params)
-        # Calculate energy
-        E = scan_atoms.get_potential_energy()
-        print(f"a={a:.3f} c={c:.3f} c/a = {c/a:.3f} E={E:.6f} eV")
-        scan_atoms.write(f'La2NiO4_conv_scan_a{a:.3f}_c{c:.3f}.cif', format='cif')
-        scan_traj.write(scan_atoms)
-
-scan_traj.close()
+#print("\nStarting lattice constant scan...")
+#eps = 0.03
+## Reopen or create new trajectory for scan results
+#scan_traj = Trajectory('al_conv_scan.traj', 'w')
+#for a in a0 * np.linspace(1-eps, 1+eps, 3):
+#    for c in c0 * np.linspace(1-3*eps, 1+3*eps, 5):
+#        scan_atoms = conv_relaxed_atoms.copy()
+#        scan_atoms.set_cell([[a_al, 0, 0], [0, a_al, 0], [0, 0, a_al]], scale_atoms=True)
+#        #magmoms = conv_relaxed_atoms.get_magnetic_moments()
+#        scan_params = dict(calculator_params)  
+#        scan_params["txt"] = f"lat_scan.txt"
+#        scan_atoms.calc = GPAW(**scan_params)
+#        # Calculate energy
+#        E = scan_atoms.get_potential_energy()
+#        print(f"a={a_al:.3f} E={E:.6f} eV")
+#        scan_atoms.write(f'al_conv_scan_a{a_al:.3f}.cif', format='cif')
+#        scan_traj.write(scan_atoms)
+#
+#scan_traj.close()
 
 # Fit EOS
-print("\nFitting equation of state...")
-a_list, c_list, energies = [], [], []
-configs = read('La2NiO4_conv_scan.traj',index=':')  # Read all configurations from scan trajectory
-for config in configs:
-    cell = config.get_cell()
-    a_list.append(cell[0, 0])
-    c_list.append(cell[2, 2])
-    energies.append(config.get_potential_energy())
-
-a = np.array(a_list)
-c = np.array(c_list)
-energies = np.array(energies)
-
-# Dimensionless strains about (a0, c0)
-x_all = (a - a0) / a0
-y_all = (c - c0) / c0
-
-# ---- window near the minimum BEFORE fitting ----
-Emin = energies.min()
-mask = energies < Emin + 0.05   # 50 meV window (tune if needed)
-
-x = x_all[mask]
-y = y_all[mask]
-Efit = energies[mask]
-
-# Design matrix for quadratic surface in (x, y)
-X = np.column_stack([np.ones_like(x), x, y, x**2, x*y, y**2])
-
-# Least-squares fit: E(x,y) = E0 + A x + B y + C x^2 + D x y + F y^2
-p = np.linalg.lstsq(X, Efit, rcond=None)[0]
-E0, A, B, C, D, F = p
-
-# Hessian and gradient in (x,y)
-H = np.array([[2*C, D],
-              [D, 2*F]])
-g = np.array([A, B])
-
-# Check convexity (minimum)
-eigvals = np.linalg.eigvals(H)
-assert np.all(eigvals > 0), f"Fit not convex (eigvals={eigvals}); reduce eps or window tighter."
-
-# Solve for minimum in strain space
-x_eq, y_eq = -np.linalg.solve(H, g)
-
-a_eq = a0 * (1 + x_eq)
-c_eq = c0 * (1 + y_eq)
-Veq = a_eq**2 * c_eq
-
-# Evaluate energy at minimum USING x_eq, y_eq (not a_eq, c_eq)
-Eeq = E0 + A*x_eq + B*y_eq + C*x_eq**2 + D*x_eq*y_eq + F*y_eq**2
-
-print(f"Equilibrium a={a_eq:.6f} Å")
-print(f"Equilibrium c={c_eq:.6f} Å")
-print(f"Equilibrium volume={Veq:.6f} Å^3")
-print(f"Minimum energy={Eeq:.10f} eV")
-
-# Plot the sampled points (in strain space)
-plt.figure()
-plt.scatter(x, y, c=Efit)
-plt.xlabel('(a - a0)/a0')
-plt.ylabel('(c - c0)/c0')
-plt.colorbar(label='Energy (eV)')
-plt.title('Lattice Constant Scan Energy (windowed)')
-plt.grid(True)
-plt.show()
+#print("\nFitting equation of state...")
+#a_list, c_list, energies = [], [], []
+#configs = read('La2NiO4_conv_scan.traj',index=':')  # Read all configurations from scan trajectory
+#for config in configs:
+#    cell = config.get_cell()
+#    a_list.append(cell[0, 0])
+#    c_list.append(cell[2, 2])
+#    energies.append(config.get_potential_energy())
+#
+#a = np.array(a_list)
+#c = np.array(c_list)
+#energies = np.array(energies)
+#
+## Dimensionless strains about (a0, c0)
+#x_all = (a - a0) / a0
+#y_all = (c - c0) / c0
+#
+## ---- window near the minimum BEFORE fitting ----
+#Emin = energies.min()
+#mask = energies < Emin + 0.05   # 50 meV window (tune if needed)
+#
+#x = x_all[mask]
+#y = y_all[mask]
+#Efit = energies[mask]
+#
+## Design matrix for quadratic surface in (x, y)
+#X = np.column_stack([np.ones_like(x), x, y, x**2, x*y, y**2])
+#
+## Least-squares fit: E(x,y) = E0 + A x + B y + C x^2 + D x y + F y^2
+#p = np.linalg.lstsq(X, Efit, rcond=None)[0]
+#E0, A, B, C, D, F = p
+#
+## Hessian and gradient in (x,y)
+#H = np.array([[2*C, D],
+#              [D, 2*F]])
+#g = np.array([A, B])
+#
+## Check convexity (minimum)
+#eigvals = np.linalg.eigvals(H)
+#assert np.all(eigvals > 0), f"Fit not convex (eigvals={eigvals}); reduce eps or window tighter."
+#
+## Solve for minimum in strain space
+#x_eq, y_eq = -np.linalg.solve(H, g)
+#
+#a_eq = a0 * (1 + x_eq)
+#c_eq = c0 * (1 + y_eq)
+#Veq = a_eq**2 * c_eq
+#
+## Evaluate energy at minimum USING x_eq, y_eq (not a_eq, c_eq)
+#Eeq = E0 + A*x_eq + B*y_eq + C*x_eq**2 + D*x_eq*y_eq + F*y_eq**2
+#
+#print(f"Equilibrium a={a_eq:.6f} Å")
+#print(f"Equilibrium c={c_eq:.6f} Å")
+#print(f"Equilibrium volume={Veq:.6f} Å^3")
+#print(f"Minimum energy={Eeq:.10f} eV")
+#
+## Plot the sampled points (in strain space)
+#plt.figure()
+#plt.scatter(x, y, c=Efit)
+#plt.xlabel('(a - a0)/a0')
+#plt.ylabel('(c - c0)/c0')
+#plt.colorbar(label='Energy (eV)')
+#plt.title('Lattice Constant Scan Energy (windowed)')
+#plt.grid(True)
+#plt.show()

@@ -1,4 +1,4 @@
-from potentials import lj, calc_gpaw
+from potentials import potentials, calc_gpaw
 import numpy as np
 from MDAnalysis.analysis import distances
 
@@ -12,7 +12,7 @@ class Utilities:
         self.box_dimensions = box_dimensions
         self.initial_positions = initial_positions
 
-    def compute_lj(self):
+    def compute_potential(self):
         """Compute the potential energy by summing up all pair contributions."""
         energy_potential = 0
         for Ni in np.arange(np.sum(self.number_atoms)-1):
@@ -25,8 +25,9 @@ class Utilities:
             # Measure potential using pre-calculated cross coefficients
             sigma_ij = self.sigma_ij_list[Ni]
             epsilon_ij = self.epsilon_ij_list[Ni]
-            energy_potential += np.sum(lj(epsilon_ij, sigma_ij, rij))
+            energy_potential += np.sum(potentials(epsilon_ij, sigma_ij, rij))
         return energy_potential
+    
     def compute_gpaw(self):
         """Compute the potential energy using GPAW."""
         energy_potential = 0

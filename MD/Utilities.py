@@ -31,7 +31,7 @@ class Utilities:
         """Compute the potential energy using GPAW."""
         energy_potential = 0
         for Ni in np.arange(np.sum(self.number_atoms)-1):
-            calculator_params = {calculator_params = {
+            calculator_params = {
                 "convergence": {"density": 1e-4,
                                 "eigenstates": 1e-8,
                                 "energy": 1e-6,

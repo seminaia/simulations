@@ -141,7 +141,8 @@ class MonteCarlo(Measurements):
             # The first step is to make a copy of the previous state
             # Since atoms numbers are evolving, its also important to store the
             # neighbor, sigma, and epsilon lists
-            self.Epot = self.compute_potential() # TOFIX: not necessary every time
+            if not hasattr(self, 'Epot'):
+                self.Epot = self.compute_potential()
             initial_positions = copy.deepcopy(self.atoms_positions)
             initial_number_atoms = copy.deepcopy(self.number_atoms)
             initial_neighbor_lists = copy.deepcopy(self.neighbor_lists)

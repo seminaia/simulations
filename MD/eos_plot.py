@@ -11,6 +11,16 @@ import os
 import re
 import matplotlib.pyplot as plt
 
+# List everything in the current directory
+all_items = os.listdir('.')
+print("All files and folders:")
+for item in sorted(all_items):
+    print(f"  - {item}")
+
+# Specifically check for folders matching the pattern
+matching = glob.glob('outputs_tau*')
+print(f"\nFolders matching 'outputs_tau*': {matching}")
+
 def get_final_epot(log_path):
     """
     Read simulation.log and return the Epot value from the last data line.

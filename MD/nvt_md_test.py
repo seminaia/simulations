@@ -7,6 +7,7 @@ from ase.visualize import view
 from ase import units
 from ase.io.trajectory import Trajectory
 from ase.md.nose_hoover_chain import NoseHooverChainNVT
+from ase.md.npt import NPT
 from ase import Atoms
 from ase.md.velocitydistribution import (
     MaxwellBoltzmannDistribution,
@@ -176,7 +177,7 @@ combined_atoms.calc = calc
 # ── Energy minimization — relax strained crystal contacts before MD ───────────
 print("\nMinimising energy to relax scaled crystal contacts (fmax=0.01 eV/Å)...")
 minimiser = BFGS(combined_atoms, logfile='LiF_BeF2_minimisation.log')
-minimiser.run(fmax=0.01, steps=500)
+minimiser.run(fmax=0.01, steps=600)
 print(f"  Done. Epot = {combined_atoms.get_potential_energy()/len(combined_atoms):.4f} eV/atom")
 
 # ── Initial velocities ────────────────────────────────────────────────────────
@@ -221,7 +222,7 @@ printenergy(combined_atoms)
 
 time_ps, epot_list, ekin_list, temp_list, pressure_list = [], [], [], [], []
 steps_per_block = 100
-n_blocks        = 100
+n_blocks        = 500
 total_steps     = n_blocks * steps_per_block
 
 print(f"\nRunning {total_steps} steps  ({total_steps * timestep_fs / 1000:.1f} ps)...")

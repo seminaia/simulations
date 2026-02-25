@@ -123,17 +123,11 @@ def relax(atoms: Atoms,
     return opt_atoms
 # Structure setup
 a0 = 3.80
-a_al = 4.05
 c0 = 12.45
 conv_cell = [
     [a0, 0, 0],
     [0, a0, 0],
     [0, 0, c0]
-]
-al_conv_cell = [
-    [a_al, 0, 0],
-    [0, a_al, 0],
-    [0, 0, a_al]
 ]
 prim_cell = [
     [a0, 0, 0],
@@ -141,7 +135,6 @@ prim_cell = [
     [-a0, -a0, c0]
 ]
 symbols = ('La','La','La','La','Ni','Ni','O','O','O','O','O','O','O','O')
-al_symbol = ('Al','Al','Al','Al')
 conv_frac_positions = [  
     (0.50,  0.50,  0.14),
     (0.00,  0.00,  0.36),
@@ -157,12 +150,6 @@ conv_frac_positions = [
     (0.00,  0.50,  0.50),
     (0.50,  0.50,  0.68),
     (0.00,  0.00,  0.82)]
-al_conv_frac_coordinates = [
-    (0.00, 0.00, 0.00),
-    (0.00, 0.50, 0.50),
-    (0.50, 0.00, 0.50),
-    (0.50, 0.50, 0.00)
-]
 prim_frac_positions = [
     (0.36, 0.36, 0.36),
     (0.36, 0.36, 0.86),
@@ -179,27 +166,13 @@ prim_frac_positions = [
     (0.00, 0.50, 0.00),
     (0.00, 0.50, 0.50)]
 magmoms = [0.6, -0.6, 0.6, -0.6, 2.0, -2.0, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6]
-al_conv_atoms = Atoms(symbols=al_symbol,
-              scaled_positions=al_conv_frac_coordinates,
-              cell=al_conv_cell,
+conv_atoms = Atoms(symbols=symbols,
+              scaled_positions=conv_frac_positions,
+              cell=conv_cell,
               pbc=True)
-al_conv_atoms.write('Al_conv.cif', format='cif')
-view(al_conv_atoms, repeat=(2, 2, 2))
-#conv_atoms = Atoms(symbols=symbols,
-#              scaled_positions=conv_frac_positions,
-#              cell=conv_cell,
-#              pbc=True)
-#conv_atoms.set_initial_magnetic_moments(magmoms)
-#conv_atoms.write('La2NiO4_conv.cif', format='cif')
-#view(conv_atoms, repeat=(2, 2, 1))
-#
-#prim_atoms = Atoms(symbols=symbols,
-#                scaled_positions=prim_frac_positions,
-#                cell=prim_cell,
-#                pbc=True)
-#prim_atoms.set_initial_magnetic_moments(magmoms)
-#prim_atoms.write('La2NiO4_prim.cif', format='cif')
-#view(prim_atoms, repeat=(2, 2, 1))
+conv_atoms.set_initial_magnetic_moments(magmoms)
+conv_atoms.write('La2NiO4_conv.cif', format='cif')
+view(conv_atoms, repeat=(2, 2, 1))
 
 calculator_params = {
     "convergence": {"density": 1e-4,
@@ -219,22 +192,22 @@ calculator_params = {
     "mode": {"ecut": 520,
             "name": "pw"},
     "nbands":"nao",
-    "occwupations": {"name": "fermi-dirac",
+    "occupations": {"name": "fermi-dirac",
                     "width": 0.01},
-    #"setups": {"Ni": ':d, 6.2'},
-    #"symmetry":"off",
+    "setups": {"Ni": ':d, 6.2'},
+    "symmetry":"off",
     "txt": "rlx.txt",
     "xc": "PBE"
 }
 
 # Run relaxation
-conv_relaxed_atoms = relax(al_conv_atoms, 
+conv_relaxed_atoms = relax(conv_atoms, 
                            calculator_params,
                            fmax=0.01,
                            fixcell=False, 
-                           logname='al_conv_opt.log',
-                           trajname='al_conv_opt.traj',
-                           gpwname='al_conv_rlx.gpw')
+                           logname='conv_opt.log',
+                           trajname='conv_opt.traj',
+                           gpwname='conv_rlx.gpw')
 view(conv_relaxed_atoms, repeat=(2, 2, 2))
 if isinstance(conv_relaxed_atoms, FrechetCellFilter):
     conv_relaxed_atoms = conv_relaxed_atoms.atoms
@@ -243,51 +216,13 @@ if isinstance(conv_relaxed_atoms, FrechetCellFilter):
 E_conv = conv_relaxed_atoms.get_potential_energy()
 conv_pos = conv_relaxed_atoms.get_positions()
 conv_relax_cell = conv_relaxed_atoms.get_cell()
-#conv_relaxed_atoms.write('La2NiO4_relaxed_conv.cif', format='cif')
+conv_relaxed_atoms.write('La2NiO4_relaxed_conv.cif', format='cif')
 print("Relaxed cell:")
 print(conv_relax_cell)
 print("Potential energy (eV):", E_conv)
 #print(conv_scaled_pos)
 print("All positions (Angstrom):")
 print(conv_pos)
-#prim_relaxed_atoms = relax(prim_atoms, 
-#                           calculator_params,
-#                           fmax =0.01,
-#                           fixcell=False,
-#                           logname='La2NiO4_prim_opt.log',
-#                           trajname='La2NiO4_prim_opt.traj',
-#                           gpwname='La2NiO4_prim_rlx.gpw')
-#prim_relaxed_atoms.set_cell(conv_relaxed_atoms.get_cell(), scale_atoms=True)
-#
-#E_prim = prim_relaxed_atoms.get_potential_energy()
-#prim_relaxed_atoms.write('La2NiO4_relaxed_prim.cif', format='cif')
-#prim_scaled_positions = prim_relaxed_atoms.get_scaled_positions()
-#prim_positions = prim_relaxed_atoms.get_positions()
-#print("Potential energy (eV):", E_prim)
-#print("All scaled positions (fractional):")
-#print(prim_scaled_positions)
-#print("All positions (Angstrom):")
-#print(prim_positions)
-# Lattice constant scan
-#print("\nStarting lattice constant scan...")
-#eps = 0.03
-## Reopen or create new trajectory for scan results
-#scan_traj = Trajectory('al_conv_scan.traj', 'w')
-#for a in a0 * np.linspace(1-eps, 1+eps, 3):
-#    for c in c0 * np.linspace(1-3*eps, 1+3*eps, 5):
-#        scan_atoms = conv_relaxed_atoms.copy()
-#        scan_atoms.set_cell([[a_al, 0, 0], [0, a_al, 0], [0, 0, a_al]], scale_atoms=True)
-#        #magmoms = conv_relaxed_atoms.get_magnetic_moments()
-#        scan_params = dict(calculator_params)  
-#        scan_params["txt"] = f"lat_scan.txt"
-#        scan_atoms.calc = GPAW(**scan_params)
-#        # Calculate energy
-#        E = scan_atoms.get_potential_energy()
-#        print(f"a={a_al:.3f} E={E:.6f} eV")
-#        scan_atoms.write(f'al_conv_scan_a{a_al:.3f}.cif', format='cif')
-#        scan_traj.write(scan_atoms)
-#
-#scan_traj.close()
 
 # Fit EOS
 #print("\nFitting equation of state...")

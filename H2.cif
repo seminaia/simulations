@@ -1,3 +1,0 @@
-data_image0
-_chemical_formula_structural       H2
-_chemical_formula_sum              "H2"

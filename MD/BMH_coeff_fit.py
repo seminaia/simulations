@@ -43,7 +43,7 @@ SPECORDER = ['Li', 'Be', 'F', 'H']
 SCAN_PAIRS = [
     ('Li', 'F'),
     ('Be', 'F'),
-    ('F',  'F'),2
+    ('F',  'F'), 
     ('H',  'F'),
 ]
 
@@ -282,33 +282,16 @@ def main():
         e_t2 = bmh_C(r_values, A2 * np.exp(sig2 / rho2), rho2, C2)
         e_t3 = bmh_rep(r_values, A3 * np.exp(sig3 / rho3), rho3)
 
-        # Full model for E_pot comparison:
-        #   E_pot(r) ≈ BMH(r) + Coul(r) + E_pot(r_max) − Coul(r_max)
-        e_offset = e_pot[-1] - coul_vals[-1]
-        e_full1  = e_t1 + coul_vals + e_offset
-        e_full2  = e_t2 + coul_vals + e_offset
-        e_full3  = e_t3 + coul_vals + e_offset
-
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4))
-        fig.suptitle(f'Fit for {sym1}–{sym2}  (σ={sigma:.3f} Å fixed)')
-
-        ax1.plot(r_values, e_pot,   'o',   color='steelblue', label='DFT $E_{pot}$')
-        ax1.plot(r_values, e_full1, 'r-',  label='rep+C+D+Coul')
-        ax1.plot(r_values, e_full2, 'g--', label='rep+C+Coul')
-        ax1.plot(r_values, e_full3, 'b-.', label='rep+Coul')
-        ax1.axhline(0, color='k', lw=0.8, alpha=0.4)
-        ax1.set_xlabel('r (Å)'); ax1.set_ylabel('$E_{pot}$ (eV)')
-        ax1.set_title('Full energy'); ax1.legend(fontsize=7)
-
-        ax2.plot(r_values, e_sr,    'o',   color='steelblue', label='DFT $E_{sr}$')
-        ax2.plot(r_values, e_t1,    'r-',  label='rep+C+D')
-        ax2.plot(r_values, e_t2,    'g--', label='rep+C')
-        ax2.plot(r_values, e_t3,    'b-.', label='rep only')
-        ax2.axhline(0, color='k', lw=0.8, alpha=0.4)
-        ax2.set_xlabel('r (Å)'); ax2.set_ylabel('$E_{sr}$ (eV)')
-        ax2.set_title('Short-range (fit target)'); ax2.legend(fontsize=7)
-
-        plt.tight_layout()
+        plt.figure(figsize=(6, 4))
+        plt.plot(r_values, e_sr,       'o',   label='DFT (ref-subtracted)')
+        plt.plot(r_values, e_t1,       'r-',  label='rep+C+D')
+        plt.plot(r_values, e_t2,       'g--', label='rep+C')
+        plt.plot(r_values, e_t3,       'b-.', label='rep only')
+        plt.axhline(0, color='k', lw=0.8, alpha=0.4)
+        plt.xlabel('r (Å)')
+        plt.ylabel('$E_{sr}$ (eV)')
+        plt.title(f'Fit for {sym1}–{sym2}  (σ={sigma:.3f} Å fixed)')
+        plt.legend(fontsize=7)
         plt.show()
 
     # ── LAMMPS pair_coeff table ───────────────────────────────────────────────

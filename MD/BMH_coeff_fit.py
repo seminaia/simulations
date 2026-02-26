@@ -2,8 +2,7 @@
 Born-Mayer-Huggins potential fitting using GPAW DFT
 ====================================================
 Fits BMH short-range parameters (A, ρ, C, D) for each ion pair
-in LiF·BeF₂+H by scanning dimer energies with GPAW PBE/PW and
-subtracting the point-charge Coulomb term.
+in LiF·BeF₂+H by scanning dimer energies with GPAW PBE/PW.
 
   Full BMH potential (LAMMPS born/coul/long):
       V(r) = A·exp((σ−r)/ρ) − C/r⁶ + D/r⁸   +   k·q₁·q₂/r
@@ -12,16 +11,12 @@ subtracting the point-charge Coulomb term.
   pair_coeff i j  A(eV)  ρ(Å)  σ(Å)  C(eV·Å⁶)  D(eV·Å⁸)
     σ = contact/collision diameter (Å); sets the energy scale of the repulsion
 
-Method (reference-subtraction — avoids monomer spin issues):
-  E_sr(r) = [E_dimer(r) − E_dimer(r_ref)]
-            − k·q₁·q₂·(1/r − 1/r_ref)
+Method (reference subtraction):
+  E_sr(r) = [E_DFT(r) − E_DFT(r_max)] − k·q₁q₂·(1/r − 1/r_max)
 
-  where r_ref is large enough that E_sr(r_ref) ≈ 0.
-
-Dispersion fitting tiers:
-  F–F           → fit A, ρ, C, D   (dominant anion–anion dispersion)
-  H–F           → fit A, ρ, C      (C₆ expected; D small for a proton)
-  Li–F, Be–F    → fit A, ρ         (cation polarisability negligible)
+  Removes the ionic-state asymptote (E_DFT → -(IE−EA) ≠ 0 for Li-F, Be-F),
+  so E_sr → 0 at r_max. Fit pure BMH to E_sr; parameters go directly to LAMMPS.
+  σ is fixed from Shannon ionic radii; A is back-computed as A = B·exp(−σ/ρ).
 
 Cation–cation pairs (Li–Li, Li–Be, Be–Be, H–H, H–Li, H–Be)
 are purely Coulombic → A = C = D = 0 in LAMMPS.
@@ -30,7 +25,7 @@ are purely Coulombic → A = C = D = 0 in LAMMPS.
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.constants import epsilon_0, e, physical_constants 
+from scipy.constants import epsilon_0, e
 from ase import Atoms
 from gpaw import GPAW, PW, FermiDirac
 
@@ -48,30 +43,37 @@ SPECORDER = ['Li', 'Be', 'F', 'H']
 SCAN_PAIRS = [
     ('Li', 'F'),
     ('Be', 'F'),
-    ('F',  'F'),
+    ('F',  'F'),2
     ('H',  'F'),
 ]
 
-# Dispersion fitting tiers (pairs not listed get C = D = 0)
-FIT_CD = {('F', 'F')}          # fit A, ρ, C, D  — full BMH
-FIT_C  = {('H', 'F')}          # fit A, ρ, C     — D=0
-
-# Contact distance σ (Å): minimum r below which LAMMPS holds E constant.
-# Set to a safe value slightly below R_MIN; not part of the energy expression.
-SIGMA_DEFAULT = 1.0   # Å
+# Contact distance σ (Å) per pair — sum of Shannon ionic radii (6-coord).
+# σ is fixed during fitting; only B = A·exp(σ/ρ) and ρ are free parameters.
+# After fitting, A is recovered via A = B·exp(−σ/ρ).
+# Shannon radii (Å): Li⁺=0.76, Be²⁺=0.45, F⁻=1.33, H⁺≈0 (bare proton).
+SIGMA_CONTACT = {
+    ('Li', 'F'):  2.09,   # Li⁺(0.76) + F⁻(1.33)
+    ('F',  'Li'): 2.09,
+    ('Be', 'F'):  1.78,   # Be²⁺(0.45) + F⁻(1.33)
+    ('F',  'Be'): 1.78,
+    ('F',  'F'):  2.66,   # F⁻(1.33) + F⁻(1.33)
+    ('H',  'F'):  1.33,   # H⁺(≈0) + F⁻(1.33)
+    ('F',  'H'):  1.33,
+}
+SIGMA_DEFAULT = 1.0   # Å fallback for pairs not in SIGMA_CONTACT
 
 # r grid for dimer scan
-R_MIN = 0.8    # Å  — avoid core-core divergence in DFT
+R_MIN = 1.0    # Å  — avoid core-core divergence in DFT
 R_MAX = 5.0    # Å  — well into the flat / zero region
 N_R   = 10     # number of separation points
-R_REF = 8.0    # Å  — large-separation reference; E_sr(r_ref) ≈ 0
 
 # GPAW plane-wave settings
 ECUT_EV = 400   # eV
 VACUUM  = 7.0   # Å vacuum on each side of the dimer
 
-# Coulomb constant  k_e·e²  in eV·Å
-K_COULOMB = e * 1e10 / (4 * np.pi * epsilon_0)  # F/m
+# Coulomb constant  k_e  in eV·Å  (= e/(4πε₀) in SI, converted to eV·Å)
+K_COULOMB = e * 1e10 / (4 * np.pi * epsilon_0)
+
 # ── GPAW helpers ──────────────────────────────────────────────────────────────
 def make_gpaw(txt='-'):
     """GPAW PW calculator for isolated dimers (Γ-point, mild smearing)."""
@@ -104,117 +106,131 @@ def get_energy(atoms, log_tag):
 
 def scan_pair(sym1, sym2, r_values):
     """
-    Return the short-range BMH energy E_sr(r) at each separation.
+    Return the raw DFT potential energy E_pot(r) at each separation.
 
-    E_sr(r) = [E_dimer(r) − E_dimer(r_ref)] − k·q₁·q₂·(1/r − 1/r_ref)
-
-    The reference subtraction cancels both monomer energies and avoids
-    spin-polarised monomer DFT calculations.
+    GPAW references energies to isolated neutral atoms, so E_pot(r→∞) → 0.
+    The Coulomb term is included directly in the fitting function (bmh_coul)
+    rather than being pre-subtracted here.
     """
     q1  = CHARGES.get(sym1, 0.0)
     q2  = CHARGES.get(sym2, 0.0)
     tag = f'{sym1}{sym2}'
 
-    print(f"  Reference  r_ref = {R_REF:.1f} Å ...", end='  ', flush=True)
-    e_ref = get_energy(dimer_atoms(sym1, sym2, R_REF), f'{tag}_ref')
-    print(f"E_ref = {e_ref:.6f} eV")
-
-    e_sr_list = []
+    e_pot_list = []
     for r in r_values:
-        e_dim      = get_energy(dimer_atoms(sym1, sym2, r), f'{tag}_r{r:.2f}')
-        delta_e    = e_dim - e_ref
-        delta_coul = K_COULOMB * q1 * q2 * (1.0 / r - 1.0 / R_REF)
-        e_sr       = delta_e - delta_coul
-        e_sr_list.append(e_sr)
-        print(f"    r={r:.2f} Å  ΔE={delta_e:+.4f}  "
-              f"ΔE_coul={delta_coul:+.4f}  E_sr={e_sr:+.4f} eV")
+        e_pot = get_energy(dimer_atoms(sym1, sym2, r), f'{tag}_r{r:.2f}')
+        E_lr  = K_COULOMB * q1 * q2 / r
+        e_sr  = e_pot - E_lr
+        e_pot_list.append(e_pot)
+        print(f"    r={r:.2f} Å  E_pot={e_pot:+.4f}  "
+              f"E_lr={E_lr:+.4f}  E_sr={e_sr:+.4f} eV")
+    return np.array(e_pot_list)
 
-    return np.array(e_sr_list)
-
-
+def coul(q1, q2, r):
+    """Coulomb energy: k·q₁·q₂/r"""
+    return K_COULOMB * q1 * q2 / r
 # ── BMH functional forms ──────────────────────────────────────────────────────
 
-def bmh(r, A, sigma, rho, C, D):
-    """Full BMH short-range: A·exp((σ−r)/ρ) − C/r⁶ + D/r⁸"""
-    return A * np.exp((sigma - r) / rho) - C / r**6 + D / r**8
+def bmh_coul(r, B, rho, C, D, q1, q2):
+    """BMH + Coulomb: B·exp(−r/ρ) − C/r⁶ + D/r⁸  +  k·q₁·q₂/r"""
+    return B * np.exp(-r / rho) - C / r**6 + D / r**8 + coul(q1, q2, r)
 
 
-def bmh_C(r, A, sigma, rho, C):
-    """BMH without r⁻⁸ term: A·exp((σ−r)/ρ) − C/r⁶"""
-    return A * np.exp((sigma - r) / rho) - C / r**6
+def bmh_D(r, B, rho, C, D):
+    """Short-range BMH only: B·exp(−r/ρ) − C/r⁶ + D/r⁸"""
+    return B * np.exp(-r / rho) - C / r**6 + D / r**8 
 
 
-def bmh_rep(r, A, sigma, rho):
-    """Pure repulsion: A·exp((σ−r)/ρ)"""
-    return A * np.exp((sigma - r) / rho)
+def bmh_C(r, B, rho, C):
+    """BMH repulsion + dipole-dipole: B·exp(−r/ρ) − C/r⁶"""
+    return B * np.exp(-r / rho) - C / r**6
+
+
+def bmh_rep(r, B, rho):
+    """BMH repulsion only: B·exp(−r/ρ)"""
+    return B * np.exp(-r / rho)
 
 
 # ── Fitting ───────────────────────────────────────────────────────────────────
 
-def fit_bmh(sym1, sym2, r_values, e_sr):
+def fit_bmh(sym1, sym2, r_values, e_pot):
     """
-    Fit BMH parameters to E_sr(r).
+    Fit BMH parameters using reference-subtracted short-range energy.
 
-    Points excluded from the fit:
-      - r < 1.8 Å   (DFT core region may be unreliable)
-      - E_sr > 20 eV (likely unconverged SCF at very short r)
-      - E_sr < −2 eV (unphysical attraction — numerical noise)
+    Reference subtraction normalises the target to zero at r_max:
+        E_sr(r) = [E_DFT(r) − E_DFT(r_max)] − k·q₁q₂·(1/r − 1/r_max)
+
+    This removes the ionic-state asymptote offset (E_DFT → -(IE−EA) ≠ 0
+    for strongly ionic pairs like Li-F) and makes E_sr → 0 at large r,
+    consistent with pure BMH short-range decay.
+
+    Fits pure BMH (no Coulomb term) to E_sr. The BMH parameters go
+    directly into LAMMPS born/coul/long pair_coeff.
+
+    σ is fixed; A is back-computed as A = B·exp(−σ/ρ) after the fit.
 
     Returns:
-      params  : np.ndarray [A, sigma, rho, C, D]  in eV, Å, Å, eV·Å⁶, eV·Å⁸
-      err     : np.ndarray  1-σ uncertainties (nan if fit failed)
+      (params, err) triples for tier1 [A,σ,ρ,C,D], tier2 [A,σ,ρ,C,0],
+      tier3 [A,σ,ρ,0,0]  — params in eV, Å, Å, eV·Å⁶, eV·Å⁸
     """
     pair     = (sym1, sym2)
     pair_rev = (sym2, sym1)
-    do_CD = pair in FIT_CD or pair_rev in FIT_CD
-    do_C  = pair in FIT_C  or pair_rev in FIT_C
+    sigma = SIGMA_CONTACT.get(pair, SIGMA_CONTACT.get(pair_rev, SIGMA_DEFAULT))
+    q1 = CHARGES.get(sym1, 0.0)
+    q2 = CHARGES.get(sym2, 0.0)
 
-    mask  = (r_values >= 1.8) & (e_sr < 20.0) & (e_sr > -2.0)
-    r_fit = r_values[mask]
-    e_fit = e_sr[mask]
+    # Reference-subtracted short-range energy: E_sr(r_max) = 0 by construction
+    coul_vals = K_COULOMB * q1 * q2 / r_values
+    e_sr = (e_pot - e_pot[-1]) - (coul_vals - coul_vals[-1])
 
-    if len(r_fit) < 4:
-        print("    WARNING: fewer than 4 usable points — returning zeros.")
-        return np.zeros(5), np.full(5, np.nan)
-
+    # Fit pure BMH tiers to e_sr (no Coulomb in the model)
     try:
-        if do_CD:
-            popt, pcov = curve_fit(
-                bmh, r_fit, e_fit,
-                p0     = [500.0, 1.0, 0.25, 5.0, 2.0],
-                bounds = ([0, 0.01, 0.01, 0, 0], [1e6, 5.0, 2.0, 500.0, 500.0]),
-                maxfev = 100_000,
-            )
-            A, sigma, rho, C, D = popt
-            err = np.sqrt(np.diag(pcov))
+        popt1, pcov1 = curve_fit(
+            bmh_D, r_values, e_sr,
+            p0     = [500.0, 0.30, 5.0, 2.0],
+            bounds = ([0, 0.10, 0, 0], [1e6, 0.60, 500.0, 500.0]),
+            maxfev = 100_000,
+        )
+        B1, rho1, C1, D1 = popt1
+        eb1, er1, ec1, ed1 = np.sqrt(np.diag(pcov1))
 
-        elif do_C:
-            popt, pcov = curve_fit(
-                bmh_C, r_fit, e_fit,
-                p0     = [300.0, 1.0, 0.25, 2.0],
-                bounds = ([0, 0.01, 0.01, 0], [1e6, 5.0, 2.0, 500.0]),
-                maxfev = 100_000,
-            )
-            A, sigma, rho, C = popt
-            D   = 0.0
-            err = np.append(np.sqrt(np.diag(pcov)), 0.0)
+        popt2, pcov2 = curve_fit(
+            bmh_C, r_values, e_sr,
+            p0     = [500.0, 0.30, 5.0],
+            bounds = ([0, 0.10, 0], [1e6, 0.60, 500.0]),
+            maxfev = 100_000,
+        )
+        B2, rho2, C2 = popt2
+        eb2, er2, ec2 = np.sqrt(np.diag(pcov2))
 
-        else:
-            popt, pcov = curve_fit(
-                bmh_rep, r_fit, e_fit,
-                p0     = [300.0, 1.0, 0.25],
-                bounds = ([0, 0.01, 0.01], [1e6, 5.0, 2.0]),
-                maxfev = 100_000,
-            )
-            A, sigma, rho = popt
-            C, D   = 0.0, 0.0
-            err    = np.append(np.sqrt(np.diag(pcov)), [0.0, 0.0])
+        popt3, pcov3 = curve_fit(
+            bmh_rep, r_values, e_sr,
+            p0     = [500.0, 0.30],
+            bounds = ([0, 0.10], [1e6, 0.60]),
+            maxfev = 100_000,
+        )
+        B3, rho3 = popt3
+        eb3, er3 = np.sqrt(np.diag(pcov3))
 
     except RuntimeError as exc:
         print(f"    WARNING: curve_fit failed: {exc}")
-        return np.zeros(5), np.full(5, np.nan)
+        nan5 = np.full(5, np.nan)
+        return (np.zeros(5), nan5), (np.zeros(5), nan5), (np.zeros(5), nan5)
 
-    return np.array([A, sigma, rho, C, D]), err
+    # Back-compute A from B = A·exp(σ/ρ)  →  A = B·exp(−σ/ρ)
+    A1 = B1 * np.exp(-sigma / rho1)
+    A2 = B2 * np.exp(-sigma / rho2)
+    A3 = B3 * np.exp(-sigma / rho3)
+
+    # Error propagation (σ fixed): δA = sqrt((exp(−σ/ρ)·δB)² + (A·σ/ρ²·δρ)²)
+    err_A1 = np.sqrt((np.exp(-sigma / rho1) * eb1)**2 + (A1 * sigma / rho1**2 * er1)**2)
+    err_A2 = np.sqrt((np.exp(-sigma / rho2) * eb2)**2 + (A2 * sigma / rho2**2 * er2)**2)
+    err_A3 = np.sqrt((np.exp(-sigma / rho3) * eb3)**2 + (A3 * sigma / rho3**2 * er3)**2)
+
+    tier1 = (np.array([A1, sigma, rho1, C1, D1]), np.array([err_A1, 0.0, er1, ec1, ed1]))
+    tier2 = (np.array([A2, sigma, rho2, C2, 0.0]), np.array([err_A2, 0.0, er2, ec2, 0.0]))
+    tier3 = (np.array([A3, sigma, rho3, 0.0, 0.0]), np.array([err_A3, 0.0, er3, 0.0, 0.0]))
+    return tier1, tier2, tier3
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -230,26 +246,70 @@ def main():
               f"(q₁={CHARGES.get(sym1,0):+.0f}, q₂={CHARGES.get(sym2,0):+.0f})")
         print(f"{'='*60}")
 
-        e_sr               = scan_pair(sym1, sym2, r_values)
-        params, err        = fit_bmh(sym1, sym2, r_values, e_sr)
-        A, sigma, rho, C, D = params
+        e_pot                    = scan_pair(sym1, sym2, r_values)
+        tier1, tier2, tier3      = fit_bmh(sym1, sym2, r_values, e_pot)
+        params, err              = tier1        # tier1 (full BMH) → LAMMPS output
+        A, sigma, rho, C, D     = params
 
+        # Reference-subtracted E_sr for plotting (matches what fit_bmh uses)
+        q1 = CHARGES.get(sym1, 0.0)
+        q2 = CHARGES.get(sym2, 0.0)
+        coul_vals = K_COULOMB * q1 * q2 / r_values
+        e_sr    = (e_pot - e_pot[-1]) - (coul_vals - coul_vals[-1])
         r_dense = np.linspace(R_MIN, R_MAX, 300)
-        e_model = bmh(r_dense, A, sigma, rho, C, D)
+        B_model = A * np.exp(sigma / rho)
+        e_model = bmh_D(r_dense, B_model, rho, C, D)   # short-range only (matches e_sr)
 
         results[(sym1, sym2)] = {
             'A': A, 'sigma': sigma, 'rho': rho, 'C': C, 'D': D,
             'err': err,
+            'tier2': tier2, 'tier3': tier3,
             'r': r_values, 'e_sr': e_sr,
             'r_dense': r_dense, 'e_model': e_model,
         }
-
         print(f"\n  ── Fitted Born-Mayer-Huggins parameters ──────────────────")
         print(f"     A   = {A:10.4f}  ± {err[0]:.4f}   eV")
         print(f"     σ   = {sigma:10.5f}  ± {err[1]:.5f}   Å")
         print(f"     ρ   = {rho:10.5f}  ± {err[2]:.5f}   Å")
         print(f"     C   = {C:10.4f}  ± {err[3]:.4f}   eV·Å⁶")
         print(f"     D   = {D:10.4f}  ± {err[4]:.4f}   eV·Å⁸")
+        
+        # Evaluate each tier's pure BMH at r_values (no Coulomb, matches e_sr)
+        A1, sig1, rho1, C1, D1 = tier1[0]
+        A2, sig2, rho2, C2, _  = tier2[0]
+        A3, sig3, rho3, _,  _  = tier3[0]
+        e_t1 = bmh_D(r_values, A1 * np.exp(sig1 / rho1), rho1, C1, D1)
+        e_t2 = bmh_C(r_values, A2 * np.exp(sig2 / rho2), rho2, C2)
+        e_t3 = bmh_rep(r_values, A3 * np.exp(sig3 / rho3), rho3)
+
+        # Full model for E_pot comparison:
+        #   E_pot(r) ≈ BMH(r) + Coul(r) + E_pot(r_max) − Coul(r_max)
+        e_offset = e_pot[-1] - coul_vals[-1]
+        e_full1  = e_t1 + coul_vals + e_offset
+        e_full2  = e_t2 + coul_vals + e_offset
+        e_full3  = e_t3 + coul_vals + e_offset
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4))
+        fig.suptitle(f'Fit for {sym1}–{sym2}  (σ={sigma:.3f} Å fixed)')
+
+        ax1.plot(r_values, e_pot,   'o',   color='steelblue', label='DFT $E_{pot}$')
+        ax1.plot(r_values, e_full1, 'r-',  label='rep+C+D+Coul')
+        ax1.plot(r_values, e_full2, 'g--', label='rep+C+Coul')
+        ax1.plot(r_values, e_full3, 'b-.', label='rep+Coul')
+        ax1.axhline(0, color='k', lw=0.8, alpha=0.4)
+        ax1.set_xlabel('r (Å)'); ax1.set_ylabel('$E_{pot}$ (eV)')
+        ax1.set_title('Full energy'); ax1.legend(fontsize=7)
+
+        ax2.plot(r_values, e_sr,    'o',   color='steelblue', label='DFT $E_{sr}$')
+        ax2.plot(r_values, e_t1,    'r-',  label='rep+C+D')
+        ax2.plot(r_values, e_t2,    'g--', label='rep+C')
+        ax2.plot(r_values, e_t3,    'b-.', label='rep only')
+        ax2.axhline(0, color='k', lw=0.8, alpha=0.4)
+        ax2.set_xlabel('r (Å)'); ax2.set_ylabel('$E_{sr}$ (eV)')
+        ax2.set_title('Short-range (fit target)'); ax2.legend(fontsize=7)
+
+        plt.tight_layout()
+        plt.show()
 
     # ── LAMMPS pair_coeff table ───────────────────────────────────────────────
     # pair_style born/coul/long: pair_coeff i j  A  rho  sigma  C  D
@@ -286,7 +346,7 @@ def main():
         fh.write("# Born-Mayer-Huggins pair coefficients\n")
         fh.write("# Fitted from GPAW/PBE dimer energy scans\n")
         fh.write(f"# r scan: {R_MIN:.1f}–{R_MAX:.1f} Å  ({N_R} points)\n")
-        fh.write(f"# r_ref:  {R_REF:.1f} Å   E_cut: {ECUT_EV} eV   xc: PBE\n")
+        fh.write(f"# E_cut: {ECUT_EV} eV   xc: PBE\n")
         fh.write("# pair_style born/coul/long\n")
         fh.write("# Format: pair_coeff i j  A(eV)  rho(Å)  sigma(Å)  C(eV·Å⁶)  D(eV·Å⁸)\n")
         fh.write("#\n")
@@ -347,7 +407,5 @@ def main():
     plot_file = 'BMH_fit_results.png'
     plt.savefig(plot_file, dpi=150, bbox_inches='tight')
     print(f"Plot saved → {plot_file}")
-
-
 if __name__ == '__main__':
     main()

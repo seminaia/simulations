@@ -136,7 +136,7 @@ base_params = {
                     "eigenstates": 1e-8,
                     "energy": 1e-6, 
                     "forces": 1e-4},
-    "eigensolver": {"name": "cg", 
+    "eigensolver": {"name": "RMMDIIS", 
                     "niter": 5},
     "maxiter": 500,
     "mixer": {"backend": "pulay", 
@@ -146,11 +146,15 @@ base_params = {
               "weight": 100},
     "mode": {"ecut": 520, "name": "pw"},
     "nbands": "nao",
+    "poissonsolver": {"name":"fft"},
     "symmetry": "off",
     "occupations": {"name": "fermi-dirac",
                     "width": 0.01},
     "txt": None,  # Will be set per material
-    "xc": "PBE"
+    "xc": {'name': 'LCY-PBE',
+           'fraction': 0.25,
+           'omega': 0.11,
+           'backend': 'pw'}
 }
 
 # ============================================================

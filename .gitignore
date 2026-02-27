@@ -1,2 +1,2 @@
-LiF_BeF2_classical_prod.traj
-LiF_BeF2_nvt.traj
+# Trajectory files (can be very large)
+*.traj

@@ -37,8 +37,8 @@ RUN_AIMD = True   # include AIMD frames
 ECUT_EV     = 400
 XC          = 'HSE06'
 SMEAR_WIDTH = 0.01
-KPTS_RELAX  = (1,1,1)
-KPTS_SUPER  = (2, 2, 2)
+KPTS_RELAX  = (2, 2, 2)
+KPTS_SUPER  = (1, 1, 1)
 FMAX        = 0.02         # eV/Å
 
 # Rattled supercell configs
@@ -102,11 +102,13 @@ if RELAX:
     atoms = ATOMS.copy()
     atoms.calc = make_gpaw(KPTS_RELAX, f'{NAME}_relax.log')
     BFGS(atoms, logfile=f'{NAME}_relax_opt.log').run(fmax=FMAX, steps=200)
+    E_relax = atoms.get_potential_energy() / len(atoms)
     atoms.calc = None
     relaxed = atoms
+    print(f"  E = {E_relax:.5f} eV/atom")
 else:
     relaxed = ATOMS.copy()
-print(f"  E = {relaxed.get_potential_energy()/len(relaxed):.5f} eV/atom" if RELAX else "  Skipped")
+    print("  Skipped")
 
 # Step 2a: rattled supercells
 print("\nStep 2a: Rattled supercell configs")

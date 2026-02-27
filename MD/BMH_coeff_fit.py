@@ -82,23 +82,22 @@ EPSILON_R = 1.0
 def make_gpaw(txt='-'):
     """GPAW PW calculator for isolated dimers (Γ-point, mild smearing)."""
     return GPAW(
-        mode=PW(ECUT_EV),
-        xc          = 'HSE06',
-        kpts        = {'size': (1, 1, 1), 'gamma': True},
-        eigensolver = {'name': 'rmm-diis', 'niter':10},
+        mode        = PW(ECUT_EV),
+        xc          = "HSE06",
         occupations = FermiDirac(0.01),
         symmetry    = 'off',
         txt         = txt,
+        kpts        = (2, 2, 2),
         convergence = {'energy': 1e-5},
         maxiter     = 500,
-        mixer       = Mixer(beta=0.02, nmaxold=10, weight=100),
-
+        mixer       = {'backend': 'pulay', 'method': 'separate',
+                       'beta': 0.02, 'nmaxold': 10, 'weight': 100},
     )
 
 
 def dimer_atoms(sym1, sym2, r, vacuum=VACUUM):
     """Neutral atom dimer: sym1 at origin, sym2 at (r,0,0), in vacuum box."""
-    atoms = Atoms([sym1, sym2], positions=[(0, 0, 0), (r, 0, 0)])
+    atoms = Atoms([sym1, sym2], positions=[(0, 0, 0), (r, 0, 0)],pbc=True)
     atoms.center(vacuum=vacuum)
     return atoms
 

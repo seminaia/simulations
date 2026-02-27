@@ -83,7 +83,7 @@ def make_gpaw(txt='-'):
     """GPAW PW calculator for isolated dimers (Γ-point, mild smearing)."""
     return GPAW(
         mode        = PW(ECUT_EV),
-        xc          = 'PBE',
+        xc          = 'HSE06',
         kpts        = {'size': (1, 1, 1), 'gamma': True},
         occupations = FermiDirac(0.05),
         symmetry    = 'off',

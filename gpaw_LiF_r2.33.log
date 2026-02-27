@@ -5,6 +5,7 @@
  |__ |  _|___|_____|  25.7.0
  |___|_|             
 
+<<<<<<< HEAD
 User:   soki@HP-EliteBook-840-G6
 Date:   Thu Feb 26 12:08:25 2026
 Arch:   x86_64
@@ -17,6 +18,20 @@ _gpaw:  /home/soki/miniconda3/envs/mylmpenv/lib/python3.14/site-packages/
 ase:    /home/soki/miniconda3/envs/mylmpenv/lib/python3.14/site-packages/ase (version 3.27.0)
 numpy:  /home/soki/miniconda3/envs/mylmpenv/lib/python3.14/site-packages/numpy (version 2.4.2)
 scipy:  /home/soki/miniconda3/envs/mylmpenv/lib/python3.14/site-packages/scipy (version 1.17.0)
+=======
+User:   soki@soki-Dell-Pro-14-Plus-PB14250
+Date:   Thu Feb 26 19:40:43 2026
+Arch:   x86_64
+Pid:    624690
+CWD:    /home/soki/simulations
+Python: 3.14.2
+gpaw:   /home/soki/miniconda3/envs/my-lammps-env/lib/python3.14/site-packages/gpaw
+_gpaw:  /home/soki/miniconda3/envs/my-lammps-env/lib/python3.14/site-packages/
+        _gpaw.cpython-314-x86_64-linux-gnu.so
+ase:    /home/soki/miniconda3/envs/my-lammps-env/lib/python3.14/site-packages/ase (version 3.27.0)
+numpy:  /home/soki/miniconda3/envs/my-lammps-env/lib/python3.14/site-packages/numpy (version 2.4.1)
+scipy:  /home/soki/miniconda3/envs/my-lammps-env/lib/python3.14/site-packages/scipy (version 1.17.0)
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
 libxc:  7.0.0
 units:  Angstrom and eV
 cores: 1
@@ -24,6 +39,7 @@ OpenMP: True
 OMP_NUM_THREADS: 1
 
 Input parameters:
+<<<<<<< HEAD
   convergence: {energy: 1e-05}
   kpts: {gamma: True,
          size: (1, 1, 1)}
@@ -35,6 +51,24 @@ Input parameters:
                 width: 0.05}
   symmetry: off
   xc: PBE
+=======
+  convergence: {density: 0.001,
+                eigenstates: 1e-08,
+                energy: 1e-06,
+                forces: 0.0001}
+  maxiter: 500
+  mixer: {backend: pulay,
+          beta: 0.1,
+          method: fullspin,
+          nmaxold: 5,
+          weight: 100}
+  mode: {name: pw}
+  nbands: nao
+  occupations: {name: fermi-dirac,
+                width: 0.01}
+  symmetry: off
+  xc: HSE06
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
 
 System changes: positions, numbers, cell, pbc, initial_charges, initial_magmoms 
 
@@ -48,7 +82,11 @@ species:
     valence: 1
     core: 2
     charge: 0.0
+<<<<<<< HEAD
     file: /home/soki/miniconda3/envs/mylmpenv/lib/python3.14/site-packages/gpaw_data/setups/Li.PBE.gz
+=======
+    file: /home/soki/miniconda3/envs/my-lammps-env/lib/python3.14/site-packages/gpaw_data/setups/Li.PBE.gz
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
     compensation charges: {type: gauss,
                            rc: 0.33,
                            lmax: 2}
@@ -69,7 +107,11 @@ species:
     valence: 7
     core: 2
     charge: 0.0
+<<<<<<< HEAD
     file: /home/soki/miniconda3/envs/mylmpenv/lib/python3.14/site-packages/gpaw_data/setups/F.PBE.gz
+=======
+    file: /home/soki/miniconda3/envs/my-lammps-env/lib/python3.14/site-packages/gpaw_data/setups/F.PBE.gz
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
     compensation charges: {type: gauss,
                            rc: 0.20,
                            lmax: 2}
@@ -90,9 +132,17 @@ Reference energy: -2916.868605  # eV
 Spin-paired calculation
 
 Convergence criteria:
+<<<<<<< HEAD
  Maximum [total energy] change in last 3 cyles: 1e-05 eV / valence electron
  Maximum integral of absolute [dens]ity change: 0.0001 electrons / valence electron
  Maximum integral of absolute [eigenst]ate change: 4e-08 eV^2 / valence electron
+=======
+ Maximum [total energy] change in last 3 cyles: 1e-06 eV / valence electron
+ Maximum integral of absolute [dens]ity change: 0.001 electrons / valence electron
+ Maximum integral of absolute [eigenst]ate change: 1e-08 eV^2 / valence electron
+ Maximum change in the atomic [forces] across last 2 cycles: 0.0001 eV/Ang OR
+Maximum error relative to the maximum force is below inf
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
  Maximum number of scf [iter]ations: 500
  (Square brackets indicate name in SCF output, whereas a 'c' in
  the SCF output indicates the quantity has converged.)
@@ -109,8 +159,13 @@ Symmetries present (total): 1
    0:     0.00000000    0.00000000    0.00000000          1/1
 
 Wave functions: Plane wave expansion
+<<<<<<< HEAD
   Cutoff energy: 400.000 eV
   Number of coefficients: 58149 (reduced to 29075)
+=======
+  Cutoff energy: 340.000 eV
+  Number of coefficients: 17545 (reduced to 8773)
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
   Pulay-stress correction: 0.000000 eV/Ang^3 (de/decut=0.000000)
   Using FFTW library
   ScaLapack parameters: grid=1x1, blocksize=None
@@ -118,20 +173,30 @@ Wave functions: Plane wave expansion
     Improved wavefunction reuse through dual PAW basis 
 
 Occupation numbers: Fermi-Dirac:
+<<<<<<< HEAD
   width: 0.0500  # eV
+=======
+  width: 0.0100  # eV
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
  
 
 Eigensolver
    Davidson(niter=2) 
 
 Densities:
+<<<<<<< HEAD
   Coarse grid: 80*70*70 grid
   Fine grid: 160*140*140 grid
+=======
+  Coarse grid: 54*45*45 grid
+  Fine grid: 108*90*90 grid
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
   Total Charge: 0.000000 
 
 Density mixing:
   Method: separate
   Backend: pulay
+<<<<<<< HEAD
   Linear mixing parameter: 0.05
   old densities: 5
   Damping of long wavelength oscillations: 50 
@@ -139,10 +204,20 @@ Density mixing:
 Hamiltonian:
   XC and Coulomb potentials evaluated on a 160*140*140 grid
   Using the PBE Exchange-Correlation functional
+=======
+  Linear mixing parameter: 0.1
+  old densities: 5
+  Damping of long wavelength oscillations: 100 
+
+Hamiltonian:
+  XC and Coulomb potentials evaluated on a 108*90*90 grid
+  Using the HSE06 Exchange-Correlation functional
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
   External potential:
     NoExternalPotential
  
 
+<<<<<<< HEAD
 XC parameters: PBE with 2 nearest neighbor stencil
 
 Memory estimate:
@@ -163,6 +238,22 @@ Memory estimate:
       Projections: 0.00 MiB
       Projectors: 3.77 MiB
       PW-descriptor: 8.05 MiB
+=======
+XC parameters: HYB_GGA_XC_HSE06 + 0.25 * EXX(omega = 0.11 bohr^-1)
+
+Memory estimate:
+  Process memory now: 342.52 MiB
+Attribute error: AttributeError("'HybridXC' object has no attribute 'estimate_memory'")
+Some object probably lacks estimate_memory() method
+Memory breakdown may be incomplete
+  Calculator: 67.52 MiB
+    Density: 53.34 MiB
+      Arrays: 21.69 MiB
+      Localized functions: 23.30 MiB
+      Mixer: 8.34 MiB
+    Hamiltonian: 14.18 MiB
+      Arrays: 14.18 MiB
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
 
 Total number of cores used: 1
 
@@ -180,6 +271,7 @@ Density initialized from atomic densities
 Creating initial wave functions:
   8 bands from LCAO basis set
 
+<<<<<<< HEAD
           .---------------------------------------.  
          /|                                       |  
         / |                                       |  
@@ -207,10 +299,32 @@ Creating initial wave functions:
  | /                                       /         
  |/                                       /          
  *---------------------------------------*           
+=======
+       .-----------------------------.  
+      /|                             |  
+     / |                             |  
+    /  |                             |  
+   /   |                             |  
+  /    |                             |  
+ *     |                             |  
+ |     |                             |  
+ |     |                             |  
+ |     |        Li    F              |  
+ |     |                             |  
+ |     |                             |  
+ |     .-----------------------------.  
+ |    /                             /   
+ |   /                             /    
+ |  /                             /     
+ | /                             /      
+ |/                             /       
+ *-----------------------------*        
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
 
 Atomic positions and initial magnetic moments
 
 Positions:
+<<<<<<< HEAD
    0 Li     7.000000    7.000000    7.000000    ( 0.0000,  0.0000,  0.0000)
    1 F      9.333333    7.000000    7.000000    ( 0.0000,  0.0000,  0.0000)
 
@@ -308,11 +422,137 @@ Extrapolated:    -4.374965
 Fermi level: -3.44163
 
 Gap: 2.371 eV
+=======
+   0 Li     5.000000    5.000000    5.000000    ( 0.0000,  0.0000,  0.0000)
+   1 F      7.333333    5.000000    5.000000    ( 0.0000,  0.0000,  0.0000)
+
+Unit cell:
+           periodic     x           y           z      points  spacing
+  1. axis:    no    12.333333    0.000000    0.000000    54     0.2284
+  2. axis:    no     0.000000   10.000000    0.000000    45     0.2222
+  3. axis:    no     0.000000    0.000000   10.000000    45     0.2222
+
+  Lengths:  12.333333  10.000000  10.000000
+  Angles:   90.000000  90.000000  90.000000
+
+Effective grid spacing dv^(1/3) = 0.2243
+
+     iter     time        total  log10-change:
+                         energy   eigst   dens  force
+iter:   1 19:40:44
+iter:   2 19:40:45                +1.00  -0.67
+iter:   3 19:40:46    -5.343533   -1.08  -0.75
+iter:   4 19:40:47    -4.616005   +0.52  -0.83
+iter:   5 19:40:48    -0.219207   -0.22  -0.79
+iter:   6 19:40:49    -4.203861   -0.65  -0.77
+iter:   7 19:40:50    -4.434058   -0.39  -0.63
+iter:   8 19:40:50    -0.359170   -0.38  -0.44
+iter:   9 19:40:51    -7.136347   -0.92  -0.62
+iter:  10 19:40:52    -3.868642   -0.62  -0.43
+iter:  11 19:40:53    -3.524855   -0.86  -0.30
+iter:  12 19:40:54     0.105602   +0.94  -0.29
+iter:  13 19:40:55   -13.632987   +0.81  -0.87
+iter:  14 19:40:56    -4.397958   -0.23  -0.95
+iter:  15 19:40:57    -3.098070   +0.02  -1.08
+iter:  16 19:40:58    -2.105300   -0.79  -1.30
+iter:  17 19:40:59    -3.123893   -0.92  -1.22
+iter:  18 19:41:00    -3.224434   -1.00  -1.15
+iter:  19 19:41:01    -3.140778   -1.12  -1.15
+iter:  20 19:41:02    -3.570078   -0.98  -1.20
+iter:  21 19:41:03    -3.890900   -1.29  -1.35
+iter:  22 19:41:04    -3.190932   -1.50  -1.29
+iter:  23 19:41:05    -3.709272   -0.86  -1.37
+iter:  24 19:41:06    -2.895512   -0.02  -1.19
+iter:  25 19:41:07    -4.397308   -0.96  -1.74
+iter:  26 19:41:08    -3.680380   -1.53  -1.79
+iter:  27 19:41:09    -3.381640   -1.12  -1.93
+iter:  28 19:41:10    -3.122760   -1.62  -1.64
+iter:  29 19:41:11    -3.241220   -1.94  -1.50
+iter:  30 19:41:12    -3.455107   -1.98  -1.51
+iter:  31 19:41:13    -3.299935   -1.35  -1.48
+iter:  32 19:41:14    -3.617058   -2.41  -1.68
+iter:  33 19:41:15    -3.427238   -1.78  -1.70
+iter:  34 19:41:16    -3.619980   -2.24  -2.07
+iter:  35 19:41:17    -3.473129   -2.49  -2.14
+iter:  36 19:41:18    -3.452977   -2.50  -2.34
+iter:  37 19:41:19    -3.474410   -2.71  -2.68
+iter:  38 19:41:20    -3.443183   -3.12  -2.91
+iter:  39 19:41:21    -3.430000   -3.57  -2.88
+iter:  40 19:41:22    -3.418595   -2.91  -2.92
+iter:  41 19:41:23    -3.378176   -3.23  -2.67
+iter:  42 19:41:24    -3.432154   -3.24  -3.01c
+iter:  43 19:41:25    -3.449059   -2.90  -2.91
+iter:  44 19:41:26    -3.384795   -3.89  -2.90
+iter:  45 19:41:27    -3.416385   -4.03  -2.99
+iter:  46 19:41:28    -3.427113   -4.48  -3.48c
+iter:  47 19:41:29    -3.424823   -4.92  -3.79c
+iter:  48 19:41:30    -3.418028   -5.18  -3.93c
+iter:  49 19:41:31    -3.415394   -5.75  -3.98c
+iter:  50 19:41:32    -3.416173   -6.24  -3.77c
+iter:  51 19:41:34    -3.417667   -6.02  -3.83c
+iter:  52 19:41:35    -3.418585   -6.34  -4.05c
+iter:  53 19:41:36    -3.418647   -6.69  -4.34c
+iter:  54 19:41:37    -3.417695   -6.27  -4.37c
+iter:  55 19:41:37    -3.418497   -6.72  -4.74c
+iter:  56 19:41:38    -3.417536   -7.63  -5.00c
+iter:  57 19:41:39    -3.417519   -7.81  -5.18c
+iter:  58 19:41:41    -3.417486   -8.48c -5.34c
+iter:  59 19:41:41    -3.417589   -8.96c -5.37c
+iter:  60 19:41:42    -3.417583   -8.27c -5.35c
+iter:  61 19:41:43    -3.417493   -8.62c -5.25c
+iter:  62 19:41:44    -3.417518   -8.71c -5.26c
+iter:  63 19:41:45    -3.417597   -8.92c -5.62c
+iter:  64 19:41:47    -3.417605   -9.45c -5.86c
+iter:  65 19:41:48    -3.417585   -8.29c -5.79c
+iter:  66 19:41:49    -3.417491   -8.04c -5.34c
+iter:  67 19:41:50    -3.417644   -9.09c -6.08c
+iter:  68 19:41:51    -3.417586   -8.97c -5.92c
+iter:  69 19:41:52    -3.417598   -9.09c -5.59c
+iter:  70 19:41:53    -3.417598   -9.45c -5.40c
+iter:  71 19:41:54    -3.417571  -10.15c -5.42c
+iter:  72 19:41:55    -3.417565  -10.78c -5.48c
+iter:  73 19:41:56    -3.417566c -11.17c -5.52c
+iter:  74 19:41:57    -3.417571c  -8.41c -5.50c -4.08c
+
+Converged after 74 iterations.
+
+Dipole moment: (-2.009815, 0.000000, 0.000000) |e|*Ang
+
+Energy contributions relative to reference atoms: (reference = -2916.868605)
+
+Kinetic:        -21.083760
+Potential:      +24.123490
+External:        +0.000000
+XC:              -6.677999
+Entropy (-ST):   -0.000000
+Local:           +0.220698
+SIC:             +0.000000
+--------------------------
+Free energy:     -3.417571
+Extrapolated:    -3.417571
+
+HYB_GGA_XC_HSE06 + 0.25 * EXX(omega = 0.11 bohr^-1)
+Short-range Coulomb: erfc(omega*r)/r (omega = 0.11 bohr^-1)
+ Band  Eigenvalues  Occupancy
+    0    -26.60137    2.00000
+    1     -6.24589    2.00000
+    2     -5.87694    2.00000
+    3     -5.87694    2.00000
+    4     -1.90606    0.00000
+    5     -0.04502    0.00000
+    6     -0.04502    0.00000
+    7      0.09550    0.00000
+
+Fermi level: -3.43350
+
+Gap: 3.971 eV
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
 Transition (v -> c):
   (s=0, k=0, n=3, [0.00, 0.00, 0.00]) -> (s=0, k=0, n=4, [0.00, 0.00, 0.00])
 No difference between direct/indirect transitions
 Timing:                              incl.     excl.
 -----------------------------------------------------------
+<<<<<<< HEAD
 Hamiltonian:                         1.221     0.009   0.0% |
  Atomic:                             0.057     0.001   0.0% |
   XC Correction:                     0.056     0.056   0.1% |
@@ -323,10 +563,23 @@ Hamiltonian:                         1.221     0.009   0.0% |
  XC 3D grid:                         1.034     1.034   1.2% |
 LCAO initialization:                 0.162     0.056   0.1% |
  LCAO eigensolver:                   0.007     0.000   0.0% |
+=======
+Hamiltonian:                         0.674     0.002   0.0% |
+ Atomic:                             0.034     0.000   0.0% |
+  XC Correction:                     0.034     0.034   0.0% |
+ Calculate atomic Hamiltonians:      0.006     0.006   0.0% |
+ Communicate:                        0.000     0.000   0.0% |
+ Initialize Hamiltonian:             0.001     0.001   0.0% |
+ Poisson:                            0.002     0.002   0.0% |
+ XC 3D grid:                         0.629     0.629   0.8% |
+LCAO initialization:                 0.039     0.027   0.0% |
+ LCAO eigensolver:                   0.002     0.000   0.0% |
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
   Calculate projections:             0.000     0.000   0.0% |
   DenseAtomicCorrection:             0.000     0.000   0.0% |
   Distribute overlap matrix:         0.000     0.000   0.0% |
   Orbital Layouts:                   0.000     0.000   0.0% |
+<<<<<<< HEAD
   Potential matrix:                  0.006     0.006   0.0% |
  LCAO to grid:                       0.091     0.091   0.1% |
  Set positions (LCAO WFS):           0.007     0.001   0.0% |
@@ -376,3 +629,53 @@ Total:                                        87.663 100.0%
 
 Memory usage: 766.28 MiB
 Date: Thu Feb 26 12:09:53 2026
+=======
+  Potential matrix:                  0.002     0.002   0.0% |
+ LCAO to grid:                       0.007     0.007   0.0% |
+ Set positions (LCAO WFS):           0.003     0.000   0.0% |
+  Basic WFS set positions:           0.000     0.000   0.0% |
+  Basis functions set positions:     0.000     0.000   0.0% |
+  P tci:                             0.001     0.001   0.0% |
+  ST tci:                            0.000     0.000   0.0% |
+  mktci:                             0.001     0.001   0.0% |
+PWDescriptor:                        0.004     0.004   0.0% |
+SCF-cycle:                          73.403     0.033   0.0% |
+ Davidson:                          22.140     0.180   0.2% |
+  Subspace diag:                     8.476     0.005   0.0% |
+   calc_h_matrix:                    8.433     0.030   0.0% |
+    Apply H:                         8.402     8.383  11.3% |----|
+     HMM T:                          0.020     0.020   0.0% |
+   diagonalize:                      0.015     0.015   0.0% |
+   rotate_psi:                       0.023     0.023   0.0% |
+  calc. matrices:                   13.449     0.094   0.1% |
+   Apply H:                         13.355    13.343  18.0% |------|
+    HMM T:                           0.012     0.012   0.0% |
+  diagonalize:                       0.016     0.016   0.0% |
+  rotate_psi:                        0.019     0.019   0.0% |
+ Density:                            3.483     0.001   0.0% |
+  Atomic density matrices:           0.025     0.025   0.0% |
+  Mix:                               2.969     2.969   4.0% |-|
+  Multipole moments:                 0.005     0.005   0.0% |
+  Pseudo density:                    0.482     0.482   0.6% |
+   Symmetrize density:               0.000     0.000   0.0% |
+ Forces:                             0.216     0.216   0.3% |
+ Hamiltonian:                       47.529     0.165   0.2% |
+  Atomic:                            2.521     0.020   0.0% |
+   XC Correction:                    2.501     2.501   3.4% ||
+  Calculate atomic Hamiltonians:     0.465     0.465   0.6% |
+  Communicate:                       0.001     0.001   0.0% |
+  Poisson:                           0.260     0.260   0.4% |
+  XC 3D grid:                       44.118    44.118  59.4% |-----------------------|
+ Orthonormalize:                     0.002     0.000   0.0% |
+  calc_s_matrix:                     0.000     0.000   0.0% |
+  inverse-cholesky:                  0.000     0.000   0.0% |
+  projections:                       0.001     0.001   0.0% |
+  rotate_psi_s:                      0.000     0.000   0.0% |
+Set symmetry:                        0.000     0.000   0.0% |
+Other:                               0.165     0.165   0.2% |
+-----------------------------------------------------------
+Total:                                        74.284 100.0%
+
+Memory usage: 355.67 MiB
+Date: Thu Feb 26 19:41:57 2026
+>>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)

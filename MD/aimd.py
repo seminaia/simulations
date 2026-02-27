@@ -60,7 +60,7 @@ print(f"  Species  : {set(atoms.get_chemical_symbols())}")
 def make_gpaw(txt='gpaw_md.log'):
     return GPAW(
         mode        = PW(ECUT_EV),
-        xc          = 'PBE',
+        xc          = 'HSE06',
         kpts        = KPTS,
         occupations = FermiDirac(0.1),     # eV — broadens occupation, aids SCF
         symmetry    = 'off',               # atoms break symmetry during MD — must disable

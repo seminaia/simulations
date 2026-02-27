@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.constants import epsilon_0, e
 from ase import Atoms
-from gpaw import GPAW, PW, FermiDirac
+from gpaw import GPAW, PW, FermiDirac, Mixer
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 
@@ -85,11 +85,14 @@ def make_gpaw(txt='-'):
         mode        = PW(ECUT_EV),
         xc          = 'HSE06',
         kpts        = {'size': (1, 1, 1), 'gamma': True},
-        occupations = FermiDirac(0.05),
+        eigensolver = {'name': 'dav', 'niter':10},
+        occupations = FermiDirac(0.01),
         symmetry    = 'off',
         txt         = txt,
         convergence = {'energy': 1e-5},
         maxiter     = 500,
+        mixer       = Mixer(beta=0.02, nmaxold=10, weight=100),
+
     )
 
 

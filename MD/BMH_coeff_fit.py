@@ -82,10 +82,10 @@ EPSILON_R = 1.0
 def make_gpaw(txt='-'):
     """GPAW PW calculator for isolated dimers (Γ-point, mild smearing)."""
     return GPAW(
-        mode        = PW(ECUT_EV),
+        mode=PW(ECUT_EV),
         xc          = 'HSE06',
         kpts        = {'size': (1, 1, 1), 'gamma': True},
-        eigensolver = {'name': 'dav', 'niter':10},
+        eigensolver = {'name': 'rmm-diis', 'niter':10},
         occupations = FermiDirac(0.01),
         symmetry    = 'off',
         txt         = txt,

@@ -1,2 +1,3 @@
-# Trajectory files (can be very large)
+# Large simulation output files
 *.traj
+*.gpw

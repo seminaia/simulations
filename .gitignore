@@ -1,3 +1,4 @@
 # Large simulation output files
 *.traj
 *.gpw
+*.log

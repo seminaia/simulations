@@ -37,7 +37,7 @@ RUN_AIMD = True   # include AIMD frames
 ECUT_EV     = 400
 XC          = 'HSE06'
 SMEAR_WIDTH = 0.01
-KPTS_RELAX  = (4, 4, 4)
+KPTS_RELAX  = (1,1,1)
 KPTS_SUPER  = (2, 2, 2)
 FMAX        = 0.02         # eV/Å
 

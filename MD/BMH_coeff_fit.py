@@ -2,7 +2,7 @@
 Born-Mayer-Huggins potential fitting using GPAW DFT
 ====================================================
 Fits BMH short-range parameters (A, ρ, C, D) for each ion pair
-in LiF·BeF₂+H by scanning dimer energies with GPAW HSE06/PW.
+in LiF·BeF₂+H by scanning dimer energies with GPAW PBE/PW.
 
   Full BMH potential (LAMMPS born/coul/long):
       V(r) = A·exp((σ−r)/ρ) − C/r⁶ + D/r⁸   +   k·q₁·q₂/r
@@ -28,8 +28,7 @@ from scipy.optimize import curve_fit
 from scipy.constants import epsilon_0, e
 from ase import Atoms
 from gpaw import GPAW, PW, FermiDirac
-from gpaw.poisson import FFTPoissonSolver
-from gpaw.hybrids.energy import non_self_consistent_energy
+
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 # Ionic charges (must match LAMMPS charge_map in classical_md.py)
@@ -70,7 +69,7 @@ N_R   = 10     # number of separation points
 
 # GPAW plane-wave settings
 ECUT_EV = 400   # eV
-VACUUM  = 5.0   # Å vacuum on each side of the dimer
+VACUUM  = 7.0   # Å vacuum on each side of the dimer
 
 # Coulomb constant  k_e  in eV·Å  (= e/(4πε₀) in SI, converted to eV·Å)
 K_COULOMB = e * 1e10 / (4 * np.pi * epsilon_0)
@@ -81,30 +80,17 @@ EPSILON_R = 1.0
 
 # ── GPAW helpers ──────────────────────────────────────────────────────────────
 def make_gpaw(txt='-'):
-    """GPAW HSE06/PW calculator for isolated dimers (Γ-point, mild smearing)."""
-    base_params = {
-        "convergence": {"density": 1e-3,
-                        "eigenstates": 1e-8,
-                        "energy": 1e-6, 
-                        "forces": 1e-4},
-        "eigensolver": {"name": "dav", 
-                        "niter": 5},
-        "maxiter": 500,
-        "mixer": {"backend": "pulay", 
-                  "beta": 0.1,
-                  "method": "fullspin",
-                  "nmaxold": 5,
-                  "weight": 100},
-        "mode": {"name": "pw"},
-        "nbands": "nao",
-        "symmetry": "off",
-        "occupations": {"name": "fermi-dirac",
-                        "width": 0.01},
-        "txt": txt,  # Will be set per material
-        "xc": 'HSE06',           
-    }
-    
-    return GPAW(**base_params)
+    """GPAW PW calculator for isolated dimers (Γ-point, mild smearing)."""
+    return GPAW(
+        mode        = PW(ECUT_EV),
+        xc          = 'PBE',
+        kpts        = {'size': (1, 1, 1), 'gamma': True},
+        occupations = FermiDirac(0.05),
+        symmetry    = 'off',
+        txt         = txt,
+        convergence = {'energy': 1e-5},
+        maxiter     = 500,
+    )
 
 
 def dimer_atoms(sym1, sym2, r, vacuum=VACUUM):
@@ -145,7 +131,6 @@ def scan_pair(sym1, sym2, r_values):
     return np.array(e_pot_list)
 
 def coul(q1, q2, r):
-<<<<<<< HEAD
     """Screened Coulomb energy: k·q₁·q₂ / (ε_r·r)"""
     return K_COULOMB * q1 * q2 / (EPSILON_R * r)
 
@@ -156,32 +141,16 @@ def lj(r, epsilon, sigma):
 
 # ── BMH functional forms ──────────────────────────────────────────────────────
 
-=======
-    """Coulomb energy: k·q₁·q₂/r"""
-    return K_COULOMB * q1 * q2 / r
-
-# ── BMH functional forms ──────────────────────────────────────────────────────
-def bmh_D_coul(r, B, rho, C, D, q1, q2):
-    """BMH + Coulomb: B·exp(−r/ρ) − C/r⁶ - D/r⁸  +  k·q₁·q₂/r"""
-    return B * np.exp(-r / rho) - C / r**6 - D / r**8 + coul(q1, q2, r)
-
-
->>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
 def bmh_D(r, B, rho, C, D):
-    """Short-range BMH only: B·exp(−r/ρ) − C/r⁶ - D/r⁸"""
-    return B * np.exp(-r / rho) - C / r**6 - D / r**8 
+    """Short-range BMH only: B·exp(−r/ρ) − C/r⁶ + D/r⁸"""
+    return B * np.exp(-r / rho) - C / r**6 + D / r**8 
 
-def bmh_C_coul(r, B, rho, C, q1, q2):
-    """BMH + Coulomb: B·exp(−r/ρ) − C/r⁶  +  k·q₁·q₂/r"""
-    return B * np.exp(-r / rho) - C / r**6 + coul(q1, q2, r)
 
 def bmh_C(r, B, rho, C):
     """BMH repulsion + dipole-dipole: B·exp(−r/ρ) − C/r⁶"""
     return B * np.exp(-r / rho) - C / r**6
 
-def bmh_rep_coul(r, B, rho, q1, q2):
-    """BMH + Coulomb: B·exp(−r/ρ)  +  k·q₁·q₂/r"""
-    return B * np.exp(-r / rho) + coul(q1, q2, r)
+
 def bmh_rep(r, B, rho):
     """BMH repulsion only: B·exp(−r/ρ)"""
     return B * np.exp(-r / rho)
@@ -209,22 +178,11 @@ def fit_bmh(sym1, sym2, r_values, e_pot):
     q1 = CHARGES.get(sym1, 0.0)
     q2 = CHARGES.get(sym2, 0.0)
 
-<<<<<<< HEAD
     coul_vals = coul(q1, q2, r_values)
-=======
-    # Reference-subtracted short-range energy: E_sr(r_max) = 0 by construction
-    coul_vals = K_COULOMB * q1 * q2 / r_values
-    e_sr = e_pot  - coul_vals
->>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
 
     try:
         popt1, pcov1 = curve_fit(
-<<<<<<< HEAD
             bmh_D+coul_vals, r_values, e_pot,
-=======
-            lambda r, B, rho, C, D: bmh_D_coul(r, B, rho, C, D, q1, q2),
-            r_values, e_pot,
->>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
             p0     = [500.0, 0.30, 5.0, 2.0],
             bounds = ([0, 0.10, 0, 0], [1e6, 0.60, 500.0, 500.0]),
             maxfev = 100_000,
@@ -233,12 +191,7 @@ def fit_bmh(sym1, sym2, r_values, e_pot):
         eb1, er1, ec1, ed1 = np.sqrt(np.diag(pcov1))
 
         popt2, pcov2 = curve_fit(
-<<<<<<< HEAD
             bmh_C+coul_vals, r_values, e_pot,
-=======
-            lambda r, B, rho, C: bmh_C_coul(r, B, rho, C, q1, q2),
-            r_values, e_pot,
->>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
             p0     = [500.0, 0.30, 5.0],
             bounds = ([0, 0.10, 0], [1e6, 0.60, 500.0]),
             maxfev = 100_000,
@@ -247,12 +200,7 @@ def fit_bmh(sym1, sym2, r_values, e_pot):
         eb2, er2, ec2 = np.sqrt(np.diag(pcov2))
 
         popt3, pcov3 = curve_fit(
-<<<<<<< HEAD
             bmh_rep+coul_vals, r_values, e_pot,
-=======
-            lambda r, B, rho: bmh_rep_coul(r, B, rho, q1, q2),
-            r_values, e_pot,
->>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
             p0     = [500.0, 0.30],
             bounds = ([0, 0.10], [1e6, 0.60]),
             maxfev = 100_000,
@@ -330,7 +278,6 @@ def main():
 
         q1 = CHARGES.get(sym1, 0.0)
         q2 = CHARGES.get(sym2, 0.0)
-<<<<<<< HEAD
         r_dense = np.linspace(R_MIN, R_MAX, 300)
         B_model = A * np.exp(sigma / rho)
         e_model = bmh_D(r_dense, B_model, rho, C, D) + coul(q1, q2, r_dense)
@@ -339,13 +286,6 @@ def main():
         eps_lj, sig_lj = lj_params
         # LJ+coul dense curve for plotting against raw e_pot
         e_lj_dense = lj(r_dense, eps_lj, sig_lj) + coul(q1, q2, r_dense)
-=======
-        coul_vals = K_COULOMB * q1 * q2 / r_values
-        e_sr    = e_pot  - coul_vals
-        r_dense = np.linspace(R_MIN, R_MAX, 300)
-        B_model = A * np.exp(sigma / rho)
-        e_model = bmh_D(r_dense, B_model, rho, C, D)  + coul(q1, q2, r_dense) # short-range only (matches e_sr)
->>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
 
         results[(sym1, sym2)] = {
             'A': A, 'sigma': sigma, 'rho': rho, 'C': C, 'D': D,
@@ -370,7 +310,6 @@ def main():
         A2, sig2, rho2, C2, _  = tier2[0]
         A3, sig3, rho3, _,  _  = tier3[0]
         e_t1 = bmh_D(r_values, A1 * np.exp(sig1 / rho1), rho1, C1, D1) + coul(q1, q2, r_values)
-<<<<<<< HEAD
         e_t2 = bmh_C(r_values, A2 * np.exp(sig2 / rho2), rho2, C2)     + coul(q1, q2, r_values)
         e_t3 = bmh_rep(r_values, A3 * np.exp(sig3 / rho3), rho3)        + coul(q1, q2, r_values)
         e_lj_vals = lj(r_values, eps_lj, sig_lj) + coul(q1, q2, r_values)
@@ -384,20 +323,6 @@ def main():
         plt.axhline(0, color='k', lw=0.8, alpha=0.4)
         plt.xlabel('r (Å)')
         plt.ylabel('Energy (eV)')
-=======
-        e_t2 = bmh_C(r_values, A2 * np.exp(sig2 / rho2), rho2, C2) + coul(q1, q2, r_values)
-        e_t3 = bmh_rep(r_values, A3 * np.exp(sig3 / rho3), rho3) + coul(q1, q2, r_values)
-        
-
-        plt.figure(figsize=(6, 4))
-        plt.plot(r_values, e_pot,       'o',   label='DFT')
-        plt.plot(r_values, e_t1,       'r-',  label='rep+C+D')
-        plt.plot(r_values, e_t2,       'g--', label='rep+C')
-        plt.plot(r_values, e_t3,       'b-.', label='rep only')
-        plt.axhline(0, color='k', lw=0.8, alpha=0.4)
-        plt.xlabel('r (Å)')
-        plt.ylabel('$E_{pot}$ (eV)')
->>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
         plt.title(f'Fit for {sym1}–{sym2}  (σ={sigma:.3f} Å fixed)')
         plt.legend(fontsize=7)
         plt.show()
@@ -435,9 +360,9 @@ def main():
     out_file = 'BMH_pair_coeff.txt'
     with open(out_file, 'w') as fh:
         fh.write("# Born-Mayer-Huggins pair coefficients\n")
-        fh.write("# Fitted from GPAW/HSE06 dimer energy scans\n")
+        fh.write("# Fitted from GPAW/PBE dimer energy scans\n")
         fh.write(f"# r scan: {R_MIN:.1f}–{R_MAX:.1f} Å  ({N_R} points)\n")
-        fh.write(f"# E_cut: {ECUT_EV} eV   xc: HSE06\n")
+        fh.write(f"# E_cut: {ECUT_EV} eV   xc: PBE\n")
         fh.write("# pair_style born/coul/long\n")
         fh.write("# Format: pair_coeff i j  A(eV)  rho(Å)  sigma(Å)  C(eV·Å⁶)  D(eV·Å⁸)\n")
         fh.write("#\n")
@@ -509,14 +434,9 @@ def main():
 
     for ax, ((s1, s2), dat) in zip(axes_flat, results.items()):
         A, sigma, rho, C, D = dat['A'], dat['sigma'], dat['rho'], dat['C'], dat['D']
-<<<<<<< HEAD
         eps_lj, sig_lj = dat['lj_params']
         ax.scatter(dat['r'], dat['e_pot'], color='steelblue', s=50,
                    zorder=3, label='GPAW E_pot')
-=======
-        ax.scatter(dat['r'], dat['e_sr'], color='steelblue', s=50,
-                   zorder=3, label='GPAW HSE06')
->>>>>>> 751b0c6 (Add log files for GPAW calculations of LiF at different configurations)
         ax.plot(dat['r_dense'], dat['e_model'], 'r-', lw=1.8,
                 label=(f"BMH+coul\n"
                        f"A={A:.1f} σ={sigma:.3f} ρ={rho:.3f}\n"
@@ -536,7 +456,7 @@ def main():
     for ax in axes_flat[n:]:
         ax.axis('off')
 
-    plt.suptitle('Born-Mayer-Huggins fit  (GPAW/HSE06 dimer scans)', fontsize=12)
+    plt.suptitle('Born-Mayer-Huggins fit  (GPAW/PBE dimer scans)', fontsize=12)
     plt.tight_layout()
     plot_file = 'BMH_fit_results.png'
     plt.savefig(plot_file, dpi=150, bbox_inches='tight')

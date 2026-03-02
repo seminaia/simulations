@@ -99,7 +99,7 @@ def make_gpaw(txt='-'):
         "mode": {"name": "pw"},
         "nbands": "nao",
         #"symmetry": "off",
-        "occupations": {"name": "fermi-dirac",
+        "occupations": {"name": "methfessel-paxton",
                         "width": 0.1},
         "txt": txt,  # Will be set per material
         "xc": "HSE06",  

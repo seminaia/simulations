@@ -164,8 +164,8 @@ def lj(r, epsilon, sigma):
 # ── BMH functional forms ──────────────────────────────────────────────────────
 
 def bmh_D(r, B, rho, C, D):
-    """Short-range BMH only: B·exp(−r/ρ) − C/r⁶ + D/r⁸"""
-    return B * np.exp(-r / rho) - C / r**6 + D / r**8 
+    """Short-range BMH only: B·exp(−r/ρ) − C/r⁶ - D/r⁸"""
+    return B * np.exp(-r / rho) - C / r**6 - D / r**8 
 
 
 def bmh_C(r, B, rho, C):

@@ -95,12 +95,12 @@ def make_gpaw(txt='-'):
                   "beta": 0.1,
                   "method": "fullspin",
                   "nmaxold": 5,
-                  },
+                  "weight": 100.0},
         "mode": {"name": "pw"},
         "nbands": "nao",
         #"symmetry": "off",
         "occupations": {"name": "methfessel-paxton",
-                        "width": 0.1},
+                        "width": 0.01},
         "txt": txt,  # Will be set per material
         "xc": "HSE06",  
     }

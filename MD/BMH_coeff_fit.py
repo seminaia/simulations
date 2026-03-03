@@ -69,7 +69,7 @@ R_ABS_MIN  = 0.8    # Å absolute floor to avoid DFT core divergence
 N_R        = 10     # number of separation points per pair
 
 # GPAW plane-wave settings
-ECUT_EV = 400   # eV
+ECUT_EV = 300   # eV
 VACUUM  = 6.0   # Å vacuum on each side of the dimer
 
 # Coulomb constant  k_e  in eV·Å  (= e/(4πε₀) in SI, converted to eV·Å)
@@ -88,7 +88,7 @@ def make_gpaw(txt='-'):
                         "energy": 1e-6, 
                         "forces": 1e-6},
         "eigensolver": {"name": "rmm-diis",
-                        "niter": 10},
+                        "niter": 5},
         "kpts": (1, 1, 1),
         "maxiter": 1000,
         "mixer": {"backend": "pulay", 
@@ -96,7 +96,8 @@ def make_gpaw(txt='-'):
                   "method": "fullspin",
                   "nmaxold": 5,
                   "weight": 100.0},
-        "mode": {"name": "pw"},
+        "mode": {"name": "pw",
+                 "ecut": ECUT_EV},
         "nbands": "nao",
         #"symmetry": "off",
         "occupations": {"name": "methfessel-paxton",

@@ -98,14 +98,16 @@ def make_gpaw(txt='-'):
                   "nmaxold": 5,
                   "weight": 50.0},
         "mode": {"name": "pw",
-                 "ecut": ECUT_EV
-                 },
+                 "ecut": ECUT_EV},
         "nbands": "nao",
         #"symmetry": "off",
         "occupations": {"name": "methfessel-paxton",
-                        "width": 0.01},
+                        "width": 0.1},
         "txt": txt,  
-        "xc": {"name": "HSE06",
+        "xc": {'backend': 'pw',
+               'fraction': 0.25,
+               'omega': 0.2,
+               'name': 'HYB_GGA_XC_HSE06'
                },  
     }
     return GPAW(**base_params)
@@ -113,7 +115,7 @@ def make_gpaw(txt='-'):
 
 def dimer_atoms(sym1, sym2, r, vacuum=VACUUM):
     """Neutral atom dimer: sym1 at origin, sym2 at (r,0,0), in vacuum box."""
-    atoms = Atoms([sym1, sym2], positions=[(0, 0, 0), (r, 0, 0)], pbc=True)
+    atoms = Atoms([sym1, sym2], positions=[(0, 0, 0), (r, 0, 0)], pbc=False)
     atoms.center(vacuum=vacuum)
     return atoms
 
@@ -267,7 +269,6 @@ def fit_lj(sym1, sym2, r_values, e_pot):
     idx_min = np.argmin(e_pot)
     sig0 = r_values[idx_min] / 2**(1/6) if e_pot[idx_min] < 0 else 2.0
     eps0 = max(-e_pot[idx_min], 0.05)
-    coul_vals = coul(CHARGES.get(sym1, 0.0), CHARGES.get(sym2, 0.0), r_values)
     try:
         popt, pcov = curve_fit(
             lambda r, epsilon, sigma: lj(r, epsilon, sigma) + coul(CHARGES.get(sym1, 0.0), CHARGES.get(sym2, 0.0), r),

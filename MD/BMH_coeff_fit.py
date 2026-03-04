@@ -102,7 +102,7 @@ def make_gpaw(txt='-'):
         "nbands": "nao",
         #"symmetry": "off",
         "occupations": {"name": "methfessel-paxton",
-                        "width": 0.1},
+                        "width": 0.01},
         "txt": txt,  
         "xc": {'backend': 'pw',
                'fraction': 0.25,

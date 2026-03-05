@@ -64,9 +64,9 @@ SIGMA_DEFAULT = 1.0   # Å fallback for pairs not in SIGMA_CONTACT
 
 # r grid for dimer scan — expressed as fractions of the pair's contact distance σ
 R_FRAC_MIN = 0.50   # lower bound: 50% of σ  (deep repulsive wall)
-R_FRAC_MAX = 1.50   # upper bound: 150% of σ (well into flat / zero region)
+R_FRAC_MAX = 1.25   # upper bound: 125% of σ (well into flat / zero region)
 R_ABS_MIN  = 0.8    # Å absolute floor to avoid DFT core divergence
-N_R        = 10     # number of separation points per pair
+N_R        = 7     # number of separation points per pair
 
 # GPAW plane-wave settings
 ECUT_EV =800   # eV
@@ -93,7 +93,7 @@ def make_gpaw(txt='-'):
         "kpts": (1, 1, 1),
         "maxiter": 1000,
         "mixer": {"backend": "pulay", 
-                  "beta": 0.05,
+                  "beta": 0.25,
                   "method": "fullspin",
                   "nmaxold": 5,
                   "weight": 50.0},
@@ -106,7 +106,7 @@ def make_gpaw(txt='-'):
         "txt": txt,  
         "xc": {'backend': 'pw',
                'fraction': 0.25,
-               'omega': 0.2,
+               'omega': 0.15,  #bohr^-1
                'name': 'HYB_GGA_XC_HSE06'
                },  
     }
@@ -126,7 +126,7 @@ def get_energy(atoms, log_tag):
     gpw_file = f'gpaw_{log_tag}.gpw'
     if os.path.exists(gpw_file) and os.path.getsize(gpw_file) > 0:
         print(f"    Loading from checkpoint: {gpw_file}")
-        atoms.calc = GPAW(gpw_file, txt=f'gpaw_{log_tag}.log')
+        atoms.calc = GPAW(gpw_file)
         return atoms.get_potential_energy()
     atoms.calc = make_gpaw(txt=f'gpaw_{log_tag}.log')
     energy = atoms.get_potential_energy()

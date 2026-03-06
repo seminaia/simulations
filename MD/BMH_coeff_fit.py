@@ -26,6 +26,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.constants import epsilon_0, e
+from ase.units import eV, Ang, Bohr
 from ase import Atoms
 from gpaw import GPAW, PW, FermiDirac, Mixer
 
@@ -70,7 +71,7 @@ N_R        = 7     # number of separation points per pair
 
 # GPAW plane-wave settings
 ECUT_EV =800   # eV
-VACUUM  = 6.0   # Å vacuum on each side of the dimer
+VACUUM  = 6.0 * Ang   # Å vacuum on each side of the dimer
 
 # Coulomb constant  k_e  in eV·Å  (= e/(4πε₀) in SI, converted to eV·Å)
 K_COULOMB = e * 1e10 / (4 * np.pi * epsilon_0)
@@ -106,7 +107,7 @@ def make_gpaw(txt='-'):
         "txt": txt,  
         "xc": {'backend': 'pw',
                'fraction': 0.25,
-               'omega': 0.15,  #bohr^-1
+               'omega': 0.2 * Bohr,  #bohr^-1
                'name': 'HYB_GGA_XC_HSE06'
                },  
     }
@@ -302,7 +303,8 @@ def main():
         print(f"\n{'='*60}")
         print(f"Pair  {sym1}–{sym2}  "
               f"(q₁={CHARGES.get(sym1,0):+.0f}, q₂={CHARGES.get(sym2,0):+.0f})  "
-              f"σ={sigma_pair:.3f} Å  r=[{r_lo:.2f}, {r_hi:.2f}] Å")
+              f"σ={sigma_pair:.3f} Å  r=[{r_lo:.2f}, {r_hi:.2f}] Å, "
+              f"Screening:{0.2} Å^-1 {0.2*Bohr:.2f} bohr⁻¹")
         print(f"{'='*60}")
 
         e_pot                    = scan_pair(sym1, sym2, r_values)

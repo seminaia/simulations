@@ -54,12 +54,15 @@ SCAN_PAIRS = [
 # Shannon radii (Å): Li⁺=0.76, Be²⁺=0.45, F⁻=1.33, H⁺≈0 (bare proton).
 SIGMA_CONTACT = {
     ('Li', 'F'):  2.09,   # Li⁺(0.76) + F⁻(1.33)
-    ('F',  'Li'): 2.09,
     ('Be', 'F'):  1.78,   # Be²⁺(0.45) + F⁻(1.33)
-    ('F',  'Be'): 1.78,
     ('F',  'F'):  2.66,   # F⁻(1.33) + F⁻(1.33)
     ('H',  'F'):  1.33,   # H⁺(≈0) + F⁻(1.33)
-    ('F',  'H'):  1.33,
+}
+ionization_potentials = {
+    ('Li', 'F'): 11.3,
+    ('Be', 'F'): 9.3,
+    ('F',  'F'): 15.7,
+    ('H',  'F'): 16.3,
 }
 SIGMA_DEFAULT = 1.0   # Å fallback for pairs not in SIGMA_CONTACT
 
@@ -79,9 +82,9 @@ K_COULOMB = e * 1e10 / (4 * np.pi * epsilon_0)
 # Relative dielectric constant ε_r (1 = vacuum; set >1 for screened Coulomb)
 # Must match the 'dielectric' command in LAMMPS.
 EPSILON_R = 1.0
-
+SCREEN = 0.25*Ang  # Å^-1 screening parameter 
 # ── GPAW helpers ──────────────────────────────────────────────────────────────
-def make_gpaw(txt='-'):
+def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV):
     """GPAW PW calculator for isolated dimers (Γ-point, mild smearing)."""
     base_params = {
         "convergence": {"density": 1e-8,
@@ -98,18 +101,18 @@ def make_gpaw(txt='-'):
                   "method": "fullspin",
                   "nmaxold": 5,
                   "weight": 50.0},
-        "mode": {"name": "pw",
-                 "ecut": ECUT_EV},
+        "mode": {"name": "fd"},
+                 #"ecut": ECUT_EV},
         "nbands": "nao",
         #"symmetry": "off",
         "occupations": {"name": "methfessel-paxton",
                         "width": 0.01},
         "txt": txt,  
-        "xc": {'backend': 'pw',
-               'fraction': 0.25,
-               'omega': 0.2 * Bohr,  #bohr^-1
-               'name': 'HYB_GGA_XC_HSE06'
-               },  
+        "xc": {
+               #'fraction': 0.25,
+               'omega': SCREEN * Bohr,  #bohr^-1
+               'name': 'LCY-PBE',
+               },
     }
     return GPAW(**base_params)
 
@@ -127,12 +130,15 @@ def get_energy(atoms, log_tag):
     gpw_file = f'gpaw_{log_tag}.gpw'
     if os.path.exists(gpw_file) and os.path.getsize(gpw_file) > 0:
         print(f"    Loading from checkpoint: {gpw_file}")
-        atoms.calc = GPAW(gpw_file)
-        return atoms.get_potential_energy()
-    atoms.calc = make_gpaw(txt=f'gpaw_{log_tag}.log')
-    energy = atoms.get_potential_energy()
-    atoms.calc.write(gpw_file)
-    return energy
+        calc = GPAW(gpw_file)
+        atoms.calc = calc
+        return calc.get_potential_energy(atoms), calc.get_homo_lumo()
+    calc = make_gpaw(txt=f'gpaw_{log_tag}.log')
+    atoms.calc = calc
+    energy = calc.get_potential_energy(atoms)
+    e_homo, e_lumo = calc.get_homo_lumo()
+    calc.write(gpw_file)
+    return energy, (e_homo, e_lumo)
 
 
 # ── Dimer energy scan ─────────────────────────────────────────────────────────
@@ -150,14 +156,20 @@ def scan_pair(sym1, sym2, r_values):
     tag = f'{sym1}{sym2}'
 
     e_pot_list = []
+    e_homo_list =[]
+    e_lumo_list =[]
     for r in r_values:
-        e_pot = get_energy(dimer_atoms(sym1, sym2, r), f'{tag}_r{r:.2f}')
+        e_pot, (e_homo, e_lumo) = get_energy(dimer_atoms(sym1, sym2, r), f'{tag}_r{r:.2f}')
         E_lr  = coul(q1, q2, r)
         e_sr  = e_pot - E_lr
         e_pot_list.append(e_pot)
+        e_homo_list.append(e_homo)
+        e_lumo_list.append(e_lumo)
         print(f"    r={r:.2f} Å  E_pot={e_pot:+.4f}  "
-              f"E_lr={E_lr:+.4f}  E_sr={e_sr:+.4f} eV")
-    return np.array(e_pot_list)
+              f"E_lr={E_lr:+.4f}  E_sr={e_sr:+.4f} eV"
+              f"  HOMO={e_homo:+.4f}  LUMO={e_lumo:+.4f}"
+              )
+    return np.array(e_pot_list), np.array(e_homo_list), np.array(e_lumo_list)
 
 def coul(q1, q2, r):
     """Screened Coulomb energy: k·q₁·q₂ / (ε_r·r)"""
@@ -299,15 +311,16 @@ def main():
         r_lo = max(R_FRAC_MIN * sigma_pair, R_ABS_MIN)
         r_hi = R_FRAC_MAX * sigma_pair
         r_values = np.linspace(r_lo, r_hi, N_R)
-
+        IP = ionization_potentials.get(pair, ionization_potentials.get((sym2, sym1), None))
         print(f"\n{'='*60}")
-        print(f"Pair  {sym1}–{sym2}  "
+        print(f"Pair  {sym1}–{sym2}  Ionization potential: {IP:.1f} eV" 
               f"(q₁={CHARGES.get(sym1,0):+.0f}, q₂={CHARGES.get(sym2,0):+.0f})  "
               f"σ={sigma_pair:.3f} Å  r=[{r_lo:.2f}, {r_hi:.2f}] Å, "
-              f"Screening:{0.2} Å^-1 {0.2*Bohr:.2f} bohr⁻¹")
+              f"Screening:{SCREEN:.2f} Å^-1 {SCREEN*Bohr:.2f} bohr⁻¹"
+              f"Cutoff: {ECUT_EV} eV")
         print(f"{'='*60}")
 
-        e_pot                    = scan_pair(sym1, sym2, r_values)
+        e_pot, e_homo, e_lumo = scan_pair(sym1, sym2, r_values)
         tier1, tier2, tier3      = fit_bmh(sym1, sym2, r_values, e_pot)
         params1, err1              = tier1        # tier1 (full BMH) → LAMMPS output
         params2, err2              = tier2
@@ -336,7 +349,7 @@ def main():
             'tier1': {'A': A1, 'sigma': sigma1, 'rho': rho1, 'C': C1, 'D': D1, 'err': err_A1, 'err_rho': er1, 'err_C': ec1, 'err_D': ed1},
             'tier2': {'A': A2, 'sigma': sigma2, 'rho': rho2, 'C': C2, 'D': 0.0, 'err': err_A2, 'err_rho': er2, 'err_C': ec2},
             'tier3': {'A': A3, 'sigma': sigma3, 'rho': rho3, 'C': 0.0, 'D': 0.0, 'err': err_A3, 'err_rho': er3},
-            'r': r_values, 'e_pot': e_pot,
+            'r': r_values, 'e_pot': e_pot, 'e_homo': e_homo, 'e_lumo': e_lumo, 
             'r_dense': r_dense, 'e1_model': e1_model, 'e2_model': e2_model, 'e3_model': e3_model,
             'lj_params': lj_params, 'lj_err': lj_err, 'e_lj_dense': e_lj_dense, 'e_coul': e_coul,
         }

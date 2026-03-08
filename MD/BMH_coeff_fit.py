@@ -40,13 +40,14 @@ SPECORDER = ['Li', 'Be', 'F', 'H']
 
 # Pairs that need short-range DFT scanning.
 # H⁺ (proton, q=+1): only H–F has meaningful short-range interaction.
-# All cation–cation pairs are purely Coulombic → not listed here.
-SCAN_PAIRS = [
-    ('Li', 'F'),
-    ('Be', 'F'),
-    ('F',  'F'), 
-    ('H',  'F'),
-]
+# All cation–cation pairs are purely Coulombic → not listed here. 
+
+SCAN_PAIRS = {
+    ('Li', 'F'): (0, 0),
+    ('Be', 'F'): (0, 1),
+    ('F',  'F'): (0, 0),
+    ('H',  'F'): (0, 0),
+}
 
 # Contact distance σ (Å) per pair — sum of Shannon ionic radii (6-coord).
 # σ is fixed during fitting; only B = A·exp(σ/ρ) and ρ are free parameters.
@@ -58,7 +59,15 @@ SIGMA_CONTACT = {
     ('F',  'F'):  2.66,   # F⁻(1.33) + F⁻(1.33)
     ('H',  'F'):  1.33,   # H⁺(≈0) + F⁻(1.33)
 }
-ionization_potentials = {
+
+MAGMOMS = {
+    ('Li', 'F'): [0,0],
+    ('Be', 'F'): [0,1],
+    ('F',  'F'): [0,0],
+    ('H',  'F'): [0,0],  
+}
+
+IONIZATION_POTENTIAL = {
     ('Li', 'F'): 11.3,
     ('Be', 'F'): 9.3,
     ('F',  'F'): 15.7,
@@ -84,7 +93,7 @@ K_COULOMB = e * 1e10 / (4 * np.pi * epsilon_0)
 EPSILON_R = 1.0
 SCREEN = 0.2*Ang  # Å^-1 screening parameter 
 # ── GPAW helpers ──────────────────────────────────────────────────────────────
-def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV):
+def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV, hunds = False):
     """GPAW PW calculator for isolated dimers (Γ-point, mild smearing)."""
     base_params = {
         "convergence": {"density": 1e-8,
@@ -93,7 +102,7 @@ def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV):
                         "forces": 1e-6},
         "eigensolver": {"name": "rmm-diis",
                         "niter": 5},
-        "hund": True,
+        "hund": hunds,
         "kpts": (1, 1, 1),
         "maxiter": 1000,
         "mixer": {"backend": "pulay", 
@@ -114,18 +123,18 @@ def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV):
                'name': 'HYB_GGA_XC_HSE06',
                },
     }
+    
     return GPAW(**base_params)
 
 
-def dimer_atoms(sym1, sym2, r, vacuum=VACUUM):
-    """Neutral atom dimer: sym1 at origin, sym2 at (r,0,0), in vacuum box."""
-    atoms = Atoms([sym1, sym2], positions=[(0, 0, 0), (r, 0, 0)], pbc=False)
-    atoms.set_initial_magnetic_moments([2,-2])
+def dimer_atoms(sym1, sym2, r, magmoms=None, vacuum=VACUUM):
+    atoms = Atoms([sym1, sym2], positions=[(0,0,0), (r,0,0)], pbc=False)
+    if magmoms is not None:
+        atoms.set_initial_magnetic_moments(magmoms)
     atoms.center(vacuum=vacuum)
     return atoms
 
-
-def get_energy(atoms, log_tag):
+def get_energy(atoms, log_tag, hunds=False):
     """Return potential energy (eV), loading from .gpw checkpoint if available."""
     import os
     gpw_file = f'gpaw_{log_tag}.gpw'
@@ -134,7 +143,7 @@ def get_energy(atoms, log_tag):
         calc = GPAW(gpw_file)
         atoms.calc = calc
         return calc.get_potential_energy(atoms), calc.get_homo_lumo()
-    calc = make_gpaw(txt=f'gpaw_{log_tag}.log')
+    calc = make_gpaw(txt=f'gpaw_{log_tag}.log',hunds=hunds)
     atoms.calc = calc
     energy = calc.get_potential_energy(atoms)
     e_homo, e_lumo = calc.get_homo_lumo()
@@ -144,7 +153,7 @@ def get_energy(atoms, log_tag):
 
 # ── Dimer energy scan ─────────────────────────────────────────────────────────
 
-def scan_pair(sym1, sym2, r_values):
+def scan_pair(sym1, sym2, r_values, magmoms,hunds=False):
     """
     Return the raw DFT potential energy E_pot(r) at each separation.
 
@@ -160,7 +169,7 @@ def scan_pair(sym1, sym2, r_values):
     e_homo_list =[]
     e_lumo_list =[]
     for r in r_values:
-        e_pot, (e_homo, e_lumo) = get_energy(dimer_atoms(sym1, sym2, r), f'{tag}_r{r:.2f}')
+        e_pot, (e_homo, e_lumo) = get_energy(dimer_atoms(sym1, sym2, r, magmoms), f'{tag}_r{r:.2f}',hunds=hunds)
         E_lr  = coul(q1, q2, r)
         e_sr  = e_pot - E_lr
         e_pot_list.append(e_pot)
@@ -193,7 +202,7 @@ def bmh_C(r, B, rho, C):
     return B * np.exp(-r / rho) - C / r**6
 
 
-def bmh_rep(r, B, rho):
+def bmh_rep(r, B, rho): 
     """BMH repulsion only: B·exp(−r/ρ)"""
     return B * np.exp(-r / rho)
 
@@ -218,7 +227,7 @@ def fit_bmh(sym1, sym2, r_values, e_pot):
     sigma = SIGMA_CONTACT.get(pair, SIGMA_CONTACT.get(pair_rev, SIGMA_DEFAULT))
     q1 = CHARGES.get(sym1, 0.0)
     q2 = CHARGES.get(sym2, 0.0)
-
+    
     try:
         popt1, pcov1 = curve_fit(
             lambda r, B, rho, C, D: bmh_D(r, B, rho, C, D) + coul(q1, q2, r),
@@ -312,7 +321,12 @@ def main():
         r_lo = max(R_FRAC_MIN * sigma_pair, R_ABS_MIN)
         r_hi = R_FRAC_MAX * sigma_pair
         r_values = np.linspace(r_lo, r_hi, N_R)
-        IP = ionization_potentials.get(pair, ionization_potentials.get((sym2, sym1), None))
+        IP = IONIZATION_POTENTIAL.get(pair, IONIZATION_POTENTIAL.get((sym2, sym1), None))
+        magmoms = MAGMOMS.get(pair, MAGMOMS.get((sym2, sym1), (0, 0)))
+        if magmoms == (0,1):
+            hunds = True
+        else:
+            hunds = False
         print(f"\n{'='*60}")
         print(f"Pair  {sym1}–{sym2}  Ionization potential: {IP:.1f} eV" 
               f"(q₁={CHARGES.get(sym1,0):+.0f}, q₂={CHARGES.get(sym2,0):+.0f})  "
@@ -321,7 +335,7 @@ def main():
               f"Cutoff: {ECUT_EV} eV")
         print(f"{'='*60}")
 
-        e_pot, e_homo, e_lumo = scan_pair(sym1, sym2, r_values)
+        e_pot, e_homo, e_lumo = scan_pair(sym1, sym2, r_values, magmoms,hunds)
         tier1, tier2, tier3      = fit_bmh(sym1, sym2, r_values, e_pot)
         params1, err1              = tier1        # tier1 (full BMH) → LAMMPS output
         params2, err2              = tier2

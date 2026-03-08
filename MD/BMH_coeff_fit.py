@@ -82,7 +82,7 @@ K_COULOMB = e * 1e10 / (4 * np.pi * epsilon_0)
 # Relative dielectric constant ε_r (1 = vacuum; set >1 for screened Coulomb)
 # Must match the 'dielectric' command in LAMMPS.
 EPSILON_R = 1.0
-SCREEN = 0.25*Ang  # Å^-1 screening parameter 
+SCREEN = 0.2*Ang  # Å^-1 screening parameter 
 # ── GPAW helpers ──────────────────────────────────────────────────────────────
 def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV):
     """GPAW PW calculator for isolated dimers (Γ-point, mild smearing)."""
@@ -93,7 +93,7 @@ def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV):
                         "forces": 1e-6},
         "eigensolver": {"name": "rmm-diis",
                         "niter": 5},
-        #"hund": True,
+        "hund": True,
         "kpts": (1, 1, 1),
         "maxiter": 1000,
         "mixer": {"backend": "pulay", 
@@ -101,17 +101,17 @@ def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV):
                   "method": "fullspin",
                   "nmaxold": 5,
                   "weight": 50.0},
-        "mode": {"name": "fd"},
-                 #"ecut": ECUT_EV},
+        "mode": {"name": "pw",
+                 "ecut": ECUT_EV},
         "nbands": "nao",
         #"symmetry": "off",
         "occupations": {"name": "methfessel-paxton",
                         "width": 0.01},
         "txt": txt,  
-        "xc": {
-               #'fraction': 0.25,
+        "xc": { 'backend': 'pw',
+               'fraction': 0.25,
                'omega': SCREEN * Bohr,  #bohr^-1
-               'name': 'LCY-PBE',
+               'name': 'HYB_GGA_XC_HSE06',
                },
     }
     return GPAW(**base_params)
@@ -120,6 +120,7 @@ def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV):
 def dimer_atoms(sym1, sym2, r, vacuum=VACUUM):
     """Neutral atom dimer: sym1 at origin, sym2 at (r,0,0), in vacuum box."""
     atoms = Atoms([sym1, sym2], positions=[(0, 0, 0), (r, 0, 0)], pbc=False)
+    atoms.set_initial_magnetic_moments([2,-2])
     atoms.center(vacuum=vacuum)
     return atoms
 

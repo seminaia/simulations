@@ -16,14 +16,16 @@ Note on cost vs classical MD
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from ase import units
+from ase import units, Atoms
 from ase.build import bulk, make_supercell
 from ase.optimize import BFGS
 from ase.md.nose_hoover_chain import NoseHooverChainNVT
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary, ZeroRotation
 from ase.md import MDLogger
 from ase.io.trajectory import Trajectory
-from gpaw import GPAW, PW, FermiDirac
+from gpaw import GPAW, PW, restart, Mixer, MixerSum, MixerDif
+from ase.units import eV, Ang, Bohr
+from ase.filters import FrechetCellFilter
 
 # ── Parameters ────────────────────────────────────────────────────────────────
 TEMPERATURE    = 1200       # K  (lower than classical run — AIMD is expensive)
@@ -32,53 +34,236 @@ TDAMP_FS       = 50         # thermostat damping (fs)
 N_EQUIL        = 200        # NVT equilibration steps
 N_PROD         = 500        # NVT production steps
 LOG_INTERVAL   = 10         # steps between log entries
-ECUT_EV        = 400        # plane-wave cutoff (eV)
-KPTS           = (2, 2, 2)  # k-point grid — small for MD speed
-SUPERCELL      = 2          # n×n×n supercell of LiF rocksalt unit cell
+ECUT_EV        = 500        # plane-wave cutoff (eV)
+KPTS           = (1, 1, 1)  # k-point grid — small for MD speed
+SUPERCELL      = 1          # n×n×n supercell of LiF rocksalt unit cell
+SCREEN = 0.25*Bohr 
 
-TRAJ_EQUIL = "LiF_aimd_equil.traj"
-TRAJ_PROD  = "LiF_aimd_prod.traj"
-LOG_EQUIL  = "LiF_aimd_equil.log"
-LOG_PROD   = "LiF_aimd_prod.log"
-PLOT_FILE  = "LiF_aimd_results.png"
 
+LIF_TRAJ_EQUIL = "LiF_aimd_equil.traj"
+LIF_TRAJ_PROD  = "LiF_aimd_prod.traj"
+LIF_LOG_EQUIL  = "LiF_aimd_equil.log"
+LIF_RLX_LOG    = "LiF_aimd_relax_opt.log"
+LIF_LOG_PROD   = "LiF_aimd_prod.log"
+LIF_PLOT_FILE  = "LiF_aimd_results.png"
+LIF_GPW_FILE   = "LiF_aimd_relax.gpw"
+BEF2_TRAJ_EQUIL ="BeF2_aimd_equil.traj"
+BEF2_TRAJ_PROD = "BeF2_aimd_prod.traj"
+BEF2_LOG_EQUIL = "BeF2_aimd_equil.log"
+BEF2_PLOT_FILE = "BeF2_aimd_results.png"
+BEF2_GPW_FILE  = "BeF2_aimd_relax.gpw"
+BEF2_RLX_LOG   = "BeF2_aimd_relax_opt.log"
 # ── Build LiF 2×2×2 supercell ────────────────────────────────────────────────
 print("=" * 60)
 print("Building LiF rocksalt supercell")
 print("=" * 60)
-
+bef2_frac_cell = [   
+    (0.4658484850000000,    0.0000000000000000,    0.3333333333333330),
+    (0.0000000000000000,    0.4658484850000000,    0.6666666666666661),
+    (0.5341515150000000,    0.5341515150000000,    0.0000000000000000),
+    (0.4111597766666660,    0.2772815833333330,    0.2222729999999990),
+    (0.7227184166666660,    0.1338781933333330,    0.5556063333333331),
+    (0.8661218066666660,    0.5888402233333331,    0.8889396666666660),
+    (0.1338781933333330,    0.7227184166666660,    0.4443936666666660),
+    (0.5888402233333331,    0.8661218066666660,    0.1110603333333330),
+    (0.2772815833333330,    0.4111597766666660,    0.7777270000000001)]
+bef2_cell =[(2.3336366944146949,   -4.0419773211333370,    0.0000000000000000),
+   (2.3336366944146949,    4.0419773211333370,    0.0000000000000000),
+   (0.0000000000000000,    0.0000000000000000,    5.1827969293352050)]
 lif_unit   = bulk('LiF', crystalstructure='rocksalt', a=4.03, cubic=True)
-atoms      = make_supercell(lif_unit, SUPERCELL * np.eye(3, dtype=int))
+bef2_symbols = ['Be', 'Be', 'Be', 'F', 'F', 'F', 'F', 'F','F']
+bef2_unit = Atoms(  bef2_symbols,
+                    cell = bef2_cell,
+                    scaled_positions = bef2_frac_cell
+                    )
+lif_atoms      = make_supercell(lif_unit, SUPERCELL * np.eye(3, dtype=int))
+bef2_atoms = make_supercell(bef2_unit,SUPERCELL*np.eye(3,dtype=int))
+print(f"LiF Atoms    : {len(lif_atoms)}")
+print(f"LiF Cell (Å) : {np.diag(lif_atoms.cell)}")
+print(f"BeF2 Atoms   : {len(bef2_atoms)}")
+print(f"BeF2 Cell (A): {np.diag(bef2_atoms.cell)}")
 
-print(f"  Atoms    : {len(atoms)}")
-print(f"  Cell (Å) : {np.diag(atoms.cell)}")
-print(f"  Species  : {set(atoms.get_chemical_symbols())}")
+def relax(atoms: Atoms,
+          calculator_params: Dict[str, Any],
+          fmax: float = 0.01,
+          fixcell: bool = True,
+          logname: str = 'opt.log',
+          trajname: str = 'opt.traj',
+          gpwname: str = 'rlx.gpw') -> Atoms:
+    """
+    Relax atomic structure using GPAW.
+    
+    Parameters:
+    -----------
+    atoms : Atoms
+        ASE Atoms object to relax
+    calculator_params : dict
+        Parameters for GPAW calculator
+    fmax : float
+        Maximum force tolerance (eV/Å)
+    fixcell : bool
+        If True, only relax atomic positions (ISIF=2 equivalent)
+        If False, relax both atoms and cell (ISIF=3 equivalent)
+    logname : str
+        Name of optimization log file
+    trajname : str
+        Name of trajectory file
+    gpwname : str
+        Name of GPAW restart file
+    
+    Returns:
+    --------
+    Atoms
+        Relaxed atomic structure
+    """
+    
+    # -------------------------
+    # Restart or initialize GPAW
+    # -------------------------
+    calc_dft = None
+    
+    if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
+        try:
+            atoms, calc_dft = restart(gpwname)
+            atoms.calc = calc_dft
+            print(f"Successfully restarted from {gpwname}")
+        except Exception as e:
+            print(f"Restart failed ({e}). Starting fresh calculation.")
+            calc_dft = GPAW(**calculator_params)
+            atoms.calc = calc_dft
+    else:
+        calc_dft = GPAW(**calculator_params)
+        atoms.calc = calc_dft
+        print("Starting fresh calculation")
+    # -------------------------
+    # Choose relaxation mode
+    # -------------------------
+    if fixcell:
+        # ISIF = 2 equivalent - only relax atoms
+        opt_atoms = atoms
+        print("Relaxation mode: fixed cell (ISIF=2 equivalent)")
+    else:
+        # ISIF = 3 equivalent - relax both atoms and cell
+        opt_atoms = FrechetCellFilter(atoms)
+        print("Relaxation mode: variable cell (ISIF=3 equivalent)")
 
+    # -------------------------
+    # Run optimizer
+    # -------------------------
+    # Add observer to save checkpoints during optimization
+
+    # Create optimizer
+    opt = BFGS(opt_atoms, 
+               logfile=logname,
+               trajectory=trajname)
+        
+    # Run relaxation
+    print(f"Starting relaxation with fmax={fmax} eV/Å")
+    opt.run(fmax=fmax, steps=500)  # Added steps limit for safety
+
+    if isinstance(opt_atoms, FrechetCellFilter):
+        opt_atoms = opt_atoms.atoms
+
+    # -------------------------
+    # Save final state
+    # -------------------------
+    try:
+        # Write final calculator state
+        opt_atoms.calc.write(gpwname, mode='all')
+        print(f"Final state saved to {gpwname}")        
+    except Exception as e:
+        print(f"Warning: Could not save final state: {e}")
+    
+    # Get final forces f or reporting
+    if hasattr(opt_atoms, 'get_forces'):
+        forces = opt_atoms.get_forces()
+        max_force = np.max(np.linalg.norm(forces, axis=1))
+        print(f"Relaxation completed. Maximum force: {max_force:.6f} eV/Å")
+    return opt_atoms
 # ── GPAW calculator ───────────────────────────────────────────────────────────
 # Γ-only or small k-grid for MD (speed priority)
 # FermiDirac smearing handles metallic/semi-ionic systems better during MD
-def make_gpaw(txt='gpaw_md.log'):
-    return GPAW(
-        mode        = PW(ECUT_EV),
-        xc          = 'HSE06',
-        kpts        = KPTS,
-        occupations = FermiDirac(0.1),     # eV — broadens occupation, aids SCF
-        symmetry    = 'off',               # atoms break symmetry during MD — must disable
-        txt         = txt,
-        convergence = {'energy': 1e-4},    # relaxed tolerance — faster SCF per step
-        maxiter     = 300,
-    )
+def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV, hunds = False):
+    """GPAW PW calculator for isolated dimers (Γ-point, mild smearing)."""
+    base_params = {
+        "convergence": {"density": 1e-8,
+                        "eigenstates": 1e-10,
+                        "energy": 1e-6, 
+                        "forces": 1e-6},
+        "eigensolver": {"name": "rmm-diis",
+                        "niter": 5},
+        "hund": hunds,
+        "kpts": (1, 1, 1),
+        "maxiter": 1000,
+        "mixer": {"backend": "pulay", 
+                  "beta": 0.25,
+                  "method": "fullspin",
+                  "nmaxold": 5,
+                  "weight": 50.0},
+        "mode": {"name": "pw",
+                 "ecut": ECUT_EV},
+        "nbands": "nao",
+        #"symmetry": "off",
+        "occupations": {"name": "fermi-dirac",
+                        "width": 0.01},
+        "txt": txt,  
+        "xc": { 'backend': 'pw',
+               'fraction': 0.25,
+               'omega': SCREEN * Bohr,  #bohr^-1
+               'name': 'HYB_GGA_XC_HSE06',
+               },
+    }
+    
+    return GPAW(**base_params)
 
 # ── Step 1: Geometry relaxation ───────────────────────────────────────────────
 print("\n" + "=" * 60)
 print("Step 1: Geometry relaxation (BFGS, fmax=0.05 eV/Å)")
 print("=" * 60)
+base_params = {
+        "convergence": {"density": 1e-8,
+                        "eigenstates": 1e-10,
+                        "energy": 1e-6, 
+                        "forces": 1e-6},
+        "eigensolver": {"name": "rmm-diis",
+                        "niter": 5},
+        "kpts": (1, 1, 1),
+        "maxiter": 1000,
+        "mixer": {"backend": "pulay", 
+                  "beta": 0.25,
+                  "method": "fullspin",
+                  "nmaxold": 5,
+                  "weight": 50.0},
+        "mode": {"name": "pw",
+                 "ecut": ECUT_EV},
+        "nbands": "nao",
+        #"symmetry": "off",
+        "occupations": {"name": "fermi-dirac",
+                        "width": 0.01},
+        "xc": { 'backend': 'pw',
+               'fraction': 0.25,
+               'omega': SCREEN * Bohr,  #bohr^-1
+               'name': 'HYB_GGA_XC_HSE06',
+               },
+    }
+    
+lif_relax = relax(lif_atoms,
+                  calculator_params=base_params,
+                  fmax = 0.01,
+                  fixcell = True,
+                  logname = LIF_RLX_LOG,
+                  gpwname = LIF_GPW_FILE)
 
-atoms.calc = make_gpaw(txt='LiF_aimd_relax.log')
-relax = BFGS(atoms, logfile='LiF_aimd_relax_opt.log')
-relax.run(fmax=0.05, steps=100)
-print(f"  Epot = {atoms.get_potential_energy()/len(atoms):.4f} eV/atom")
-atoms.write("LiF_aimd_relaxed.xyz")
+bef2_relax = relax(bef2_atoms,
+                   calculator_params=base_params,
+                   fixcell = True,
+                   logname = BEF2_RLX_LOG,
+                   gpwname = BEF2_GPW_FILE)
+
+print(f"  LiF Epot = {lif_relax.get_potential_energy()/len(lif_atoms):.4f} eV/atom"
+      f"  BeF2 Epot = {bef2_relax.get_potential_energies()/len(bef2_atoms):.4f} eV/atom")
+lif_relax.write("LiF_aimd_relaxed.xyz")
+bef2_relax.write("BeF2_aimd_relaxed.xyz")
 print("  Relaxed structure → LiF_aimd_relaxed.xyz")
 
 # ── Step 2: NVT equilibration ─────────────────────────────────────────────────
@@ -87,19 +272,20 @@ print(f"Step 2: NVT equilibration  T={TEMPERATURE} K  steps={N_EQUIL}")
 print("=" * 60)
 
 # Fresh calculator for MD (new txt file)
-atoms.calc = make_gpaw(txt='LiF_aimd_equil_gpaw.log')
-
-MaxwellBoltzmannDistribution(atoms, temperature_K=TEMPERATURE)
-Stationary(atoms)
-ZeroRotation(atoms)
+lif_relax.calc = make_gpaw(txt='LiF_aimd_equil_gpaw.log')
+bef2_relax.calc = make_gpaw(txt='BeF2_aimd_equil_gpaw.log')
+mix = lif_relax + bef2_relax
+MaxwellBoltzmannDistribution(mix, temperature_K=TEMPERATURE)
+Stationary(mix)
+ZeroRotation(mix)
 
 dyn_eq = NoseHooverChainNVT(
-    atoms,
+    mix,
     timestep      = TIMESTEP_FS * units.fs,
     temperature_K = TEMPERATURE,
     tdamp         = TDAMP_FS * units.fs,
-    trajectory    = TRAJ_EQUIL,
-    logfile       = LOG_EQUIL,
+    trajectory    = LIF_TRAJ_EQUIL,
+    logfile       = LIF_LOG_EQUIL,
 )
 dyn_eq.attach(MDLogger(dyn_eq, atoms, LOG_EQUIL), interval=LOG_INTERVAL)
 

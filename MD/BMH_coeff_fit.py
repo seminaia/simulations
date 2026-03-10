@@ -82,7 +82,7 @@ R_ABS_MIN  = 0.8    # Å absolute floor to avoid DFT core divergence
 N_R        = 7     # number of separation points per pair
 
 # GPAW plane-wave settings
-ECUT_EV =800   # eV
+ECUT_EV =500   # eV
 VACUUM  = 6.0 * Ang   # Å vacuum on each side of the dimer
 
 # Coulomb constant  k_e  in eV·Å  (= e/(4πε₀) in SI, converted to eV·Å)
@@ -91,7 +91,7 @@ K_COULOMB = e * 1e10 / (4 * np.pi * epsilon_0)
 # Relative dielectric constant ε_r (1 = vacuum; set >1 for screened Coulomb)
 # Must match the 'dielectric' command in LAMMPS.
 EPSILON_R = 1.0
-SCREEN = 0.2*Ang  # Å^-1 screening parameter 
+SCREEN = 0.25*Ang  # Å^-1 screening parameter 
 # ── GPAW helpers ──────────────────────────────────────────────────────────────
 def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV, hunds = False):
     """GPAW PW calculator for isolated dimers (Γ-point, mild smearing)."""

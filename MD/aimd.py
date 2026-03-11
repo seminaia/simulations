@@ -134,7 +134,7 @@ print("=" * 60)
 pbe_params = {
     "convergence": {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-6},
     "eigensolver": {"name": "dav", "niter": 5},
-    "kpts": KPTS,
+    "kpts": {"gamma": True, "size": KPTS},
     "maxiter": 1000,
     "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
     "mode": {"name": "pw", "ecut": ECUT_EV},
@@ -158,11 +158,11 @@ hse_params = {
         "fraction": 0.25, 
         "backend": "pw"},
 }
-lif_relax = relax(lif_atoms, hse_params, fmax=0.01, fixcell=False,
+lif_relax = relax(lif_atoms, pbe_params, fmax=0.01, fixcell=False,
                   logname=LIF_RLX_LOG, gpwname=LIF_GPW_FILE)
 view(lif_relax, repeat=(2, 2, 2))
 
-bef2_relax = relax(bef2_atoms, hse_params, fmax=0.01, fixcell=False,
+bef2_relax = relax(bef2_atoms, pbe_params, fmax=0.01, fixcell=False,
                    logname=BEF2_RLX_LOG, gpwname=BEF2_GPW_FILE)
 view(bef2_relax, repeat=(2, 2, 2))
 
@@ -178,7 +178,7 @@ print("=" * 60)
 
 
 mix = stack(lif_relax, bef2_relax, maxstrain=1, distance=2.5)
-mix.calc = relax(mix, pbe_params,fmax=0.01, fixcell=False, logname='mix_relax.log', gpwname='mix_relax.gpw')
+mix.calc = relax(mix, hse_params,fmax=0.01, fixcell=True, logname='mix_relax.log', gpwname='mix_relax.gpw')
 view(mix, repeat=(2, 2, 2))
 MaxwellBoltzmannDistribution(mix, temperature_K=TEMPERATURE)
 Stationary(mix)

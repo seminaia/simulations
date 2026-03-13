@@ -10,41 +10,132 @@ Workflow    : load equilibrated structure → NVT production run
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from ase import units
+from ase import units, Atoms
 from ase.io import read
 from ase.md.nose_hoover_chain import NoseHooverChainNVT
+from ase.filters import FrechetCellFilter
+from ase.io.trajectory import Trajectory
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary, ZeroRotation
 from ase.md import MDLogger
 from ase.calculators.lammpsrun import LAMMPS
-
+from gpaw import GPAW, restart
+from ase.optimize import BFGS
+from ase.units import Bohr
+from ase.spacegroup import crystal
+from ase.build.tools import cut, stack
+from ase.build import bulk, make_supercell
+from typing import Dict, Any
 # ── Parameters ────────────────────────────────────────────────────────────────
-TEMPERATURE     = 1000      # K
-TIMESTEP_FS     = 0.5       # fs
-TDAMP_FS        = 100       # thermostat damping time (fs)
+TEMPERATURE  = 1200        # K
+TIMESTEP_FS  = 1.0         # fs
+TDAMP_FS     = 50          # thermostat damping (fs)
+N_EQUIL      = 200         # NVT equilibration steps
+N_PROD       = 500         # NVT production steps
 N_STEPS         = 50_000    # production steps  (25 ps)
-LOG_INTERVAL    = 100       # steps between log entries
-TRAJ_FILE       = "LiF_BeF2_classical_prod.traj"
-LOG_FILE        = "LiF_BeF2_classical_prod.log"
-PLOT_FILE       = "LiF_BeF2_classical_results.png"
-STRUCT_FILE     = "LiF_BeF2_equilibrated.xyz"
+LOG_INTERVAL = 10          # steps between log entries
+ECUT_EV      = 500         # plane-wave cutoff (eV)
+KPTS         = (2, 2, 2)   # Γ-point only — speed priority
+SUPERCELL    = 1           # n×n×n supercell multiplier
+SCREEN       = 0.25 * Bohr # HSE06 range-separation parameter
 
+# ── File names ────────────────────────────────────────────────────────────────
+LIF_GPW_FILE   = "LiF_aimd_relax.gpw"
+LIF_RLX_LOG    = "LiF_aimd_relax_opt.log"
+BEF2_GPW_FILE  = "BeF2_aimd_relax.gpw"
+BEF2_RLX_LOG   = "BeF2_aimd_relax_opt.log"
+
+MIX_TRAJ_EQUIL = "mix_aimd_equil.traj"
+MIX_LOG_EQUIL  = "mix_aimd_equil.log"
+MIX_TRAJ_PROD  = "mix_aimd_prod.traj"
+MIX_LOG_PROD   = "mix_aimd_prod.log"
+MIX_PLOT_FILE  = "mix_aimd_results.png"
+
+def relax(
+    atoms: Atoms,
+    calculator_params: Dict[str, Any],
+    fmax: float = 0.01,
+    fixcell: bool = True,
+    logname: str = 'opt.log',
+    trajname: str = 'opt.traj',
+    gpwname: str = 'rlx.gpw',
+) -> Atoms:
+    if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
+        try:
+            atoms, calc = restart(gpwname, txt=calculator_params.get("txt", "gpaw.log"))
+            atoms.calc = calc
+            print(f"Restarted from {gpwname}")
+        except Exception as e:
+            print(f"Restart failed ({e}), starting fresh.")
+            atoms.calc = GPAW(**calculator_params)
+    else:
+        atoms.calc = GPAW(**calculator_params)
+        print("Starting fresh calculation")
+
+    opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
+    print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/Å")
+
+    BFGS(opt_atoms, logfile=logname, trajectory=trajname).run(fmax=fmax, steps=500)
+
+    if isinstance(opt_atoms, FrechetCellFilter):
+        opt_atoms = opt_atoms.atoms
+
+    try:
+        opt_atoms.calc.write(gpwname, mode='all')
+        print(f"Saved to {gpwname}")
+    except Exception as e:
+        print(f"Warning: could not save state: {e}")
+
+    forces = opt_atoms.get_forces()
+    print(f"Max force: {np.max(np.linalg.norm(forces, axis=1)):.6f} eV/Å")
+    return opt_atoms
+pbe_params = {
+    "convergence": {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-6},
+    "eigensolver": {"name": "dav", "niter": 5},
+    "kpts": {"gamma": True, "size": KPTS},
+    "maxiter": 1000,
+    "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
+    "mode": {"name": "pw", "ecut": ECUT_EV},
+    "nbands": "nao",
+    "occupations": {"name": "fermi-dirac", "width": 0.01},
+    "txt": "pbe_relax.log",
+    "xc": "PBE",
+}
+hse_params = {
+    "convergence": {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-6},
+    "eigensolver": {"name": "dav", "niter": 5},
+    "kpts": {"gamma": True, "size": (1,1,1)},  
+    "maxiter": 1000,
+    "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
+    "mode": {"name": "pw", "ecut": ECUT_EV},
+    "nbands": "nao",
+    "occupations": {"name": "fermi-dirac", "width": 0.01},
+    "txt": "hse_relax.log",
+    "xc":{"name":"HYB_GGA_XC_HSE06",
+        "omega": SCREEN,
+        "fraction": 0.25, 
+        "backend": "pw"},
+}
 # ── Load equilibrated structure ───────────────────────────────────────────────
-print("=" * 60)
-print("Loading equilibrated LiF·BeF2 structure")
-print("=" * 60)
+lif_atoms  = bulk('LiF', crystalstructure='rocksalt', a=4.03, cubic=True)
+bef2_atoms = crystal('BeF2',spacegroup=152, cellpar=[4.73, 4.73, 5.18, 90, 90, 120], basis=[(0.5,0,0.33),(0.41,0.28,0.22)])
+lif_rlx = relax(lif_atoms, pbe_params, fmax=0.01, fixcell=False, logname=LIF_RLX_LOG, gpwname=LIF_GPW_FILE)
+bef2_rlx = relax(bef2_atoms, pbe_params, fmax=0.01, fixcell=False, logname=BEF2_RLX_LOG, gpwname=BEF2_GPW_FILE)
+rlx = stack(lif_rlx, bef2_rlx, maxstrain=1, distance=2.5)
 
-atoms = read(STRUCT_FILE)
-print(f"  Atoms    : {len(atoms)}")
-print(f"  Species  : {set(atoms.get_chemical_symbols())}")
-print(f"  Cell (Å) : {np.diag(atoms.cell)}")
+print(f"LiF  : {len(lif_rlx)} atoms  cell={np.diag(lif_rlx.cell)} Å")
+print(f"BeF2 : {len(bef2_rlx)} atoms  cell={np.diag(bef2_rlx.cell)} Å")
+print(f"  Atoms    : {len(rlx)}")
+print(f"  Species  : {set(rlx.get_chemical_symbols())}")
+print(f"  Cell (Å) : {np.diag(rlx.cell)}")
+rlx.calc = GPAW(**hse_params)
 
 # ── Ionic charges ─────────────────────────────────────────────────────────────
 charge_map = {'Li': 1.0, 'Be': 2.0, 'F': -1.0}
-charges    = [charge_map[s] for s in atoms.get_chemical_symbols()]
-atoms.set_initial_charges(charges)
+charges    = [charge_map[s] for s in rlx.get_chemical_symbols()]
+rlx.set_initial_charges(charges)
 
 # ── Cutoff (must be < L/2 for all box dimensions) ────────────────────────────
-cell   = atoms.get_cell()
+cell   = rlx.get_cell()
 L_min  = min(cell[0][0], cell[1][1], cell[2][2])
 cutoff = round(L_min / 2 - 0.5, 1)
 print(f"  Cutoff   : {cutoff} Å  (L_min/2 = {L_min/2:.2f} Å)")
@@ -57,39 +148,41 @@ print(f"  Cutoff   : {cutoff} Å  (L_min/2 = {L_min/2:.2f} Å)")
 #  Be-Be   0.0       1.0        0.0
 #  Be-F  1389.47   0.23604      0.0
 #  F-F   1127.70   0.27533     14.835
-pair_coeff = [
-    '1 1    0.0      1.0      0.0  ',   # Li–Li
-    '1 2    0.0      1.0      0.0  ',   # Li–Be
-    '1 3  593.72   0.26310    0.0  ',   # Li–F
-    '2 2    0.0      1.0      0.0  ',   # Be–Be
-    '2 3 1389.47   0.23604    0.0  ',   # Be–F
-    '3 3 1127.70   0.27533   14.835',   # F–F
-]
+#pair_coeff = [
+#    '1 1    0.0      1.0      0.0  ',   # Li–Li
+#    '1 2    0.0      1.0      0.0  ',   # Li–Be
+#    '1 3  593.72   0.26310    0.0  ',   # Li–F
+#    '2 2    0.0      1.0      0.0  ',   # Be–Be
+#    '2 3 1389.47   0.23604    0.0  ',   # Be–F
+#    '3 3 1127.70   0.27533   14.835',   # F–F
+#]
 
-calc = LAMMPS(
-    specorder   = ['Li', 'Be', 'F'],
-    atom_style  = 'charge',
-    pair_style  = f'buck/coul/long {cutoff}',
-    kspace_style= 'ewald 1.0e-5',
-    pair_coeff  = pair_coeff,
-)
-atoms.calc = calc
+#calc = LAMMPS(
+#    specorder   = ['Li', 'Be', 'F'],
+#    atom_style  = 'charge',
+#    pair_style  = f'born/coul/long {cutoff}',
+#    kspace_style= 'ewald 1.0e-5',
+#    pair_coeff  = pair_coeff,
+#)
+
+calc = GPAW(**hse_params)
+rlx.calc = calc
 
 # ── Reinitialise velocities at target temperature ─────────────────────────────
-MaxwellBoltzmannDistribution(atoms, temperature_K=TEMPERATURE)
-Stationary(atoms)
-ZeroRotation(atoms)
+MaxwellBoltzmannDistribution(rlx, temperature_K=TEMPERATURE)
+Stationary(rlx)
+ZeroRotation(rlx)
 
 # ── NVT thermostat (Nosé-Hoover chain) ───────────────────────────────────────
 dyn = NoseHooverChainNVT(
-    atoms,
+    rlx,
     timestep    = TIMESTEP_FS * units.fs,
     temperature_K = TEMPERATURE,
     tdamp       = TDAMP_FS * units.fs,
-    trajectory  = TRAJ_FILE,
-    logfile     = LOG_FILE,
+    trajectory  = MIX_TRAJ_EQUIL,
+    logfile     = MIX_LOG_EQUIL,
 )
-dyn.attach(MDLogger(dyn, atoms, "LiF_BeF2_classical_md.log"), interval=LOG_INTERVAL)
+dyn.attach(MDLogger(dyn, rlx, "LiF_BeF2_classical_md.log"), interval=LOG_INTERVAL)
 
 # ── Accumulators ──────────────────────────────────────────────────────────────
 time_ps, epot_list, ekin_list, temp_list = [], [], [], []
@@ -100,10 +193,9 @@ n_blocks        = N_STEPS // steps_per_block
 
 def collect():
     time_ps.append(dyn.get_time() / (1000 * units.fs))
-    epot_list.append(atoms.get_potential_energy())
-    ekin_list.append(atoms.get_kinetic_energy())
-    temp_list.append(atoms.get_temperature())
-
+    epot_list.append(rlx.get_potential_energy())
+    ekin_list.append(rlx.get_kinetic_energy())
+    temp_list.append(rlx.get_temperature())
 dyn.attach(collect, interval=steps_per_block)
 
 # ── Production run ────────────────────────────────────────────────────────────
@@ -117,7 +209,7 @@ for i in range(n_blocks):
     if (i + 1) % 10 == 0:
         t   = time_ps[-1]
         T   = temp_list[-1]
-        Ep  = epot_list[-1] / len(atoms)
+        Ep  = epot_list[-1] / len(rlx)
         print(f"  block {i+1:4d}/{n_blocks}  t={t:.3f} ps  "
               f"T={T:.1f} K  Epot={Ep:.4f} eV/atom")
 
@@ -128,13 +220,13 @@ print("\n" + "=" * 60)
 print("Production Summary")
 print("=" * 60)
 print(f"  T_mean   : {np.mean(temp_list):.1f} ± {np.std(temp_list):.1f} K")
-print(f"  E_drift  : {(etot_arr[-1]-etot_arr[0])/len(atoms):.6f} eV/atom")
+print(f"  E_drift  : {(etot_arr[-1]-etot_arr[0])/len(rlx):.6f} eV/atom")
 
 # ── RDF ───────────────────────────────────────────────────────────────────────
 print("\nComputing RDF from trajectory...")
 from ase.io.trajectory import Trajectory as Traj
 
-traj   = Traj(TRAJ_FILE)
+traj   = Traj(MIX_TRAJ_EQUIL)
 n_traj = len(traj)
 
 # Sample last 50% of trajectory for RDF
@@ -228,7 +320,7 @@ fig = plt.figure(figsize=(14, 10))
 
 # 1. Energy
 ax1 = fig.add_subplot(2, 3, 1)
-n   = len(atoms)
+n   = len(rlx)
 ax1.plot(time_ps, np.array(epot_list)/n, 'b-',  lw=1.2, label='Potential')
 ax1.plot(time_ps, np.array(ekin_list)/n, 'r-',  lw=1.2, label='Kinetic')
 ax1.plot(time_ps, etot_arr/n,            'k--', lw=1.2, label='Total')
@@ -272,13 +364,13 @@ ax5.set_title('Temperature Distribution'); ax5.legend(fontsize=8)
 ax6 = fig.add_subplot(2, 3, 6)
 ax6.axis('off')
 lines = [
-    f"System:  LiF·BeF2  ({len(atoms)} atoms)",
+    f"System:  LiF·BeF2  ({len(rlx)} atoms)",
     f"T:       {TEMPERATURE} K",
     f"Steps:   {N_STEPS}  ({N_STEPS*TIMESTEP_FS/1000:.1f} ps)",
     f"dt:      {TIMESTEP_FS} fs",
     "",
     f"T_mean:  {np.mean(temp_list):.1f} ± {np.std(temp_list):.1f} K",
-    f"E_drift: {(etot_arr[-1]-etot_arr[0])/len(atoms):.5f} eV/atom",
+    f"E_drift: {(etot_arr[-1]-etot_arr[0])/len(rlx):.5f} eV/atom",
     "",
     "Diffusion (last 50% MSD fit):",
     f"  D(Li) = {diffusion_cm2s(msd_Li, msd_time):.3e} cm²/s",
@@ -290,6 +382,6 @@ ax6.text(0.05, 0.95, "\n".join(lines), transform=ax6.transAxes,
 
 plt.suptitle(f'Classical MD  LiF·BeF2  T={TEMPERATURE} K  (LAMMPS/ASE)', fontsize=12)
 plt.tight_layout()
-plt.savefig(PLOT_FILE, dpi=150, bbox_inches='tight')
-print(f"\nPlot saved → {PLOT_FILE}")
-print(f"Trajectory → {TRAJ_FILE}")
+plt.savefig(MIX_PLOT_FILE, dpi=150, bbox_inches='tight')
+print(f"\nPlot saved → {MIX_PLOT_FILE}")
+print(f"Trajectory → {MIX_TRAJ_FILE}")

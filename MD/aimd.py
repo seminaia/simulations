@@ -58,8 +58,6 @@ print("Building LiF and BeF2 supercells")
 print("=" * 60)
 
 lif_atoms  = bulk('LiF', crystalstructure='rocksalt', a=4.03, cubic=True)
-
-
 bef2_atoms = crystal('BeF2',spacegroup=152, cellpar=[4.73, 4.73, 5.18, 90, 90, 120], basis=[(0.5,0,0.33),(0.41,0.28,0.22)])
 
 print(f"LiF  : {len(lif_atoms)} atoms  cell={np.diag(lif_atoms.cell)} Å")

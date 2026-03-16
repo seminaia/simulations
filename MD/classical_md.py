@@ -1,188 +1,211 @@
 """
-Classical MD for LiF·BeF2 + H₂ using LAMMPS via ASE
-=====================================================
+Classical MD for LiF·BeF2 using LAMMPS via ASE
+================================================
 Force field : Buckingham + Ewald (Coulomb)
-Potentials  : Tosi-Fumi (1964) for LiF, extended to Be-F and H-F
-H₂ model   : neutral H atoms (charge 0) — models dissociated H₂ in melt.
-              Charge-neutral by construction (no Ewald correction needed).
-              H–H and H–F short-range repulsion via Buckingham only
-              (no Coulomb since q_H = 0).
-H params    : approximate soft-sphere repulsion — verify against ab initio
-              for quantitative work.
-Workflow    : load equilibrated structure → insert H₂ pairs →
-              energy minimise → NVT production → RDF + MSD analysis
+Potentials  : Tosi-Fumi (1964) for LiF, extended to Be-F
+Workflow    : load equilibrated structure → NVT production run
+              → RDF, MSD, VDOS analysis → plots
 """
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
-from ase import units, Atom, Atoms
-from ase.build import bulk, make_supercell
-from ase.optimize import BFGS
+from ase import units, Atoms
+from ase.io import read, write as ase_write
 from ase.md.nose_hoover_chain import NoseHooverChainNVT
+from ase.filters import FrechetCellFilter
+from ase.io.trajectory import Trajectory
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary, ZeroRotation
 from ase.md import MDLogger
-from ase.io.trajectory import Trajectory
 from ase.calculators.lammpsrun import LAMMPS
-
+from gpaw import GPAW, restart
+from ase.optimize import BFGS
+from ase.units import Bohr
+from ase.spacegroup import crystal
+from ase.build.tools import stack
+from ase.build import bulk
+from typing import Dict, Any
 # ── Parameters ────────────────────────────────────────────────────────────────
-TEMPERATURE     = 1000      # K
-TIMESTEP_FS     = 0.5       # fs
-TDAMP_FS        = 100       # thermostat damping (fs)
-N_STEPS         = 50000    # production steps (25 ps)
-LOG_INTERVAL    = 100       # steps between log entries
-N_H_PAIRS       = 20        # number of H₂ pairs to insert (2 H atoms each)
-MIN_INSERT_DIST = 1.8       # Å — minimum distance when placing new atoms
-RNG_SEED        = 42
+TEMPERATURE  = 1200        # K
+TIMESTEP_FS  = 1.0         # fs
+TDAMP_FS     = 50          # thermostat damping (fs)
+N_STEPS      = 50_000      # production steps  (25 ps)
+LOG_INTERVAL = 10          # steps between log entries
+ECUT_EV      = 500         # plane-wave cutoff (eV)
+KPTS         = (2, 2, 2)   # Γ-point only — speed priority
+SCREEN       = 0.25 * Bohr # HSE06 range-separation parameter
 
-TRAJ_FILE   = "LiF_BeF2_H2_classical_1000K.traj"
-LOG_FILE    = "LiF_BeF2_H2_classical_1000K.log"
-PLOT_FILE   = "LiF_BeF2_H2_classical_1000K.png"
+# ── File names ────────────────────────────────────────────────────────────────
+LIF_GPW_FILE   = "LiF_aimd_relax.gpw"
+LIF_RLX_LOG    = "LiF_aimd_relax_opt.log"
+BEF2_GPW_FILE  = "BeF2_aimd_relax.gpw"
+BEF2_RLX_LOG   = "BeF2_aimd_relax_opt.log"
 
-# ── Build LiF·BeF2 combined structure ────────────────────────────────────────
-print("=" * 60)
-print("Building LiF·BeF2 structure")
-print("=" * 60)
+MIX_TRAJ_EQUIL = "mix_aimd_equil.traj"
+MIX_LOG_EQUIL  = "mix_aimd_equil.log"
+MIX_PLOT_FILE  = "mix_aimd_results.png"
 
-lif_unit    = bulk('LiF', crystalstructure='rocksalt', a=4.03, cubic=True)
-lif_crystal = make_supercell(lif_unit, 3 * np.eye(3, dtype=int))
+def relax(
+    atoms: Atoms,
+    calculator_params: Dict[str, Any],
+    fmax: float = 0.01,
+    fixcell: bool = True,
+    logname: str = 'opt.log',
+    trajname: str | None = None,
+    gpwname: str = 'rlx.gpw',
+) -> Atoms:
+    orig_atoms = atoms  # keep reference so we can update in-place at the end
 
-bef2_unit    = bulk('BeF2', crystalstructure='fluorite', a=4.77, c=5.18, cubic=True)
-bef2_crystal = make_supercell(bef2_unit, 3 * np.eye(3, dtype=int))
+    # Fast restart: if a converged structure was saved previously, load it directly
+    done_file = gpwname.replace('.gpw', '_relaxed.traj')
+    if os.path.exists(done_file):
+        relaxed = read(done_file, index=0)
+        print(f"Loaded converged structure from {done_file}")
+    else:
+        if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
+            try:
+                atoms, calc = restart(gpwname, txt=calculator_params.get("txt", "gpaw.log"))
+                atoms.calc = calc
+                print(f"Restarted from {gpwname}")
+            except Exception as e:
+                print(f"Restart failed ({e}), starting fresh.")
+                atoms.calc = GPAW(**calculator_params)
+        else:
+            atoms.calc = GPAW(**calculator_params)
+            print("Starting fresh calculation")
 
-lif_pos  = lif_crystal.get_positions()
-bef2_pos = bef2_crystal.get_positions()
-lif_cell = lif_crystal.cell
-bef2_cell = bef2_crystal.cell
+        opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
+        print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/Å")
 
-x_offset = np.linalg.norm(lif_cell[0])
-bef2_pos_shifted = bef2_pos + [x_offset, 0, 0]
+        BFGS(opt_atoms, logfile=logname, trajectory=trajname).run(fmax=fmax, steps=500)
 
-combined_cell = [
-    [x_offset + np.linalg.norm(bef2_cell[0]), 0, 0],
-    [0, max(lif_cell[1][1], bef2_cell[1][1]), 0],
-    [0, 0, max(lif_cell[2][2], bef2_cell[2][2])],
-]
-flibe_atoms = Atoms(
-    symbols   = list(lif_crystal.symbols) + list(bef2_crystal.symbols),
-    positions = np.vstack([lif_pos, bef2_pos_shifted]),
-    cell      = combined_cell,
-    pbc       = True,
-)
-print(f"  Atoms before H insertion : {len(flibe_atoms)}")
-print(f"  Species                  : {set(flibe_atoms.get_chemical_symbols())}")
-print(f"  Cell (Å)                 : {np.diag(flibe_atoms.cell)}")
+        if isinstance(opt_atoms, FrechetCellFilter):
+            opt_atoms = opt_atoms.atoms
 
-# ── Insert H⁺ / H⁺ pairs at random interstitial sites ────────────────────────
-print(f"\nInserting {N_H_PAIRS} H₂ pairs (neutral H atoms, charge=0)...")
+        try:
+            opt_atoms.calc.write(gpwname, mode='all')
+            print(f"Saved to {gpwname}")
+        except Exception as e:
+            print(f"Warning: could not save state: {e}")
 
-rng       = np.random.default_rng(RNG_SEED)
-cell_diag = np.diag(flibe_atoms.cell)
+        ase_write(done_file, opt_atoms)
+        print(f"Converged structure saved to {done_file}")
 
-def _mic_distances(new_pos, existing_pos, cell_diag):
-    """Minimum-image distances from new_pos to all existing_pos."""
-    diff  = existing_pos - new_pos
-    diff -= cell_diag * np.round(diff / cell_diag)
-    return np.linalg.norm(diff, axis=1)
+        forces = opt_atoms.get_forces()
+        print(f"Max force: {np.max(np.linalg.norm(forces, axis=1)):.6f} eV/Å")
+        relaxed = opt_atoms
 
-def random_interstitial(atoms_obj, min_dist, max_tries=2000):
-    """Return a random position inside the cell that is ≥ min_dist from all atoms."""
-    cd   = np.diag(atoms_obj.cell)
-    pos  = atoms_obj.get_positions()
-    for _ in range(max_tries):
-        trial = rng.random(3) * cd
-        if pos.shape[0] == 0 or _mic_distances(trial, pos, cd).min() > min_dist:
-            return trial
-    raise RuntimeError("Could not find an interstitial site — cell too crowded.")
+    # Update the original atoms object's cell and positions in-place
+    orig_atoms.set_cell(relaxed.get_cell(), scale_atoms=False)
+    orig_atoms.set_positions(relaxed.get_positions())
 
-n_inserted = 0
-for _ in range(N_H_PAIRS):
-    h_pos = random_interstitial(flibe_atoms, MIN_INSERT_DIST)
-    flibe_atoms.append(Atom('H', position=h_pos))
-    h2_pos = random_interstitial(flibe_atoms, MIN_INSERT_DIST)
-    flibe_atoms.append(Atom('H', position=h2_pos))
-    n_inserted += 1
+    cell = relaxed.cell.cellpar()
+    print(f"  Lattice: a={cell[0]:.4f} b={cell[1]:.4f} c={cell[2]:.4f} Å  "
+          f"α={cell[3]:.2f} β={cell[4]:.2f} γ={cell[5]:.2f}°")
+    return relaxed
 
-print(f"  Inserted {2*n_inserted} H atoms ({n_inserted} H₂ pairs)")
-print(f"  Total atoms after insertion : {len(flibe_atoms)}")
-sym_counts = {s: list(flibe_atoms.get_chemical_symbols()).count(s)
-              for s in sorted(set(flibe_atoms.get_chemical_symbols()))}
-print(f"  Composition : {sym_counts}")
 
-# ── Ionic charges ─────────────────────────────────────────────────────────────
-charge_map = {'Li': 1.0, 'Be': 2.0, 'F': -1.0, 'H': 0.0}  # H₂ neutral — charge 0
-charges    = [charge_map[s] for s in flibe_atoms.get_chemical_symbols()]
-flibe_atoms.set_initial_charges(charges)
-net_charge = sum(charges)
-print(f"  Net charge   : {net_charge:+.1f}  (must be 0 for Ewald)")
+pbe_params = {
+    "convergence": {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-6},
+    "eigensolver": {"name": "dav", "niter": 5},
+    "kpts": {"gamma": True, "size": KPTS},
+    "maxiter": 1000,
+    "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
+    "mode": {"name": "pw", "ecut": ECUT_EV},
+    "nbands": "nao",
+    "occupations": {"name": "fermi-dirac", "width": 0.01},
+    "txt": "pbe_relax.log",
+    "xc": "PBE",
+}
 
-# ── Cutoff ────────────────────────────────────────────────────────────────────
-cell   = flibe_atoms.get_cell()
+hse_params = {
+    "convergence": {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-6},
+    "eigensolver": {"name": "dav", "niter": 5},
+    "kpts": {"gamma": True, "size": (1,1,1)},  
+    "maxiter": 1000,
+    "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
+    "mode": {"name": "pw", "ecut": ECUT_EV},
+    "nbands": "nao",
+    "occupations": {"name": "fermi-dirac", "width": 0.01},
+    "txt": "hse_relax.log",
+    "xc":{"name":"HYB_GGA_XC_HSE06",
+        "omega": SCREEN,
+        "fraction": 0.25, 
+        "backend": "pw"},
+}
+
+# ── Load equilibrated structure ───────────────────────────────────────────────
+lif_atoms  = bulk('LiF',
+                  crystalstructure='rocksalt', 
+                  a=3.9747, cubic=True)
+lif_atoms.set_initial_charges([1.0, -1.0, 1.0, -1.0,
+                               1.0, -1.0, 1.0, -1.0])
+bef2_atoms = crystal('BeF2',
+                     spacegroup=152, 
+                     cellpar=[4.73, 4.73, 5.18, 90, 90, 120], 
+                     basis=[(0.5,0,0.33),(0.41,0.28,0.22)])
+bef2_atoms.set_initial_charges([2.0, 2.0, 2.0, 2.0,
+                                -1.0, -1.0, -1.0, -1.0,
+                                -1.0, -1.0, -1.0, -1.0])
+lif_rlx  = relax(lif_atoms,  pbe_params, fmax=0.01, fixcell=False, logname=LIF_RLX_LOG,  gpwname=LIF_GPW_FILE)
+bef2_rlx = relax(bef2_atoms, pbe_params, fmax=0.01, fixcell=False, logname=BEF2_RLX_LOG, gpwname=BEF2_GPW_FILE)
+rlx = stack(lif_rlx, bef2_rlx, maxstrain=1, distance=2.5)
+lif_cell  = lif_rlx.cell.cellpar()
+bef2_cell = bef2_rlx.cell.cellpar()
+print(f"LiF  : {len(lif_rlx)} atoms  a={lif_cell[0]:.4f} b={lif_cell[1]:.4f} c={lif_cell[2]:.4f} Å"
+      f"                             α={lif_cell[3]:.2f} β={lif_cell[4]:.2f} γ={lif_cell[5]:.2f}°")
+print(f"BeF2 : {len(bef2_rlx)} atoms  a={bef2_cell[0]:.4f} b={bef2_cell[1]:.4f} c={bef2_cell[2]:.4f} Å  "
+      f"                              α={bef2_cell[3]:.2f} β={bef2_cell[4]:.2f} γ={bef2_cell[5]:.2f}°")
+
+# ── Cutoff (must be < L/2 for all box dimensions) ────────────────────────────
+cell   = rlx.get_cell()
 L_min  = min(cell[0][0], cell[1][1], cell[2][2])
 cutoff = round(L_min / 2 - 0.5, 1)
-print(f"  Cutoff       : {cutoff} Å")
+print(f"  Cutoff   : {cutoff} Å  (L_min/2 = {L_min/2:.2f} Å)")
 
-# ── BORN-Mayer-Huggins pair coefficients  (specorder: Li=1, Be=2, F=3, H=4) ──────────
-#
-#  Pair    A (eV)     ρ (Å)  sigma(Å)     C (eV·Å⁶) D(eV A^8) cutoff   Source
-#  Li–Li    0.0       1.0        0.0         
-#  Li–Be    0.0       1.0        0.0         Coulomb only
-#  Li–F   593.72    0.26310      0.0         Tosi-Fumi 1964
-#  Li–H     0.0       1.0        0.0         Coulomb only
-#  Be–Be    0.0       1.0        0.0         Coulomb only
-#  Be–F  1389.47    0.23604      0.0         Tosi-Fumi extended
-#  Be–H     0.0       1.0        0.0         Coulomb only
-#  F–F   1127.70    0.27533     14.835       Tosi-Fumi 1964
-#  F–H     80.0     0.30000      0.0         soft repulsion for neutral H₂ in ionic melt
-#  H–H     50.0     0.30000      0.0         prevents H–H collapse (no Coulomb, q=0)
-pair_coeff = [
-    '1 1    195.91      1.0      0.0  ',   # Li–Li
-    '1 2    151.72      1.0      0.0  ',   # Li–Be
-    '1 3  593.72   0.26310    0.0  ',   # Li–F
-    '1 4    0.0      1.0      0.0  ',   # Li–H
-    '2 2    0.0      1.0      0.0  ',   # Be–Be
-    '2 3 1389.47   0.23604    0.0  ',   # Be–F
-    '2 4    0.0      1.0      0.0  ',   # Be–H
-    '3 3 1127.70   0.27533   14.835',   # F–F
-    '3 4   80.0    0.30000    0.0  ',   # F–H  
-    '4 4   50.0    0.30000    0.0  ',   # H–H
-]
-parameters = {
-    'units': 'metal',
-    'atom_style': 'charge',
-    'pair_style': f'born/coul/long {cutoff}',
-    'kspace_style': 'ewald 1.0e-5',
-    'pair_coeff': pair_coeff,
-}
-calc = LAMMPS(
-    specorder    = ['Li', 'Be', 'F', 'H'],
-    atom_style   = 'charge',
-    pair_style   = f'born/coul/long {cutoff}',
-    kspace_style = 'ewald 1.0e-5',
-    pair_coeff   = pair_coeff,
-)
-flibe_atoms.calc = calc
+# ── Buckingham pair coefficients ──────────────────────────────────────────────
+#  Pair   A (eV)     ρ (Å)     C (eV·Å⁶)
+#  Li-Li   0.0       1.0        0.0      cation-cation: Coulomb only
+#  Li-Be   0.0       1.0        0.0
+#  Li-F  593.72    0.26310      0.0
+#  Be-Be   0.0       1.0        0.0
+#  Be-F  1389.47   0.23604      0.0
+#  F-F   1127.70   0.27533     14.835
+#pair_coeff = [
+#    '1 1    0.0      1.0      0.0  ',   # Li–Li
+#    '1 2    0.0      1.0      0.0  ',   # Li–Be
+#    '1 3  593.72   0.26310    0.0  ',   # Li–F
+#    '2 2    0.0      1.0      0.0  ',   # Be–Be
+#    '2 3 1389.47   0.23604    0.0  ',   # Be–F
+#    '3 3 1127.70   0.27533   14.835',   # F–F
+#]
 
-# ── Energy minimisation to relax inserted atoms ───────────────────────────────
-print("\nMinimising energy to relax inserted H₂ positions (fmax=0.05 eV/Å)...")
-minimiser = BFGS(flibe_atoms, logfile='LiF_BeF2_H2_minimisation.log')
-minimiser.run(fmax=0.05, steps=300)
-print(f"  Epot = {flibe_atoms.get_potential_energy()/len(flibe_atoms):.4f} eV/atom")
+#calc = LAMMPS(
+#    specorder   = ['Li', 'Be', 'F'],
+#    atom_style  = 'charge',
+#    pair_style  = f'born/coul/long {cutoff}',
+#    kspace_style= 'ewald 1.0e-5',
+#    pair_coeff  = pair_coeff,
+#)
 
-# ── Reinitialise velocities ───────────────────────────────────────────────────
-MaxwellBoltzmannDistribution(flibe_atoms, temperature_K=TEMPERATURE)
-Stationary(flibe_atoms)
-ZeroRotation(flibe_atoms)
+calc = GPAW(**hse_params)
+rlx.calc = calc
 
-# ── NVT thermostat ────────────────────────────────────────────────────────────
+# ── Reinitialise velocities at target temperature ─────────────────────────────
+MaxwellBoltzmannDistribution(rlx, temperature_K=TEMPERATURE)
+Stationary(rlx)
+ZeroRotation(rlx)
+
+# ── NVT thermostat (Nosé-Hoover chain) ───────────────────────────────────────
 dyn = NoseHooverChainNVT(
-    flibe_atoms,
-    timestep      = TIMESTEP_FS * units.fs,
+    rlx,
+    timestep    = TIMESTEP_FS * units.fs,
     temperature_K = TEMPERATURE,
-    tdamp         = TDAMP_FS * units.fs,
-    trajectory    = TRAJ_FILE,
-    logfile       = LOG_FILE,
+    tdamp       = TDAMP_FS * units.fs,
+    trajectory  = MIX_TRAJ_EQUIL,
+    logfile     = MIX_LOG_EQUIL,
 )
-dyn.attach(MDLogger(dyn, flibe_atoms, "LiF_BeF2_H2_md.log"), interval=LOG_INTERVAL)
+dyn.attach(MDLogger(dyn, rlx, "classical_md.log"), interval=LOG_INTERVAL)
 
 # ── Accumulators ──────────────────────────────────────────────────────────────
 time_ps, epot_list, ekin_list, temp_list = [], [], [], []
@@ -191,37 +214,41 @@ n_blocks        = N_STEPS // steps_per_block
 
 def collect():
     time_ps.append(dyn.get_time() / (1000 * units.fs))
-    epot_list.append(flibe_atoms.get_potential_energy())
-    ekin_list.append(flibe_atoms.get_kinetic_energy())
-    temp_list.append(flibe_atoms.get_temperature())
-
+    epot_list.append(rlx.get_potential_energy())
+    ekin_list.append(rlx.get_kinetic_energy())
+    temp_list.append(rlx.get_temperature())
 dyn.attach(collect, interval=steps_per_block)
 
 # ── Production run ────────────────────────────────────────────────────────────
 print("\n" + "=" * 60)
 print(f"NVT Production  T={TEMPERATURE} K  dt={TIMESTEP_FS} fs  "
-      f"{N_STEPS} steps  ({N_STEPS*TIMESTEP_FS/1000:.1f} ps)")
+      f"steps={N_STEPS}  ({N_STEPS*TIMESTEP_FS/1000:.1f} ps)")
 print("=" * 60)
 
 for i in range(n_blocks):
     dyn.run(steps_per_block)
     if (i + 1) % 10 == 0:
-        print(f"  block {i+1:4d}/{n_blocks}  t={time_ps[-1]:.3f} ps  "
-              f"T={temp_list[-1]:.1f} K  "
-              f"Etot={(epot_list[-1]+ekin_list[-1])/len(flibe_atoms):.4f} eV/atom")
+        t   = time_ps[-1]
+        T   = temp_list[-1]
+        Ep  = epot_list[-1] / len(rlx)
+        print(f"  block {i+1:4d}/{n_blocks}  t={t:.3f} ps  "
+              f"T={T:.1f} K  Epot={Ep:.4f} eV/atom")
 
 etot_arr = np.array(epot_list) + np.array(ekin_list)
 
+# ── Summary ───────────────────────────────────────────────────────────────────
 print("\n" + "=" * 60)
 print("Production Summary")
 print("=" * 60)
-print(f"  T_mean  : {np.mean(temp_list):.1f} ± {np.std(temp_list):.1f} K")
-print(f"  E_drift : {(etot_arr[-1]-etot_arr[0])/len(flibe_atoms):.6f} eV/atom")
+print(f"  T_mean   : {np.mean(temp_list):.1f} ± {np.std(temp_list):.1f} K")
+print(f"  E_drift  : {(etot_arr[-1]-etot_arr[0])/len(rlx):.6f} eV/atom")
 
-# ── RDF from trajectory (last 50% of frames) ──────────────────────────────────
-print("\nComputing RDF...")
-traj        = Trajectory(TRAJ_FILE)
-n_traj      = len(traj)
+# ── RDF ───────────────────────────────────────────────────────────────────────
+print("\nComputing RDF from trajectory...")
+traj   = Trajectory(MIX_TRAJ_EQUIL, 'r')
+n_traj = len(traj)
+
+# Sample last 50% of trajectory for RDF
 sample_frames = [traj[i] for i in range(n_traj//2, n_traj, max(1, n_traj//200))]
 
 r_max   = cutoff - 0.5
@@ -230,146 +257,149 @@ r_edges = np.linspace(0, r_max, n_bins + 1)
 r_mid   = 0.5 * (r_edges[:-1] + r_edges[1:])
 dr      = r_edges[1] - r_edges[0]
 
-# Pairs to track — H-* pairs added
-pairs  = [('Li','F'), ('Be','F'), ('F','F'), ('H','F'), ('H','Li'), ('H','Be'), ('H','H')]
+# Collect all pair combinations of interest
+pairs = [('Li','F'), ('Be','F'), ('F','F'), ('Li','Li')]
 counts = {p: np.zeros(n_bins) for p in pairs}
-
-def _canonical(s1, s2):
-    """Return canonical (alphabetically sorted) pair key."""
-    return (s1, s2) if (s1, s2) in counts else ((s2, s1) if (s2, s1) in counts else None)
-
 n_frames_used = 0
+
 for frame in sample_frames:
-    pos      = frame.get_positions()
-    sym      = frame.get_chemical_symbols()
-    cd       = np.diag(frame.get_cell())
+    pos  = frame.get_positions()
+    sym  = frame.get_chemical_symbols()
+    cell = np.array(frame.get_cell())
+    vol  = frame.get_volume()
     n_frames_used += 1
-    for i in range(len(sym)):
-        for j in range(i + 1, len(sym)):
-            key = _canonical(sym[i], sym[j])
+
+    for i, (si, pi) in enumerate(zip(sym, pos)):
+        for j, (sj, pj) in enumerate(zip(sym, pos)):
+            if i >= j:
+                continue
+            key = None
+            if   (si=='Li' and sj=='F')  or (si=='F'  and sj=='Li'):  key=('Li','F')
+            elif (si=='Be' and sj=='F')  or (si=='F'  and sj=='Be'):  key=('Be','F')
+            elif  si=='F'  and sj=='F':                                key=('F','F')
+            elif  si=='Li' and sj=='Li':                               key=('Li','Li')
             if key is None:
                 continue
-            d = pos[j] - pos[i]
-            d -= cd * np.round(d / cd)
-            dist = np.linalg.norm(d)
+            dr_vec = pj - pi
+            # Minimum image
+            dr_vec -= cell[2][2] * np.round(dr_vec[2]/cell[2][2]) * np.array([0,0,1])
+            dr_vec -= cell[1][1] * np.round(dr_vec[1]/cell[1][1]) * np.array([0,1,0])
+            dr_vec -= cell[0][0] * np.round(dr_vec[0]/cell[0][0]) * np.array([1,0,0])
+            dist = np.linalg.norm(dr_vec)
             if dist < r_max:
                 idx = int(dist / dr)
                 if idx < n_bins:
                     counts[key][idx] += 1
 
 # Normalise to g(r)
-sym_all        = sample_frames[0].get_chemical_symbols()
-species_count  = {s: sym_all.count(s) for s in set(sym_all)}
-vol            = sample_frames[0].get_volume()
-rdf = {}
+sym_all   = sample_frames[0].get_chemical_symbols()
+species_count = {s: sym_all.count(s) for s in set(sym_all)}
+vol       = sample_frames[0].get_volume()
+rdf       = {}
 for (s1, s2), cnt in counts.items():
-    n1   = species_count.get(s1, 0)
-    n2   = species_count.get(s2, 0)
-    rho  = n2 / vol
-    shell = (4/3) * np.pi * (r_edges[1:]**3 - r_edges[:-1]**3)
-    norm  = n1 * rho * shell * n_frames_used
-    rdf[(s1, s2)] = cnt / np.where(norm > 0, norm, 1)
+    n1, n2 = species_count[s1], species_count[s2]
+    rho    = n2 / vol
+    shell  = (4/3) * np.pi * (r_edges[1:]**3 - r_edges[:-1]**3)
+    norm   = n1 * rho * shell * n_frames_used
+    rdf[(s1,s2)] = cnt / np.where(norm > 0, norm, 1)
 
-# ── MSD per species ───────────────────────────────────────────────────────────
+# ── MSD ───────────────────────────────────────────────────────────────────────
 print("Computing MSD...")
-msd = {s: [] for s in ('Li', 'Be', 'F', 'H')}
-pos0, idx = None, {}
+msd_Li, msd_Be, msd_F = [], [], []
+pos0 = None
+idx_Li = idx_Be = idx_F = np.array([], dtype=int)
 
-for frame in traj:
+for k, frame in enumerate(traj):
     sym = np.array(frame.get_chemical_symbols())
     pos = frame.get_positions()
     if pos0 is None:
-        pos0 = pos.copy()
-        for s in msd:
-            idx[s] = np.where(sym == s)[0]
+        pos0    = pos.copy()
+        sym0    = sym.copy()
+        idx_Li  = np.where(sym0 == 'Li')[0]
+        idx_Be  = np.where(sym0 == 'Be')[0]
+        idx_F   = np.where(sym0 == 'F' )[0]
     disp = pos - pos0
-    for s in msd:
-        if len(idx[s]):
-            msd[s].append(np.mean(np.sum(disp[idx[s]]**2, axis=1)))
-        else:
-            msd[s].append(0.0)
+    msd_Li.append(np.mean(np.sum(disp[idx_Li]**2, axis=1)))
+    msd_Be.append(np.mean(np.sum(disp[idx_Be]**2, axis=1)))
+    msd_F.append( np.mean(np.sum(disp[idx_F ]**2, axis=1)))
 
-msd_time = np.arange(len(msd['Li'])) * TIMESTEP_FS / 1000   # ps
+msd_time = np.arange(len(msd_Li)) * TIMESTEP_FS / 1000   # ps
 
-def diffusion_cm2s(msd_arr, time_arr):
-    """D from linear fit over last 50% of MSD trace. Returns cm²/s."""
-    n     = len(msd_arr)
-    slope = np.polyfit(time_arr[n//2:], np.array(msd_arr[n//2:]), 1)[0]  # Å²/ps
-    return slope / 6.0 * 1e-4 * 1e12 * 1e-20
+# Diffusion: D = MSD / (6t)  [Å²/ps → cm²/s]
+def diffusion_cm2s(msd, time_ps):
+    """Linear fit over last 50% to get D in cm²/s."""
+    n  = len(msd)
+    t  = time_ps[n//2:]
+    m  = np.array(msd[n//2:])
+    slope = np.polyfit(t, m, 1)[0]           # Å²/ps
+    return slope / 6.0 * 1e-4 * 1e12 * 1e-20 # cm²/s
 
 # ── Plots ──────────────────────────────────────────────────────────────────────
-fig, axes = plt.subplots(2, 3, figsize=(15, 9))
+fig = plt.figure(figsize=(14, 10))
 
 # 1. Energy
-ax = axes[0, 0]
-n  = len(flibe_atoms)
-ax.plot(time_ps, np.array(epot_list)/n, 'b-',  lw=1.2, label='Potential')
-ax.plot(time_ps, np.array(ekin_list)/n, 'r-',  lw=1.2, label='Kinetic')
-ax.plot(time_ps, etot_arr/n,            'k--', lw=1.2, label='Total')
-ax.set_xlabel('Time (ps)'); ax.set_ylabel('Energy/atom (eV)')
-ax.set_title('Energy'); ax.legend(fontsize=8); ax.grid(alpha=0.3)
+ax1 = fig.add_subplot(2, 3, 1)
+n   = len(rlx)
+ax1.plot(time_ps, np.array(epot_list)/n, 'b-',  lw=1.2, label='Potential')
+ax1.plot(time_ps, np.array(ekin_list)/n, 'r-',  lw=1.2, label='Kinetic')
+ax1.plot(time_ps, etot_arr/n,            'k--', lw=1.2, label='Total')
+ax1.set_xlabel('Time (ps)'); ax1.set_ylabel('Energy/atom (eV)')
+ax1.set_title('Energy'); ax1.legend(fontsize=8); ax1.grid(alpha=0.3)
 
 # 2. Temperature
-ax = axes[0, 1]
-ax.plot(time_ps, temp_list, 'g-', lw=1.2)
-ax.axhline(TEMPERATURE, color='r', ls='--', alpha=0.7, label=f'Target {TEMPERATURE} K')
-ax.set_xlabel('Time (ps)'); ax.set_ylabel('T (K)')
-ax.set_title('Temperature'); ax.legend(fontsize=8); ax.grid(alpha=0.3)
+ax2 = fig.add_subplot(2, 3, 2)
+ax2.plot(time_ps, temp_list, 'g-', lw=1.2)
+ax2.axhline(TEMPERATURE, color='r', ls='--', alpha=0.7, label=f'Target {TEMPERATURE} K')
+ax2.set_xlabel('Time (ps)'); ax2.set_ylabel('Temperature (K)')
+ax2.set_title('Temperature'); ax2.legend(fontsize=8); ax2.grid(alpha=0.3)
 
-# 3. RDF — split into host pairs and H pairs
-ax = axes[0, 2]
-host_pairs = [('Li','F'), ('Be','F'), ('F','F')]
-colors_host = ['steelblue', 'tomato', 'seagreen']
-for (s1, s2), c in zip(host_pairs, colors_host):
-    ax.plot(r_mid, rdf[(s1,s2)], color=c, lw=1.5, label=f'{s1}–{s2}')
-ax.set_xlabel('r (Å)'); ax.set_ylabel('g(r)')
-ax.set_title('RDF  (host pairs)'); ax.legend(fontsize=8)
-ax.grid(alpha=0.3); ax.set_xlim(0, r_max)
+# 3. RDF
+ax3 = fig.add_subplot(2, 3, 3)
+for (s1,s2), gr in rdf.items():
+    ax3.plot(r_mid, gr, lw=1.5, label=f'{s1}–{s2}')
+ax3.set_xlabel('r (Å)'); ax3.set_ylabel('g(r)')
+ax3.set_title('Radial Distribution Function')
+ax3.legend(fontsize=8); ax3.grid(alpha=0.3); ax3.set_xlim(0, r_max)
 
-# 4. RDF — H pairs
-ax = axes[1, 0]
-h_pairs  = [('H','F'), ('H','Li'), ('H','Be'), ('H','H')]
-colors_h = ['crimson', 'royalblue', 'darkorange', 'purple']
-for (s1, s2), c in zip(h_pairs, colors_h):
-    if (s1,s2) in rdf:
-        ax.plot(r_mid, rdf[(s1,s2)], color=c, lw=1.5, label=f'{s1}–{s2}')
-ax.set_xlabel('r (Å)'); ax.set_ylabel('g(r)')
-ax.set_title('RDF  (H pairs)'); ax.legend(fontsize=8)
-ax.grid(alpha=0.3); ax.set_xlim(0, r_max)
+# 4. MSD
+ax4 = fig.add_subplot(2, 3, 4)
+ax4.plot(msd_time, msd_Li, 'b-',  lw=1.2, label='Li')
+ax4.plot(msd_time, msd_Be, 'r-',  lw=1.2, label='Be')
+ax4.plot(msd_time, msd_F,  'g-',  lw=1.2, label='F')
+ax4.set_xlabel('Time (ps)'); ax4.set_ylabel('MSD (Å²)')
+ax4.set_title('Mean Square Displacement'); ax4.legend(fontsize=8); ax4.grid(alpha=0.3)
 
-# 5. MSD per species
-ax = axes[1, 1]
-colors_msd = {'Li': 'steelblue', 'Be': 'tomato', 'F': 'seagreen', 'H': 'darkorange'}
-for s, c in colors_msd.items():
-    if any(v > 0 for v in msd[s]):
-        ax.plot(msd_time, msd[s], color=c, lw=1.5, label=s)
-ax.set_xlabel('Time (ps)'); ax.set_ylabel('MSD (Å²)')
-ax.set_title('Mean Square Displacement'); ax.legend(fontsize=9); ax.grid(alpha=0.3)
+# 5. Temperature histogram
+ax5 = fig.add_subplot(2, 3, 5)
+ax5.hist(temp_list, bins=25, color='steelblue', alpha=0.7, edgecolor='k')
+ax5.axvline(TEMPERATURE, color='r', ls='--', label='Target')
+ax5.axvline(float(np.mean(temp_list)), color='b', ls='-',
+            label=f'Mean {np.mean(temp_list):.0f} K')
+ax5.set_xlabel('T (K)'); ax5.set_ylabel('Frequency')
+ax5.set_title('Temperature Distribution'); ax5.legend(fontsize=8)
 
-# 6. Summary
-ax = axes[1, 2]
-ax.axis('off')
-d_lines = []
-for s in ('Li', 'Be', 'F', 'H'):
-    if any(v > 0 for v in msd[s]):
-        D = diffusion_cm2s(msd[s], msd_time)
-        d_lines.append(f"  D({s:<2s}) = {D:.3e} cm²/s")
+# 6. Diffusion summary text
+ax6 = fig.add_subplot(2, 3, 6)
+ax6.axis('off')
 lines = [
-    f"System : LiF·BeF2 + {N_H_PAIRS} H2  ({len(flibe_atoms)} atoms)",
-    f"T      : {TEMPERATURE} K",
-    f"Steps  : {N_STEPS}  ({N_STEPS*TIMESTEP_FS/1000:.1f} ps)",
-    f"dt     : {TIMESTEP_FS} fs",
+    f"System:  LiF·BeF2  ({len(rlx)} atoms)",
+    f"T:       {TEMPERATURE} K",
+    f"Steps:   {N_STEPS}  ({N_STEPS*TIMESTEP_FS/1000:.1f} ps)",
+    f"dt:      {TIMESTEP_FS} fs",
     "",
-    f"T_mean : {np.mean(temp_list):.1f} ± {np.std(temp_list):.1f} K",
-    f"E_drift: {(etot_arr[-1]-etot_arr[0])/len(flibe_atoms):.5f} eV/atom",
+    f"T_mean:  {np.mean(temp_list):.1f} ± {np.std(temp_list):.1f} K",
+    f"E_drift: {(etot_arr[-1]-etot_arr[0])/len(rlx):.5f} eV/atom",
     "",
-    "Diffusion (last 50% MSD linear fit):",
-] + d_lines
-ax.text(0.05, 0.95, "\n".join(lines), transform=ax.transAxes,
-        va='top', fontsize=9, family='monospace')
+    "Diffusion (last 50% MSD fit):",
+    f"  D(Li) = {diffusion_cm2s(msd_Li, msd_time):.3e} cm²/s",
+    f"  D(Be) = {diffusion_cm2s(msd_Be, msd_time):.3e} cm²/s",
+    f"  D(F)  = {diffusion_cm2s(msd_F,  msd_time):.3e} cm²/s",
+]
+ax6.text(0.05, 0.95, "\n".join(lines), transform=ax6.transAxes,
+         va='top', fontsize=9, family='monospace')
 
-plt.suptitle(f'Classical MD  LiF·BeF2+H2  T={TEMPERATURE} K  (LAMMPS/ASE)', fontsize=12)
+plt.suptitle(f'Classical MD  LiF·BeF2  T={TEMPERATURE} K  (LAMMPS/ASE)', fontsize=12)
 plt.tight_layout()
-plt.savefig(PLOT_FILE, dpi=150, bbox_inches='tight')
-print(f"\nPlot saved  → {PLOT_FILE}")
-print(f"Trajectory  → {TRAJ_FILE}")
+plt.savefig(MIX_PLOT_FILE, dpi=150, bbox_inches='tight')
+print(f"\nPlot saved → {MIX_PLOT_FILE}")
+print(f"Trajectory → {MIX_TRAJ_EQUIL}")

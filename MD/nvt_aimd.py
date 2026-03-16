@@ -67,9 +67,11 @@ c_bef2 = 5.18
 bef2_cell =[(a_bef2, 0, 0),
              (-a_bef2/2, a_bef2*np.sqrt(3)/2, 0),
              (0, 0, c_bef2)]
-lif_atoms  = bulk('LiF', crystalstructure='rocksalt', a=4.03, cubic=True)
+lif_atoms  = bulk('LiF', crystalstructure='rocksalt', a=3.97, cubic=True)
+lif_atoms: Atoms = lif_atoms.repeat([1, 1, 2])  # 8 → 16 atoms = 8 formula units
 lif_atoms.set_initial_charges([1, -1] * (len(lif_atoms) // 2))
-lif_atoms.set_initial_magnetic_moments([1, 1, 1, 1, -1, -1, -1, -1])
+lif_atoms.set_initial_magnetic_moments([1, -1] * (len(lif_atoms) // 2))
+lif_cell_params = lif_atoms.cell.cellpar()
 bef2_atoms = Atoms(
     symbols=['Be', 'Be', 'F', 'F', 'F', 'F'],
     scaled_positions=[
@@ -82,21 +84,25 @@ bef2_atoms = Atoms(
     ],
     cell=bef2_cell,
     pbc=True)
-bef2_atoms = bef2_atoms.repeat([1, 1, 2])  # 6 → 12 atoms
-bef2_atoms.set_initial_charges([2, 2, -1, -1, -1, -1] * 2)
-bef2_atoms.set_initial_magnetic_moments([2, 2, -1, -1, -1, -1] * 2)
-
-print(f"LiF  : {len(lif_atoms)} atoms  cell params={lif_atoms.cell.cellpar}",
-      f" Chemical Symbol Order: {lif_atoms.get_chemical_symbols()}",
-      f"  initial Volumes: {lif_atoms.get_volume():.2f} Å³", 
-      f"  initial magmoms: {lif_atoms.get_initial_magnetic_moments()}",
-      f"  initial charges: {lif_atoms.get_initial_charges()}")
-print(f"BeF2 : {len(bef2_atoms)} atoms  cell params={bef2_atoms.cell.cellpar}",
-      f" Chemical Symbol Order: {bef2_atoms.get_chemical_symbols()}",
-      f"  initial Volumes: {bef2_atoms.get_volume():.2f} Å³",
-      f"  initial magmoms: {bef2_atoms.get_initial_magnetic_moments()}",
-      f"  initial charges: {bef2_atoms.get_initial_charges()}")
-
+bef2_atoms: Atoms = bef2_atoms.repeat((1,1,2))
+bef2_atoms.set_initial_charges([2, 2, -1, -1, -1, -1]*2)
+bef2_atoms.set_initial_magnetic_moments([2, 2, -1, -1, -1, -1]*2)
+bef2_cell_params = bef2_atoms.cell.cellpar()
+print(f"""
+LiF  : {len(lif_atoms)} atoms  a={lif_cell_params[0]:.2f} b={lif_cell_params[1]:.2f} c={lif_cell_params[2]:.2f},
+        alpha={lif_cell_params[3]:.2f} beta={lif_cell_params[4]:.2f} gamma={lif_cell_params[5]:.2f},
+        Chemical Symbol Order: {lif_atoms.get_chemical_symbols()},
+        initial Volumes: {lif_atoms.get_volume():.2f} Å³, 
+        initial magmoms: {lif_atoms.get_initial_magnetic_moments()},
+        initial charges: {lif_atoms.get_initial_charges()}""")
+print(f"""
+BeF2 : {len(bef2_atoms)} atoms  a={bef2_cell_params[0]:.2f} b={bef2_cell_params[1]:.2f} c={bef2_cell_params[2]:.2f},
+        alpha={bef2_cell_params[3]:.2f} beta={bef2_cell_params[4]:.2f} gamma={bef2_cell_params[5]:.2f},
+        Chemical Symbol Order: {bef2_atoms.get_chemical_symbols()},
+        initial Volumes: {bef2_atoms.get_volume():.2f} Å³,
+        initial magmoms: {bef2_atoms.get_initial_magnetic_moments()},
+        initial charges: {bef2_atoms.get_initial_charges()}"""
+)
 
 # ── GPAW calculator factory ───────────────────────────────────────────────────
 def make_gpaw(txt='-', screen=SCREEN, ecut=ECUT_EV, hund=False) -> GPAW:
@@ -126,7 +132,7 @@ def relax(
     gpwname: str = 'rlx.gpw',
 ) -> Atoms:
     orig_atoms = atoms
-    done_file = gpwname.replace('.gpw', '_relaxed.traj')
+    done_file = gpwname.replace('.gpw', '.traj')
     if os.path.exists(done_file):
         relaxed = read(done_file, index=0)
         print(f"Loaded converged structure from {done_file}")
@@ -164,8 +170,8 @@ def relax(
     orig_atoms.set_cell(relaxed.get_cell(), scale_atoms=False)
     orig_atoms.set_positions(relaxed.get_positions())
     cell = relaxed.cell.cellpar()
-    print(f"  Lattice: a={cell[0]:.4f} b={cell[1]:.4f} c={cell[2]:.4f} Å  "
-          f"α={cell[3]:.2f} β={cell[4]:.2f} γ={cell[5]:.2f}° Volume={relaxed.get_volume():.2f} Å³")
+    print(f"""  Lattice: a={cell[0]:.4f} b={cell[1]:.4f} c={cell[2]:.4f} Å,
+          α={cell[3]:.2f} β={cell[4]:.2f} γ={cell[5]:.2f}° Volume={relaxed.get_volume():.2f} Å³""")
     return relaxed
 
 

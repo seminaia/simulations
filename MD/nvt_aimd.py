@@ -32,6 +32,7 @@ from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
 from ase.optimize import BFGS
 from ase.units import Bohr
 from ase.visualize import view
+from ase.spacegroup import crystal
 from gpaw import GPAW, restart
 
 # ── Parameters ────────────────────────────────────────────────────────────────
@@ -62,7 +63,7 @@ MIX_PLOT_FILE  = "nvt_results.png"
 print("=" * 60)
 print("Building LiF and BeF2 supercells")
 print("=" * 60)
-a_bef2 = 4.77
+a_bef2 = 4.67
 c_bef2 = 5.18
 bef2_cell =[(a_bef2, 0, 0),
              (-a_bef2/2, a_bef2*np.sqrt(3)/2, 0),
@@ -72,21 +73,22 @@ lif_atoms: Atoms = lif_atoms.repeat([1, 1, 2])  # 8 → 16 atoms = 8 formula uni
 lif_atoms.set_initial_charges([1, -1] * (len(lif_atoms) // 2))
 lif_atoms.set_initial_magnetic_moments([1, -1] * (len(lif_atoms) // 2))
 lif_cell_params = lif_atoms.cell.cellpar()
-bef2_atoms = Atoms(
-    symbols=['Be', 'Be', 'F', 'F', 'F', 'F'],
-    scaled_positions=[
-        (0.0, 0.0, 0.0),
-        (1/3, 2/3, 0.5),
-        (0.2, 0.4, 0.25),
-        (0.8, 0.6, 0.75),
-        (0.4, 0.2, 0.75),
-        (0.6, 0.8, 0.25),
-    ],
-    cell=bef2_cell,
-    pbc=True)
+bef2_atoms = crystal('BeF2', basis=[(0.465848, 0, 1/3), (0.41116, 0.277282, 0.222273)], spacegroup=152, cellpar = [a_bef2,a_bef2,c_bef2,90,90,120], pbc=True)
+# bef2_atoms = Atoms(
+    # symbols=['Be', 'Be', 'F', 'F', 'F', 'F'],
+    # scaled_positions=[
+        # (0.0, 0.0, 0.0),
+        # (1/3, 2/3, 0.5),
+        # (0.2, 0.4, 0.25),
+        # (0.8, 0.6, 0.75),
+        # (0.4, 0.2, 0.75),
+        # (0.6, 0.8, 0.25),
+    # ],
+    # cell=bef2_cell,
+    # pbc=True)
 bef2_atoms: Atoms = bef2_atoms.repeat((1,1,2))
-bef2_atoms.set_initial_charges([2, 2, -1, -1, -1, -1]*2)
-bef2_atoms.set_initial_magnetic_moments([2, 2, -1, -1, -1, -1]*2)
+bef2_atoms.set_initial_charges([2, -1, -1]*(len(bef2_atoms) // 3))
+bef2_atoms.set_initial_magnetic_moments([2, -1,-1]*(len(bef2_atoms) // 3))
 bef2_cell_params = bef2_atoms.cell.cellpar()
 print(f"""
 LiF  : {len(lif_atoms)} atoms  a={lif_cell_params[0]:.2f} b={lif_cell_params[1]:.2f} c={lif_cell_params[2]:.2f},

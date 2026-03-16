@@ -63,47 +63,43 @@ MIX_PLOT_FILE  = "nvt_results.png"
 print("=" * 60)
 print("Building LiF and BeF2 supercells")
 print("=" * 60)
+charges = {'Be':2, 'F':-1, 'Li':1}
+magmoms = {'Be': 1, 'F':-1,'Li':1}
 a_bef2 = 4.67
 c_bef2 = 5.18
 bef2_cell =[(a_bef2, 0, 0),
              (-a_bef2/2, a_bef2*np.sqrt(3)/2, 0),
              (0, 0, c_bef2)]
 lif_atoms  = bulk('LiF', crystalstructure='rocksalt', a=3.97, cubic=True)
-lif_atoms: Atoms = lif_atoms.repeat([1, 1, 2])  # 8 → 16 atoms = 8 formula units
-lif_atoms.set_initial_charges([1, -1] * (len(lif_atoms) // 2))
-lif_atoms.set_initial_magnetic_moments([1, -1] * (len(lif_atoms) // 2))
+lif_atoms: Atoms = lif_atoms.repeat([1, 1, 3])  # 8 → 24 atoms = 12 formula units
+lif_charges = [charges[s] for s in lif_atoms.get_chemical_symbols()]
+lif_magmoms = [magmoms[s] for s in lif_atoms.get_chemical_symbols()]
+lif_atoms.set_initial_charges(lif_charges)
+lif_atoms.set_initial_magnetic_moments(lif_magmoms)
 lif_cell_params = lif_atoms.cell.cellpar()
+
 bef2_atoms = crystal('BeF2', basis=[(0.465848, 0, 1/3), (0.41116, 0.277282, 0.222273)], spacegroup=152, cellpar = [a_bef2,a_bef2,c_bef2,90,90,120], pbc=True)
-# bef2_atoms = Atoms(
-    # symbols=['Be', 'Be', 'F', 'F', 'F', 'F'],
-    # scaled_positions=[
-        # (0.0, 0.0, 0.0),
-        # (1/3, 2/3, 0.5),
-        # (0.2, 0.4, 0.25),
-        # (0.8, 0.6, 0.75),
-        # (0.4, 0.2, 0.75),
-        # (0.6, 0.8, 0.25),
-    # ],
-    # cell=bef2_cell,
-    # pbc=True)
 bef2_atoms: Atoms = bef2_atoms.repeat((1,1,2))
-bef2_atoms.set_initial_charges([2, -1, -1]*(len(bef2_atoms) // 3))
-bef2_atoms.set_initial_magnetic_moments([2, -1,-1]*(len(bef2_atoms) // 3))
+bef2_charges = [charges[s] for s in bef2_atoms.get_chemical_symbols()]
+bef2_magmoms = [magmoms[s] for s in bef2_atoms.get_chemical_symbols()]
+bef2_atoms.set_initial_charges(bef2_charges)
+bef2_atoms.set_initial_magnetic_moments(bef2_magmoms)
 bef2_cell_params = bef2_atoms.cell.cellpar()
+
 print(f"""
 LiF  : {len(lif_atoms)} atoms  a={lif_cell_params[0]:.2f} b={lif_cell_params[1]:.2f} c={lif_cell_params[2]:.2f},
         alpha={lif_cell_params[3]:.2f} beta={lif_cell_params[4]:.2f} gamma={lif_cell_params[5]:.2f},
-        Chemical Symbol Order: {lif_atoms.get_chemical_symbols()},
         initial Volumes: {lif_atoms.get_volume():.2f} Å³, 
-        initial magmoms: {lif_atoms.get_initial_magnetic_moments()},
-        initial charges: {lif_atoms.get_initial_charges()}""")
+        Chemical Symbol Order: {lif_atoms.get_chemical_symbols()},
+        initial magmoms:       {lif_atoms.get_initial_magnetic_moments()},
+        initial charges:       {lif_atoms.get_initial_charges()}""")
 print(f"""
 BeF2 : {len(bef2_atoms)} atoms  a={bef2_cell_params[0]:.2f} b={bef2_cell_params[1]:.2f} c={bef2_cell_params[2]:.2f},
         alpha={bef2_cell_params[3]:.2f} beta={bef2_cell_params[4]:.2f} gamma={bef2_cell_params[5]:.2f},
-        Chemical Symbol Order: {bef2_atoms.get_chemical_symbols()},
         initial Volumes: {bef2_atoms.get_volume():.2f} Å³,
-        initial magmoms: {bef2_atoms.get_initial_magnetic_moments()},
-        initial charges: {bef2_atoms.get_initial_charges()}"""
+        Chemical Symbol Order: {bef2_atoms.get_chemical_symbols()},
+        initial magmoms:       {bef2_atoms.get_initial_magnetic_moments()},
+        initial charges:       {bef2_atoms.get_initial_charges()}"""
 )
 
 # ── GPAW calculator factory ───────────────────────────────────────────────────
@@ -137,13 +133,24 @@ def relax(
     done_file = gpwname.replace('.gpw', '.traj')
     if os.path.exists(done_file):
         relaxed = read(done_file, index=0)
-        print(f"Loaded converged structure from {done_file}")
+        if len(relaxed) != len(orig_atoms):
+            print(f"Cached structure has {len(relaxed)} atoms but current structure has {len(orig_atoms)}. Ignoring cache.")
+            relaxed = None
+        else:
+            print(f"Loaded converged structure from {done_file}")
     else:
+        relaxed = None
+    if relaxed is None:
         if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
             try:
                 atoms, calc = restart(gpwname, txt=calculator_params.get("txt", "gpaw.log"))
-                atoms.calc = calc
-                print(f"Restarted from {gpwname}")
+                if len(atoms) != len(orig_atoms):
+                    print(f"Cached GPW has {len(atoms)} atoms but current structure has {len(orig_atoms)}. Starting fresh.")
+                    atoms = orig_atoms
+                    atoms.calc = GPAW(**calculator_params)
+                else:
+                    atoms.calc = calc
+                    print(f"Restarted from {gpwname}")
             except Exception as e:
                 print(f"Restart failed ({e}), starting fresh.")
                 atoms.calc = GPAW(**calculator_params)
@@ -269,26 +276,28 @@ hse_params = {
     "txt": "hse_relax.log",
     "xc": {"name": "HYB_GGA_XC_HSE06", "omega": SCREEN, "fraction": 0.25, "backend": "pw"},
 }
-
 lif_relax  = relax(lif_atoms,  pbe_params, fmax=0.01, fixcell=False,
                    logname=LIF_RLX_LOG, gpwname=LIF_GPW_FILE)
 view(lif_relax, repeat=(2, 2, 2))
+lif_relax.write("LiF_aimd_relaxed.xyz")
+lif_relax_cellparams = lif_relax.cell.cellpar()
+print(f"""
+Relaxed LiF  Epot = {lif_relax.get_potential_energy()/len(lif_relax):.4f} eV/atom
+       a= {lif_relax_cellparams[0]:.2f}, b={lif_relax_cellparams[1]:.2f}, c={lif_relax_cellparams[2]:.2f}, 
+       alpha={lif_relax_cellparams[3]:.2f}, beta={lif_relax_cellparams[4]:.2f}, gamma = {lif_relax_cellparams[5]:.2f}
+       Relaxed Volume = {lif_relax.get_volume():.2f} Å³ """)
+
 bef2_relax = relax(bef2_atoms, pbe_params, fmax=0.01, fixcell=False,
                    logname=BEF2_RLX_LOG, gpwname=BEF2_GPW_FILE)
 view(bef2_relax, repeat=(2, 2, 2))
-
-print(f" Relaxed LiF  Epot = {lif_relax.get_potential_energy()/len(lif_relax):.4f} eV/atom"
-      f" Relaxed Cell Params = {lif_relax.cell.cellpar}"
-      f" Relaxed Volume = {lif_relax.get_volume():.2f} Å³"
-      f" Relaxed magmoms = {lif_relax.get_magnetic_moments()}"
-      f" Relaxed Charges = {lif_relax.get_charges()}")
-print(f" Relaxed BeF2 Epot = {bef2_relax.get_potential_energy()/len(bef2_relax):.4f} eV/atom"
-      f" Relaxed Cell Params = {bef2_relax.cell.cellpar}"
-      f" Relaxed Volume = {bef2_relax.get_volume():.2f} Å³"
-      f" Relaxed magmoms = {bef2_relax.get_magnetic_moments()}"
-      f" Relaxed Charges = {bef2_relax.get_charges()}")
-lif_relax.write("LiF_aimd_relaxed.xyz")
 bef2_relax.write("BeF2_aimd_relaxed.xyz")
+bef2_relax_cellparams = bef2_relax.cell.cellpar()
+print(f""" 
+Relaxed BeF2  Epot = {bef2_relax.get_potential_energy()/len(bef2_relax):.4f} eV/atom
+       a= {bef2_relax_cellparams[0]:.2f}, b={bef2_relax_cellparams[1]:.2f}, c={bef2_relax_cellparams[2]:.2f}, 
+       alpha={bef2_relax_cellparams[3]:.2f}, beta={bef2_relax_cellparams[4]:.2f}, gamma = {bef2_relax_cellparams[5]:.2f}
+       Relaxed Volume = {bef2_relax.get_volume()} Å³
+       """)
 
 # ── Step 2: NVT equilibration ─────────────────────────────────────────────────
 print("\n" + "=" * 60)

@@ -2,3 +2,13 @@
 *.traj
 *.gpw
 *.log
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Generated simulation outputs
+Outputs/
+log.lammps
+*.lammpstrj
+*.xyz

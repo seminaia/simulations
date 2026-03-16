@@ -136,7 +136,7 @@ base_params = {
                     "eigenstates": 1e-8,
                     "energy": 1e-6, 
                     "forces": 1e-4},
-    "eigensolver": {"name": "RMMDIIS", 
+    "eigensolver": {"name": "dav", 
                     "niter": 5},
     "maxiter": 500,
     "mixer": {"backend": "pulay", 
@@ -146,15 +146,11 @@ base_params = {
               "weight": 100},
     "mode": {"ecut": 520, "name": "pw"},
     "nbands": "nao",
-    "poissonsolver": {"name":"fft"},
-    "symmetry": "off",
+#    "symmetry": "off",
     "occupations": {"name": "fermi-dirac",
                     "width": 0.01},
     "txt": None,  # Will be set per material
-    "xc": {'name': 'LCY-PBE',
-           'fraction': 0.25,
-           'omega': 0.11,
-           'backend': 'pw'}
+    "xc": 'PBE',
 }
 
 # ============================================================
@@ -171,7 +167,7 @@ LiF_atoms = bulk('LiF', crystalstructure='rocksalt', a=a_lif, cubic=True)
 LiF_params = base_params.copy()
 LiF_params["txt"] = "LiF_rlx.txt"
 # LiF is an insulator, so moderate k-points are fine
-LiF_params["kpts"] = {"gamma": True, "size": [4, 4, 4]}
+LiF_params["kpts"] = {"gamma": True, "size": [2, 2, 2]}
 
 LiF_rlx_atoms = relax(LiF_atoms,
                       LiF_params,
@@ -189,9 +185,6 @@ bef2_cell = [[a_bef2, 0, 0],
              [-a_bef2/2, a_bef2*np.sqrt(3)/2, 0],
              [0, 0, c_bef2]]
 
-# Positions for beta-quartz structure (SiO2 analog, 3 atoms total)
-# Si at (0,0,0) and (1/3,2/3,1/2) replaced with Be
-# O positions become F
 bef2_scaled_positions = [
     (0.0, 0.0, 0.0),        # Be1
     (1/3, 2/3, 0.5),        # Be2
@@ -208,7 +201,7 @@ BeF2_atoms = Atoms(symbols=bef2_symbols,
                    pbc=True)
 BeF2_params = base_params.copy()
 BeF2_params["txt"] = "BeF2_rlx.txt"
-BeF2_params["kpts"] = {"gamma": True, "size": [3, 3, 2]}  # Hexagonal cell
+BeF2_params["kpts"] = {"gamma": True, "size": [1, 1, 1]}  # Hexagonal cell
 BeF2_rlx_atoms = relax(BeF2_atoms,
                        BeF2_params,
                        fmax=0.01,

@@ -11,6 +11,7 @@ Thermophysical properties (Porter et al. 2022, Fig. 3):
   - MSD         : mean square displacement per species
   - Diffusion D : Green-Kubo / MSD slope (Eq. 10)
   - Cv          : heat capacity at constant volume (Eq. 8)
+  - ADF         : angular distribution function (Eq. 23)
 """
 
 import os
@@ -29,7 +30,6 @@ from ase.md import MDLogger
 from ase.md.nose_hoover_chain import NoseHooverChainNVT
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary, ZeroRotation
 from ase.optimize import BFGS
-from ase.spacegroup import crystal
 from ase.units import Bohr
 from ase.visualize import view
 from gpaw import GPAW, restart
@@ -62,18 +62,40 @@ MIX_PLOT_FILE  = "nvt_results.png"
 print("=" * 60)
 print("Building LiF and BeF2 supercells")
 print("=" * 60)
-
+a_bef2 = 4.77
+c_bef2 = 5.18
+bef2_cell =[(a_bef2, 0, 0),
+             (-a_bef2/2, a_bef2*np.sqrt(3)/2, 0),
+             (0, 0, c_bef2)]
 lif_atoms  = bulk('LiF', crystalstructure='rocksalt', a=4.03, cubic=True)
-lif_atoms.set_initial_charges([-1, 1] * (len(lif_atoms) // 2))
-lif_atoms.set_initial_magnetic_moments([1, -1, 1, -1, 0.5, -0.5, 0.5, -0.5])
-bef2_atoms = crystal('BeF2', spacegroup=152,
-                     cellpar=[4.73, 4.73, 5.18, 90, 90, 120],
-                     basis=[(0.5, 0, 0.33), (0.41, 0.28, 0.22)])
-bef2_atoms.set_initial_magnetic_moments([2, -2, 2, -1, 1, -1, 1, -1, 1, -1, 1, -1])
-bef2_atoms.set_initial_charges([-1, -1, 2] * (len(bef2_atoms) // 3))
+lif_atoms.set_initial_charges([1, -1] * (len(lif_atoms) // 2))
+lif_atoms.set_initial_magnetic_moments([1, 1, 1, 1, -1, -1, -1, -1])
+bef2_atoms = Atoms(
+    symbols=['Be', 'Be', 'F', 'F', 'F', 'F'],
+    scaled_positions=[
+        (0.0, 0.0, 0.0),
+        (1/3, 2/3, 0.5),
+        (0.2, 0.4, 0.25),
+        (0.8, 0.6, 0.75),
+        (0.4, 0.2, 0.75),
+        (0.6, 0.8, 0.25),
+    ],
+    cell=bef2_cell,
+    pbc=True)
+bef2_atoms = bef2_atoms.repeat([1, 1, 2])  # 6 → 12 atoms
+bef2_atoms.set_initial_charges([2, 2, -1, -1, -1, -1] * 2)
+bef2_atoms.set_initial_magnetic_moments([2, 2, -1, -1, -1, -1] * 2)
 
-print(f"LiF  : {len(lif_atoms)} atoms  cell={np.diag(lif_atoms.cell)} Å")
-print(f"BeF2 : {len(bef2_atoms)} atoms  cell={np.diag(bef2_atoms.cell)} Å")
+print(f"LiF  : {len(lif_atoms)} atoms  cell params={lif_atoms.cell.cellpar}",
+      f" Chemical Symbol Order: {lif_atoms.get_chemical_symbols()}",
+      f"  initial Volumes: {lif_atoms.get_volume():.2f} Å³", 
+      f"  initial magmoms: {lif_atoms.get_initial_magnetic_moments()}",
+      f"  initial charges: {lif_atoms.get_initial_charges()}")
+print(f"BeF2 : {len(bef2_atoms)} atoms  cell params={bef2_atoms.cell.cellpar}",
+      f" Chemical Symbol Order: {bef2_atoms.get_chemical_symbols()}",
+      f"  initial Volumes: {bef2_atoms.get_volume():.2f} Å³",
+      f"  initial magmoms: {bef2_atoms.get_initial_magnetic_moments()}",
+      f"  initial charges: {bef2_atoms.get_initial_charges()}")
 
 
 # ── GPAW calculator factory ───────────────────────────────────────────────────
@@ -143,7 +165,7 @@ def relax(
     orig_atoms.set_positions(relaxed.get_positions())
     cell = relaxed.cell.cellpar()
     print(f"  Lattice: a={cell[0]:.4f} b={cell[1]:.4f} c={cell[2]:.4f} Å  "
-          f"α={cell[3]:.2f} β={cell[4]:.2f} γ={cell[5]:.2f}°")
+          f"α={cell[3]:.2f} β={cell[4]:.2f} γ={cell[5]:.2f}° Volume={relaxed.get_volume():.2f} Å³")
     return relaxed
 
 
@@ -154,6 +176,60 @@ def diffusion_cm2s(msd, time_ps):
     m = np.array(msd[n // 2:])
     slope = np.polyfit(t, m, 1)[0]           # Å²/ps
     return slope / 6.0 * 1e-4 * 1e12 * 1e-20  # cm²/s
+
+
+def compute_adf(frames, triplets, r_cut=3.0, n_bins=180):
+    """Angular Distribution Function (Porter et al. 2022, Eq. 23).
+
+    For each triplet (central, nbr1, nbr2): find all neighbour pairs (j, k)
+    within r_cut of centre atom i, with types nbr1 and nbr2 respectively (j≠k);
+    compute the j-i-k angle.  Returns (theta_deg array, adf dict peak-normalised).
+    """
+    theta_edges = np.linspace(0, 180, n_bins + 1)
+    theta_mid   = 0.5 * (theta_edges[:-1] + theta_edges[1:])
+    adf = {t: np.zeros(n_bins) for t in triplets}
+    for frame in frames:
+        pos  = frame.get_positions()
+        sym  = np.array(frame.get_chemical_symbols())
+        cell = np.array(frame.get_cell())
+        L    = np.array([cell[0, 0], cell[1, 1], cell[2, 2]])
+        for (c_type, n1_type, n2_type) in triplets:
+            idx_c  = np.where(sym == c_type)[0]
+            idx_n1 = np.where(sym == n1_type)[0]
+            idx_n2 = np.where(sym == n2_type)[0]
+            for ic in idx_c:
+                pc = pos[ic]
+                vecs_n1 = []
+                for j in idx_n1:
+                    if j == ic:
+                        continue
+                    dv = pos[j] - pc
+                    dv -= L * np.round(dv / L)
+                    d  = np.linalg.norm(dv)
+                    if 0 < d < r_cut:
+                        vecs_n1.append((j, dv, d))
+                vecs_n2 = []
+                for k in idx_n2:
+                    if k == ic:
+                        continue
+                    dv = pos[k] - pc
+                    dv -= L * np.round(dv / L)
+                    d  = np.linalg.norm(dv)
+                    if 0 < d < r_cut:
+                        vecs_n2.append((k, dv, d))
+                for (j, v1, d1) in vecs_n1:
+                    for (k, v2, d2) in vecs_n2:
+                        if j == k:
+                            continue
+                        cos_t = np.clip(np.dot(v1, v2) / (d1 * d2), -1.0, 1.0)
+                        theta = np.degrees(np.arccos(cos_t))
+                        ib    = min(int(theta / 180.0 * n_bins), n_bins - 1)
+                        adf[(c_type, n1_type, n2_type)][ib] += 1
+    for t in adf:
+        peak = adf[t].max()
+        if peak > 0:
+            adf[t] /= peak
+    return theta_mid, adf
 
 
 # ── Step 1: Geometry relaxation ───────────────────────────────────────────────
@@ -193,8 +269,16 @@ bef2_relax = relax(bef2_atoms, pbe_params, fmax=0.01, fixcell=False,
                    logname=BEF2_RLX_LOG, gpwname=BEF2_GPW_FILE)
 view(bef2_relax, repeat=(2, 2, 2))
 
-print(f"  LiF  Epot = {lif_relax.get_potential_energy()/len(lif_relax):.4f} eV/atom")
-print(f"  BeF2 Epot = {bef2_relax.get_potential_energy()/len(bef2_relax):.4f} eV/atom")
+print(f" Relaxed LiF  Epot = {lif_relax.get_potential_energy()/len(lif_relax):.4f} eV/atom"
+      f" Relaxed Cell Params = {lif_relax.cell.cellpar}"
+      f" Relaxed Volume = {lif_relax.get_volume():.2f} Å³"
+      f" Relaxed magmoms = {lif_relax.get_magnetic_moments()}"
+      f" Relaxed Charges = {lif_relax.get_charges()}")
+print(f" Relaxed BeF2 Epot = {bef2_relax.get_potential_energy()/len(bef2_relax):.4f} eV/atom"
+      f" Relaxed Cell Params = {bef2_relax.cell.cellpar}"
+      f" Relaxed Volume = {bef2_relax.get_volume():.2f} Å³"
+      f" Relaxed magmoms = {bef2_relax.get_magnetic_moments()}"
+      f" Relaxed Charges = {bef2_relax.get_charges()}")
 lif_relax.write("LiF_aimd_relaxed.xyz")
 bef2_relax.write("BeF2_aimd_relaxed.xyz")
 
@@ -379,6 +463,11 @@ Cv_total     = np.var(etot_arr) / (units.kB * TEMPERATURE ** 2)   # eV/K
 Cv_per_atom  = Cv_total / n                                         # eV/K/atom
 Cv_J         = Cv_per_atom * 1.602e-19                              # J/K/atom
 
+# ── ADF (Angular Distribution Function, Porter et al. Eq. 23) ─────────────────
+print("Computing ADF...")
+ADF_TRIPLETS = [('Be', 'F', 'F'), ('Li', 'F', 'F'), ('F', 'Be', 'Be')]
+adf_theta, adf_data = compute_adf(sample_frames, ADF_TRIPLETS, r_cut=3.0)
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 print("\n" + "=" * 60)
 print("NVT Production Summary")
@@ -392,7 +481,7 @@ print(f"  D(Be)    : {diffusion_cm2s(msd_Be, msd_time):.3e} cm²/s")
 print(f"  D(F)     : {diffusion_cm2s(msd_F,  msd_time):.3e} cm²/s")
 
 # ── Plots ──────────────────────────────────────────────────────────────────────
-fig, axes = plt.subplots(2, 3, figsize=(14, 9))
+fig, axes = plt.subplots(3, 3, figsize=(14, 13))
 
 ax = axes[0, 0]
 ax.plot(time_ps, np.array(epot_list) / n, 'b-',  lw=1.2, label='Potential')
@@ -429,6 +518,19 @@ ax.set_xlabel('Time (ps)'); ax.set_ylabel('MSD (Å²)')
 ax.set_title('Mean Square Displacement'); ax.legend(fontsize=8); ax.grid(alpha=0.3)
 
 ax = axes[1, 2]
+_adf_colors = ['darkorange', 'steelblue', 'green']
+for triplet, color in zip(ADF_TRIPLETS, _adf_colors):
+    label = f"{triplet[1]}-{triplet[0]}-{triplet[2]}"
+    ax.plot(adf_theta, adf_data[triplet], color=color, lw=1.5, label=label)
+ax.axvline(109.47, color='gray', ls=':', lw=1, label='109.5° (tet)')
+ax.set_xlabel('Angle (°)'); ax.set_ylabel('ADF (norm.)')
+ax.set_title('Angular Distribution Function'); ax.legend(fontsize=8); ax.grid(alpha=0.3)
+ax.set_xlim(0, 180)
+
+axes[2, 0].axis('off')
+axes[2, 1].axis('off')
+
+ax = axes[2, 2]
 ax.axis('off')
 lines = [
     "NVT AIMD  LiF+BeF2  (GPAW/HSE06)",

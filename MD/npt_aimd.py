@@ -9,6 +9,7 @@ Thermophysical properties (Porter et al. 2022, Fig. 3):
   - Density ρ          : average equilibrated volume → ρ = NM / (Na <V>) (Eq. 2)
   - Thermal expansion β: volume fluctuation formula β = Var(V)/(kB T <V>)  (Eq. 3/4)
   - Heat capacity Cp   : enthalpy fluctuations Cp = Var(H)/(kB T²)         (Eq. 7)
+  - ADF                : angular distribution function (Eq. 23)
 """
 
 import os
@@ -28,7 +29,6 @@ from ase.md.nose_hoover_chain import NoseHooverChainNVT
 from ase.md.npt import NPT
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary, ZeroRotation
 from ase.optimize import BFGS
-from ase.spacegroup import crystal
 from ase.units import Bohr
 from ase.visualize import view
 from gpaw import GPAW, restart
@@ -72,11 +72,24 @@ print("=" * 60)
 lif_atoms  = bulk('LiF', crystalstructure='rocksalt', a=4.03, cubic=True)
 lif_atoms.set_initial_charges([-1, 1] * (len(lif_atoms) // 2))
 lif_atoms.set_initial_magnetic_moments([1, -1, 1, -1, 0.5, -0.5, 0.5, -0.5])
-bef2_atoms = crystal('BeF2', spacegroup=152,
-                     cellpar=[4.73, 4.73, 5.18, 90, 90, 120],
-                     basis=[(0.5, 0, 0.33), (0.41, 0.28, 0.22)])
-bef2_atoms.set_initial_magnetic_moments([2, -2, 2, -1, 1, -1, 1, -1, 1, -1, 1, -1])
-bef2_atoms.set_initial_charges([-1, -1, 2] * (len(bef2_atoms) // 3))
+_bef2_cell = [[4.77, 0, 0],
+              [-4.77/2, 4.77*np.sqrt(3)/2, 0],
+              [0, 0, 5.18]]
+bef2_atoms = Atoms(
+    symbols=['Be', 'Be', 'F', 'F', 'F', 'F'],
+    scaled_positions=[
+        (0.0, 0.0, 0.0),
+        (1/3, 2/3, 0.5),
+        (0.2, 0.4, 0.25),
+        (0.8, 0.6, 0.75),
+        (0.4, 0.2, 0.75),
+        (0.6, 0.8, 0.25),
+    ],
+    cell=_bef2_cell,
+    pbc=True)
+bef2_atoms = bef2_atoms.repeat([1, 1, 2])  # 6 → 12 atoms
+bef2_atoms.set_initial_charges([2, 2, -1, -1, -1, -1] * 2)
+bef2_atoms.set_initial_magnetic_moments([2, 2, -1, -1, -1, -1] * 2)
 
 print(f"LiF  : {len(lif_atoms)} atoms  cell={np.diag(lif_atoms.cell)} Å")
 print(f"BeF2 : {len(bef2_atoms)} atoms  cell={np.diag(bef2_atoms.cell)} Å")
@@ -151,6 +164,60 @@ def relax(
     print(f"  Lattice: a={cell[0]:.4f} b={cell[1]:.4f} c={cell[2]:.4f} Å  "
           f"α={cell[3]:.2f} β={cell[4]:.2f} γ={cell[5]:.2f}°")
     return relaxed
+
+
+def compute_adf(frames, triplets, r_cut=3.0, n_bins=180):
+    """Angular Distribution Function (Porter et al. 2022, Eq. 23).
+
+    For each triplet (central, nbr1, nbr2): find all neighbour pairs (j, k)
+    within r_cut of centre atom i, with types nbr1 and nbr2 respectively (j≠k);
+    compute the j-i-k angle.  Returns (theta_deg array, adf dict peak-normalised).
+    """
+    theta_edges = np.linspace(0, 180, n_bins + 1)
+    theta_mid   = 0.5 * (theta_edges[:-1] + theta_edges[1:])
+    adf = {t: np.zeros(n_bins) for t in triplets}
+    for frame in frames:
+        pos  = frame.get_positions()
+        sym  = np.array(frame.get_chemical_symbols())
+        cell = np.array(frame.get_cell())
+        L    = np.array([cell[0, 0], cell[1, 1], cell[2, 2]])
+        for (c_type, n1_type, n2_type) in triplets:
+            idx_c  = np.where(sym == c_type)[0]
+            idx_n1 = np.where(sym == n1_type)[0]
+            idx_n2 = np.where(sym == n2_type)[0]
+            for ic in idx_c:
+                pc = pos[ic]
+                vecs_n1 = []
+                for j in idx_n1:
+                    if j == ic:
+                        continue
+                    dv = pos[j] - pc
+                    dv -= L * np.round(dv / L)
+                    d  = np.linalg.norm(dv)
+                    if 0 < d < r_cut:
+                        vecs_n1.append((j, dv, d))
+                vecs_n2 = []
+                for k in idx_n2:
+                    if k == ic:
+                        continue
+                    dv = pos[k] - pc
+                    dv -= L * np.round(dv / L)
+                    d  = np.linalg.norm(dv)
+                    if 0 < d < r_cut:
+                        vecs_n2.append((k, dv, d))
+                for (j, v1, d1) in vecs_n1:
+                    for (k, v2, d2) in vecs_n2:
+                        if j == k:
+                            continue
+                        cos_t = np.clip(np.dot(v1, v2) / (d1 * d2), -1.0, 1.0)
+                        theta = np.degrees(np.arccos(cos_t))
+                        ib    = min(int(theta / 180.0 * n_bins), n_bins - 1)
+                        adf[(c_type, n1_type, n2_type)][ib] += 1
+    for t in adf:
+        peak = adf[t].max()
+        if peak > 0:
+            adf[t] /= peak
+    return theta_mid, adf
 
 
 # ── Step 1: Geometry relaxation ───────────────────────────────────────────────
@@ -307,6 +374,15 @@ Cp_atom  = Cp_total / n                                             # eV/K/atom
 Cp_J     = Cp_atom * 1.602e-19                                      # J/K/atom
 print(f"  Heat capacity Cp = {Cp_atom:.4e} eV/K/atom  ({Cp_J:.4e} J/K/atom)")
 
+# ── ADF (Angular Distribution Function, Porter et al. Eq. 23) ─────────────────
+print("Computing ADF...")
+traj_prod   = Trajectory(MIX_TRAJ_PROD)
+n_traj_npt  = len(traj_prod)
+sample_frames = [traj_prod[i] for i in range(n_traj_npt // 2, n_traj_npt,
+                                              max(1, n_traj_npt // 200))]
+ADF_TRIPLETS = [('Be', 'F', 'F'), ('Li', 'F', 'F'), ('F', 'Be', 'Be')]
+adf_theta, adf_data = compute_adf(sample_frames, ADF_TRIPLETS, r_cut=3.0)
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 print("\n" + "=" * 60)
 print("NPT Production Summary")
@@ -319,7 +395,7 @@ print(f"  β        : {beta_K:.4e} K⁻¹")
 print(f"  Cp       : {Cp_atom:.4e} eV/K/atom  ({Cp_J:.4e} J/K/atom)")
 
 # ── Plots ──────────────────────────────────────────────────────────────────────
-fig, axes = plt.subplots(2, 3, figsize=(14, 9))
+fig, axes = plt.subplots(3, 3, figsize=(14, 13))
 
 ax = axes[0, 0]
 ax.plot(time_ps, np.array(epot_list) / n, 'b-',  lw=1.2, label='Potential')
@@ -355,6 +431,19 @@ ax.set_xlabel('Time (ps)'); ax.set_ylabel('H/atom (eV)')
 ax.set_title('Enthalpy fluctuations (→ Cp)'); ax.legend(fontsize=8); ax.grid(alpha=0.3)
 
 ax = axes[1, 2]
+_adf_colors = ['darkorange', 'steelblue', 'green']
+for triplet, color in zip(ADF_TRIPLETS, _adf_colors):
+    label = f"{triplet[1]}-{triplet[0]}-{triplet[2]}"
+    ax.plot(adf_theta, adf_data[triplet], color=color, lw=1.5, label=label)
+ax.axvline(109.47, color='gray', ls=':', lw=1, label='109.5° (tet)')
+ax.set_xlabel('Angle (°)'); ax.set_ylabel('ADF (norm.)')
+ax.set_title('Angular Distribution Function'); ax.legend(fontsize=8); ax.grid(alpha=0.3)
+ax.set_xlim(0, 180)
+
+axes[2, 0].axis('off')
+axes[2, 1].axis('off')
+
+ax = axes[2, 2]
 ax.axis('off')
 lines = [
     "NPT AIMD  LiF+BeF2  (GPAW/HSE06)",

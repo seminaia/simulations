@@ -15,6 +15,8 @@ Thermophysical properties (Porter et al. 2022, Fig. 3):
 """
 
 import os
+import sys
+from datetime import datetime
 from typing import Any, Dict
 
 import numpy as np
@@ -58,6 +60,27 @@ MIX_LOG_EQUIL  = "nvt_mix_equil.log"
 MIX_TRAJ_PROD  = "nvt_mix_prod.traj"
 MIX_LOG_PROD   = "nvt_mix_prod.log"
 MIX_PLOT_FILE  = "nvt_results.png"
+PROGRESS_LOG   = "nvt_aimd_progress.log"
+
+# ── Progress logger (tee stdout+stderr → PROGRESS_LOG) ───────────────────────
+class _Tee:
+    """Mirror writes to multiple streams; use for sys.stdout / sys.stderr."""
+    def __init__(self, *streams):
+        self._streams = streams
+    def write(self, data: str) -> None:
+        for s in self._streams:
+            s.write(data)
+            s.flush()
+    def flush(self) -> None:
+        for s in self._streams:
+            s.flush()
+    def fileno(self) -> int:          # needed by some C extensions
+        return self._streams[0].fileno()
+
+_progress_fh = open(PROGRESS_LOG, "w", buffering=1)
+sys.stdout = _Tee(sys.__stdout__, _progress_fh)  # type: ignore[assignment]
+sys.stderr = _Tee(sys.__stderr__, _progress_fh)  # type: ignore[assignment]
+print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] Logging to {PROGRESS_LOG}  —  tail -f {PROGRESS_LOG}")
 
 # ── Build structures ──────────────────────────────────────────────────────────
 print("=" * 60)
@@ -160,7 +183,17 @@ def relax(
 
         opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
         print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/Å")
-        BFGS(opt_atoms, logfile=logname, trajectory=trajname).run(fmax=fmax, steps=500)
+        bfgs = BFGS(opt_atoms, logfile=logname, trajectory=trajname)
+
+        def _relax_log():
+            raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
+            fmax_cur = float(np.max(np.linalg.norm(raw.get_forces(), axis=1)))
+            epot = raw.get_potential_energy() / len(raw)
+            print(f"[{datetime.now():%H:%M:%S}]  relax step {bfgs.nsteps:4d}  "
+                  f"Epot={epot:.4f} eV/atom  fmax={fmax_cur:.4f} eV/Å")
+
+        bfgs.attach(_relax_log, interval=1)
+        bfgs.run(fmax=fmax, steps=500)
 
         if isinstance(opt_atoms, FrechetCellFilter):
             opt_atoms = opt_atoms.atoms
@@ -336,7 +369,7 @@ for i in range(N_EQUIL // 10):
     t  = dyn_eq.get_time() / (1000 * units.fs)
     T  = mix.get_temperature()
     Ep = mix.get_potential_energy() / len(mix)
-    print(f"  equil step {(i+1)*10:4d}/{N_EQUIL}  t={t:.3f} ps  T={T:.1f} K  Epot={Ep:.4f} eV/atom")
+    print(f"[{datetime.now():%H:%M:%S}]  equil step {(i+1)*10:4d}/{N_EQUIL}  t={t:.3f} ps  T={T:.1f} K  Epot={Ep:.4f} eV/atom")
 
 # ── Step 3: NVT production ────────────────────────────────────────────────────
 print("\n" + "=" * 60)
@@ -373,7 +406,7 @@ for i in range(N_PROD // 10):
     T  = temp_list[-1]
     Ep = epot_list[-1] / len(mix)
     if (i + 1) % 5 == 0:
-        print(f"  prod step {(i+1)*10:4d}/{N_PROD}  t={t:.3f} ps  T={T:.1f} K  Epot={Ep:.4f} eV/atom")
+        print(f"[{datetime.now():%H:%M:%S}]  prod step {(i+1)*10:4d}/{N_PROD}  t={t:.3f} ps  T={T:.1f} K  Epot={Ep:.4f} eV/atom")
 
 mix.write("nvt_final.xyz")
 print("\n  Final configuration → nvt_final.xyz")

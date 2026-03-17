@@ -286,7 +286,7 @@ print("Step 1: Geometry relaxation (BFGS, fmax=0.01 eV/Å)")
 print("=" * 60)
 
 pbe_params = {
-    "convergence": {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-6},
+    "convergence": {"density":1e-8, "eigenstates":1e-10, "energy": 1e-6, "forces":1e-4},
     "eigensolver": {"name": "dav", "niter": 5},
     "kpts": {"gamma": True, "size": KPTS},
     "maxiter": 1000,
@@ -298,7 +298,7 @@ pbe_params = {
     "xc": "PBE",
 }
 hse_params = {
-    "convergence": {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-6},
+    "convergence": {"density": 1e-6, "eigenstates": 1e-8, "energy": 1e-4, "forces": 1e-2},
     "eigensolver": {"name": "dav", "niter": 5},
     "kpts": {"gamma": True, "size": (1, 1, 1)},
     "maxiter": 1000,
@@ -309,6 +309,12 @@ hse_params = {
     "txt": "hse_relax.log",
     "xc": {"name": "HYB_GGA_XC_HSE06", "omega": SCREEN, "fraction": 0.25, "backend": "pw"},
 }
+
+mix_params = pbe_params.copy()
+mix_params["txt"] = "mix_relax.log"
+mix_params["mode"] = "fd"
+mix_params["kpts"] = None
+
 lif_relax  = relax(lif_atoms,  pbe_params, fmax=0.01, fixcell=False,
                    logname=LIF_RLX_LOG, gpwname=LIF_GPW_FILE)
 view(lif_relax, repeat=(2, 2, 2))
@@ -338,8 +344,7 @@ print(f"Step 2: NVT equilibration  T={TEMPERATURE} K  steps={N_EQUIL}")
 print("=" * 60)
 
 mix = stack(lif_relax, bef2_relax, maxstrain=1, distance=2.5)
-mix.calc = relax(mix, hse_params, fmax=0.01, fixcell=True,
-                 logname='mix_relax.log', gpwname='mix_relax.gpw')
+mix.calc = GPAW(**mix_params)
 view(mix, repeat=(2, 2, 2))
 
 MaxwellBoltzmannDistribution(mix, temperature_K=TEMPERATURE)

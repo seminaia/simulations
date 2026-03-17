@@ -1,0 +1,123 @@
+gpu-5-32.int.turing.wpi.edu:rank0.python3: Failed to modify UD QP to INIT on rocep188s0: Operation not permitted
+gpu-5-32.int.turing.wpi.edu:rank0.python3: Failed to modify UD QP to INIT on rocep188s0: Operation not permitted
+gpu-5-32.int.turing.wpi.edu:rank0.python3: Failed to modify UD QP to INIT on rocep188s0: Operation not permitted
+gpu-5-32.int.turing.wpi.edu:rank0.python3: Failed to modify UD QP to INIT on rocep188s0: Operation not permitted
+[1773719069.685318] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR               ibv_reg_mr(address=0x7ffab6c00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.685347] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR               Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[2026-03-16 23:44:29] Logging to nvt_aimd_progress.log  —  tail -f nvt_aimd_progress.log
+============================================================
+Building LiF and BeF2 supercells
+============================================================
+
+LiF  : 24 atoms  a=3.97 b=3.97 c=11.91,
+        alpha=90.00 beta=90.00 gamma=90.00,
+        initial Volumes: 187.71 Å³, 
+        Chemical Symbol Order: ['Li', 'F', 'Li', 'F', 'Li', 'F', 'Li', 'F', 'Li', 'F', 'Li', 'F', 'Li', 'F', 'Li', 'F', 'Li', 'F', 'Li', 'F', 'Li', 'F', 'Li', 'F'],
+        initial magmoms:       [ 1. -1.  1. -1.  1. -1.  1. -1.  1. -1.  1. -1.  1. -1.  1. -1.  1. -1.
+  1. -1.  1. -1.  1. -1.],
+        initial charges:       [ 1. -1.  1. -1.  1. -1.  1. -1.  1. -1.  1. -1.  1. -1.  1. -1.  1. -1.
+  1. -1.  1. -1.  1. -1.]
+
+BeF2 : 18 atoms  a=4.67 b=4.67 c=10.36,
+        alpha=90.00 beta=90.00 gamma=120.00,
+        initial Volumes: 195.67 Å³,
+        Chemical Symbol Order: ['Be', 'Be', 'Be', 'F', 'F', 'F', 'F', 'F', 'F', 'Be', 'Be', 'Be', 'F', 'F', 'F', 'F', 'F', 'F'],
+        initial magmoms:       [ 1.  1.  1. -1. -1. -1. -1. -1. -1.  1.  1.  1. -1. -1. -1. -1. -1. -1.],
+        initial charges:       [ 2.  2.  2. -1. -1. -1. -1. -1. -1.  2.  2.  2. -1. -1. -1. -1. -1. -1.]
+
+============================================================
+Step 1: Geometry relaxation (BFGS, fmax=0.01 eV/Å)
+============================================================
+Loaded converged structure from LiF_aimd_relax.traj
+  Lattice: a=3.9664 b=3.9664 c=11.8618 Å,
+          α=90.00 β=90.00 γ=90.00° Volume=186.62 Å³
+
+Relaxed LiF  Epot = -4.6940 eV/atom
+       a= 3.97, b=3.97, c=11.86, 
+       alpha=90.00, beta=90.00, gamma = 90.00
+       Relaxed Volume = 186.62 Å³ 
+Loaded converged structure from BeF2_aimd_relax.traj
+  Lattice: a=4.3865 b=4.3865 c=10.0343 Å,
+          α=90.02 β=89.98 γ=120.17° Volume=166.93 Å³
+ 
+Relaxed BeF2  Epot = -5.4951 eV/atom
+       a= 4.39, b=4.39, c=10.03, 
+       alpha=90.02, beta=89.98, gamma = 120.17
+       Relaxed Volume = 166.9255623614708 Å³
+       
+
+============================================================
+Step 2: NVT equilibration  T=1200 K  steps=200
+============================================================
+Optimization terminated successfully.
+         Current function value: 0.000000
+         Iterations: 199
+         Function evaluations: 313
+Starting fresh calculation
+Relaxation mode: fixed cell  fmax=0.01 eV/Å
+[1773719069.891863] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.891908] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.891969] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.891978] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892028] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892039] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892053] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892059] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892078] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892083] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892129] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892135] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892148] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892153] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892165] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892171] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892184] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892189] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892210] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892215] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892226] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892231] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892243] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892247] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892260] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892266] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892293] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892298] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892309] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892314] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892325] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892330] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892342] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892346] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892366] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892371] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892383] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892388] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892399] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892404] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719069.892417] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719069.892422] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.027889] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.027936] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.027961] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.027972] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.027985] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.027991] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.028008] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaade00000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.028013] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.717306] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaac000000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.717364] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.717400] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaac000000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.717410] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.717427] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaac000000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.717435] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.717457] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaac000000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.717466] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.956584] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaab600000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.956626] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.956651] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaab600000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.956660] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.956673] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaab600000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.956680] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error
+[1773719070.956699] [gpu-5-32:2006409:0]           ib_md.c:296  UCX  ERROR ibv_reg_mr(address=0x7ffaab600000, length=39845888, access=0xf) failed: Cannot allocate memory : Please set max locked memory (ulimit -l) to 'unlimited' (current: 65536 kbytes)
+[1773719070.956710] [gpu-5-32:2006409:0]           mpool.c:269  UCX  ERROR Failed to allocate memory pool (name=rc_recv_desc) chunk: Input/output error

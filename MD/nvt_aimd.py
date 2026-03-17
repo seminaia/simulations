@@ -18,7 +18,6 @@ import os
 import sys
 from datetime import datetime
 from typing import Any, Dict
-
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.fft import rfft, rfftfreq
@@ -47,7 +46,7 @@ LOG_INTERVAL = 10          # steps between log entries
 ECUT_EV      = 500         # plane-wave cutoff (eV)
 KPTS         = (2, 2, 2)
 SUPERCELL    = 1
-SCREEN       = 0.25 * Bohr
+SCREEN       = 0.2 * Bohr
 
 # ── File names ────────────────────────────────────────────────────────────────
 LIF_GPW_FILE   = "LiF_aimd_relax.gpw"

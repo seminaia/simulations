@@ -1,183 +1,166 @@
-import re
-from turtle import position
-from ase.build import bulk
-import ase.build
-import ase.lattice
+import os
+from collections import OrderedDict
+from datetime import datetime
+from typing import Any, Dict
+from ase.units import Bohr
+
+import numpy as np
+from ase import Atoms
+from ase.filters import FrechetCellFilter
+from ase.io import read, write as ase_write
+from ase.optimize import BFGS
+from ase.visualize import view
+from doped.generation import DefectsGenerator
+from gpaw import GPAW, restart
+from pymatgen.analysis.defects.core import DefectType
 from shakenbreak.input import Distortions
 from ase.spacegroup import crystal
-from ase.optimize import BFGS, QuasiNewton
-from ase.visualize import view
-from collections import OrderedDict
-from ase.vibrations import Vibrations
-from ase.filters import FrechetCellFilter
-from ase.transport.calculators import TransportCalculator
-from gpaw import GPAW, PW, restart, Mixer, MixerSum, MixerDif
-from gpaw.defects import charged_defect_corrections
-from ase.eos import calculate_eos
-from matplotlib.pylab import eig
-from doped.generation import DefectsGenerator
-import numpy as np
-#from atomistics.calculators.ase import evaluate_with_ase
-#from atomistics.workflows import ElasticMatrixWorkflow
-#from atomistics.workflows import EnergyVolumeCurveWorkflow
-#import atomistics
-from ase import Atoms
-import os
-from ase.io import Trajectory, read
-import matplotlib.pyplot as plt
-from typing import Dict, Any, Optional, Union
-from pathlib import Path
-from pymatgen.analysis.defects.core import DefectType
-from pymatgen.io.cif import CifWriter
 
-def relax(atoms: Atoms,
-          calculator_params: Dict[str, Any],
-          fmax: float = 0.01,
-          fixcell: bool = True,
-          logname: str = 'opt.log',
-          trajname: str = 'opt.traj',
-          gpwname: str = 'rlx.gpw') -> Union[Atoms, FrechetCellFilter]:
-    """
-    Relax atomic structure using GPAW.
-    
-    Parameters:
-    -----------
-    atoms : Atoms
-        ASE Atoms object to relax
-    calculator_params : dict
-        Parameters for GPAW calculator
-    fmax : float
-        Maximum force tolerance (eV/Å)
-    fixcell : bool
-        If True, only relax atomic positions (ISIF=2 equivalent)
-        If False, relax both atoms and cell (ISIF=3 equivalent)
-    logname : str
-        Name of optimization log file
-    trajname : str
-        Name of trajectory file
-    gpwname : str
-        Name of GPAW restart file
-    
-    Returns:
-    --------
-    Atoms or FrechetCellFilter
-        Relaxed atomic structure
-    """
-    
-    # -------------------------
-    # Restart or initialize GPAW
-    # -------------------------
-    calc_dft = None
-    
-    if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
+# ── Relaxation helper ─────────────────────────────────────────────────────────
+def relax(
+    atoms: Atoms,
+    calculator_params: Dict[str, Any],
+    fmax: float = 0.01,
+    fixcell: bool = True,
+    logname: str = 'opt.log',
+    trajname: str | None = None,
+    gpwname: str = 'rlx.gpw',
+) -> Atoms:
+    orig_atoms = atoms
+    done_file = gpwname.replace('.gpw', '.traj')
+    if os.path.exists(done_file):
+        relaxed = read(done_file, index=0)
+        if len(relaxed) != len(orig_atoms):
+            print(f"Cached structure has {len(relaxed)} atoms but current structure has {len(orig_atoms)}. Ignoring cache.")
+            relaxed = None
+        else:
+            print(f"Loaded converged structure from {done_file}")
+    else:
+        relaxed = None
+    if relaxed is None:
+        if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
+            try:
+                atoms, _ = restart(gpwname)
+                if len(atoms) != len(orig_atoms):
+                    print(f"Cached GPW has {len(atoms)} atoms but current structure has {len(orig_atoms)}. Starting fresh.")
+                    atoms = orig_atoms
+                atoms.calc = GPAW(**calculator_params)
+                print(f"Restarted positions from {gpwname}")
+            except Exception as e:
+                print(f"Restart failed ({e}), starting fresh.")
+                atoms.calc = GPAW(**calculator_params)
+        else:
+            atoms.calc = GPAW(**calculator_params)
+            print("Starting fresh calculation")
+
+        opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
+        print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/Å")
+        bfgs = BFGS(opt_atoms, logfile=logname, trajectory=trajname)
+
+        def _relax_log():
+            raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
+            fmax_cur = float(np.max(np.linalg.norm(raw.get_forces(), axis=1)))
+            epot = raw.get_potential_energy() / len(raw)
+            print(f"[{datetime.now():%H:%M:%S}]  relax step {bfgs.nsteps:4d}  "
+                  f"Epot={epot:.4f} eV/atom  fmax={fmax_cur:.4f} eV/Å")
+
+        bfgs.attach(_relax_log, interval=1)
+        bfgs.run(fmax=fmax, steps=500)
+
+        if isinstance(opt_atoms, FrechetCellFilter):
+            opt_atoms = opt_atoms.atoms
         try:
-            atoms, calc_dft = restart(gpwname)
-            atoms.calc = calc_dft
-            print(f"Successfully restarted from {gpwname}")
+            opt_atoms.calc.write(gpwname, mode='all')
+            print(f"Saved to {gpwname}")
         except Exception as e:
-            print(f"Restart failed ({e}). Starting fresh calculation.")
-            calc_dft = GPAW(**calculator_params)
-            atoms.calc = calc_dft
-    else:
-        calc_dft = GPAW(**calculator_params)
-        atoms.calc = calc_dft
-        print("Starting fresh calculation")
+            print(f"Warning: could not save state: {e}")
 
-    # -------------------------
-    # Choose relaxation mode
-    # -------------------------
-    if fixcell:
-        # ISIF = 2 equivalent - only relax atoms
-        opt_atoms = atoms
-        print("Relaxation mode: fixed cell (ISIF=2 equivalent)")
-    else:
-        # ISIF = 3 equivalent - relax both atoms and cell
-        opt_atoms = FrechetCellFilter(atoms)
-        opt_atoms.atoms
-        print("Relaxation mode: variable cell (ISIF=3 equivalent)")
-
-    # -------------------------
-    # Run optimizer
-    # -------------------------
-    # Add observer to save checkpoints during optimization
-
-    # Create optimizer
-    opt = BFGS(opt_atoms, 
-               logfile=logname, 
-               trajectory=trajname)
-        
-    # Run relaxation
-    print(f"Starting relaxation with fmax={fmax} eV/Å")
-    opt.run(fmax=fmax, steps=500)  # Added steps limit for safety
-    opt._traj_write_image
-    
-    # -------------------------
-    # Save final state
-    # -------------------------
-    try:
-        # Write final calculator state
-        atoms.calc.write(gpwname, mode='all')
-        print(f"Final state saved to {gpwname}")
-        # Save trajectory and log are automatically handled by ASE
-    except Exception as e:
-        print(f"Warning: Could not save final state: {e}")
-    
-    # Get final forces for reporting
-    if hasattr(opt_atoms, 'get_forces'):
+        ase_write(done_file, opt_atoms)
+        print(f"Converged structure saved to {done_file}")
         forces = opt_atoms.get_forces()
-        max_force = max(np.linalg.norm(forces, axis=1))
-        print(f"Relaxation completed. Maximum force: {max_force:.6f} eV/Å")
-    
-    return opt_atoms
+        print(f"Max force: {np.max(np.linalg.norm(forces, axis=1)):.6f} eV/Å")
+        relaxed = opt_atoms
+
+    orig_atoms.set_cell(relaxed.get_cell(), scale_atoms=False)
+    orig_atoms.set_positions(relaxed.get_positions())
+    cell = relaxed.cell.cellpar()
+    print(f"""  Lattice: a={cell[0]:.4f} b={cell[1]:.4f} c={cell[2]:.4f} Å,
+          α={cell[3]:.2f} β={cell[4]:.2f} γ={cell[5]:.2f}° Volume={relaxed.get_volume():.2f} Å³""")
+    return relaxed
+
 
 defect_type_map = {
     DefectType.Vacancy.value: "Vacancy",
     DefectType.Interstitial.value: "Interstitial",
-    DefectType.Substitution.value: "Substitution"  # In case substitutions are enabled later
+    DefectType.Substitution.value: "Substitution"
 }
-symbols = ('La','La','La','La','Ni','Ni','O','O','O','O','O','O','O','O')
+symbols = ('La','Ni','O','O')
+
+# ── Calculation parameters ────────────────────────────────────────────────────
+ECUT_EV = 520
+KPTS    = (1, 1, 1)
+SCREEN  = 0.2*Bohr   # HSE06 screening parameter (Å⁻¹)
 
 # Structure setup
-a0 = 3.800742
-c0 = 12.455721
-pris_cell = [
-    [a0, 0, 0],
-    [0, a0, 0],
-    [0, 0, c0]
-]
-
-symbols = ('La','La','La','La','Ni','Ni','O','O','O','O','O','O','O','O')
-pris_frac_positions = [  
-    (0.50,  0.50,  0.14),
-    (0.00,  0.00,  0.36),
-    (0.00,  0.00,  0.64),
-    (0.50,  0.50,  0.86),
-    (0.00,  0.00,  0.00),
-    (0.50,  0.50,  0.50),
-    (0.50,  0.00,  0.00),
-    (0.00,  0.50,  0.00),
-    (0.00,  0.00,  0.18),
-    (0.50,  0.50,  0.32),
-    (0.50,  0.00,  0.50),
-    (0.00,  0.50,  0.50),
-    (0.50,  0.50,  0.68),
-    (0.00,  0.00,  0.82)]
-
+a0 = 3.92
+c0 = 12.52
 
 magmoms = [0.6, -0.6, 0.6, -0.6, 2.0, -2.0, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6]
+lno_atoms = crystal(['La','Ni','O','O'],[(0,0,0.363473),(0,0,0),(1/2,0,0),(0,0,0.178993)], spacegroup=139, cellpar=[a0, a0, c0, 90, 90, 90])
 
-pris_atoms = Atoms(symbols=symbols,
-              scaled_positions=pris_frac_positions,
-              cell=pris_cell,
-              pbc=True)
-pris_atoms.set_initial_magnetic_moments(magmoms)
-pris_atoms.write('La2NiO4_pris.cif', format='cif')
-view(pris_atoms, repeat=(2, 2, 1))
+lno_atoms.set_initial_magnetic_moments(magmoms)
+lno_atoms.write('LNO_I4mmm.cif', format='cif')
+view(lno_atoms, repeat=(2, 2, 1))
 extrinsic = {"P": ['Ca', 'Sr'], "Pb": ['Cu', 'Mn']}
 substitution_elements = ['La', 'Ni', 'Ca', 'Sr', 'Co', 'Mn']
 
+
+pbe_params = {
+    "convergence": {"density":1e-8, "eigenstates":1e-10, "energy": 1e-6, "forces":1e-4},
+    "eigensolver": {"name": "dav", "niter": 5},
+    "kpts": {"gamma": True, "size": KPTS},
+    "maxiter": 1000,
+    "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
+    "mode": {"name": "pw", "ecut": ECUT_EV},
+    "nbands": "nao",
+    "occupations": {"name": "fermi-dirac", "width": 0.01},
+    "txt": "pbe_relax.log",
+    "xc": "PBE",
+}
+hse_params = {
+    "convergence": {"density": 1e-6, "eigenstates": 1e-8, "energy": 1e-4, "forces": 1e-2},
+    "eigensolver": {"name": "dav", "niter": 5},
+    "kpts": {"gamma": True, "size": (1, 1, 1)},
+    "maxiter": 1000,
+    "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
+    "mode": {"name": "pw", "ecut": ECUT_EV},
+    "nbands": "nao",
+    "occupations": {"name": "fermi-dirac", "width": 0.01},
+    "txt": "hse_relax.log",
+    "xc": {"name": "HYB_GGA_XC_HSE06", "omega": SCREEN, "fraction": 0.25, "backend": "pw"},
+}
+# Run relaxation
+lno_relax_atoms = relax(lno_atoms,
+                      calculator_params=pbe_params,
+                      fmax=0.01,
+                      fixcell=False,
+                      logname='LNO_opt.log',
+                      trajname='LNO_opt.traj',
+                      gpwname='LNO_opt.gpw')
+lno_atoms_hse = lno_relax_atoms.copy()
+lno_atoms_hse.calc = GPAW(**hse_params)
+E_lno_hse = lno_atoms_hse.get_potential_energy()
+lno_pos = lno_atoms_hse.get_positions()
+lno_relax_cell = lno_atoms_hse.get_cell()
+print("Relaxed cell:")
+print(lno_relax_cell)
+print("PBE Potential energy (eV):", lno_relax_atoms.get_potential_energy())
+print("HSE06 Potential energy (eV):", E_lno_hse)
+print("All positions (Angstrom):")
+print(lno_pos)
+
 defect_gen = DefectsGenerator(
-    pris_atoms,
+    lno_atoms,
     extrinsic=extrinsic,
     interstitial_gen_kwargs=True,
     interstitial_elements=['O'],
@@ -189,68 +172,20 @@ defect_gen = DefectsGenerator(
     supercell_gen_kwargs={'force_diagonal': True},
 )
 
-calculator_params = {
-    "convergence": {"density": 1e-4,
-                    "eigenstates": 1e-6,
-                    "energy": 1e-5,
-                    "forces": 1e-2},
-    "eigensolver": {"name": "dav",
-                    "niter":5},
-    "kpts": {"gamma": True,
-            "size": [2, 2, 1]},
-    "maxiter": 500,
-    "mixer":{"backend": "pulay",
-            "beta": 0.1,
-            "method": "fullspin",
-            "nmaxold": 5,
-            "weight":100},
-    "mode": {"ecut": 520,
-            "name": "pw"},
-    "nbands":"nao",
-    "occupations": {"name": "fermi-dirac",
-                    "width": 0.1},
-    "setups": {"Ni": ':d, 6.2'},
-    "symmetry":"off",
-    "txt": "rlx.txt",
-    "xc": "PBE"
-}
-
-# Run relaxation
-pris_relax_atoms = relax(pris_atoms, 
-                           calculator_params,
-                      fmax=0.01,
-                      fixcell=False, 
-                      logname='La2NiO4_pris_opt.log',
-                      trajname='La2NiO4_pris_opt.traj',
-                      gpwname='La2NiO4_pris_rlx.gpw')
-
-pris = Path('La2NiO4_pris_rlx.gpw')
 
 for defect_entry in defect_gen.defect_entries.values():
     defect_name = defect_entry.name
     defect_type_value = defect_entry.defect.defect_type.value
     defect_type = defect_type_map.get(defect_type_value, "Unknown")
-    charge = defect_entry.charge_state    
+    charge = defect_entry.charge_state
     sc = defect_entry.defect_supercell
+    frac_coords = defect_entry.sc_defect_frac_coords
     defect_dict, defect_metadata = Distortions(defect_entry)
-    pris_relax_atoms = pris_relax_atoms.copy()
     defect_elements = list(OrderedDict.fromkeys([site.species.elements[0].symbol for site in sc]))
-    pris_relax_atoms.calc = GPAW(**calculator_params)
     def_atoms = Atoms(symbols=defect_elements,
-                      scaled_positions= pris_frac_positions,
-                      pbc = True,
-                      charge=charge,
-                      magmom = magmoms)
+                      scaled_positions=frac_coords,
+                      pbc=True)
     def_atoms.set_initial_magnetic_moments(magmoms)
     def_atoms.write(f'{defect_name}_{defect_type}_q{charge}.cif', format='cif')
-    def_atoms.calc = GPAW(**calculator_params)
-    
-# Get results
-E_pris = pris_relax_atoms.get_potential_energy()
-pris_pos = pris_relax_atoms.get_positions()
-pris_relax_cell = pris_relax_atoms.get_cell()
-print("Relaxed cell:")
-print(pris_relax_cell)
-print("Potential energy (eV):", E_pris)
-print("All positions (Angstrom):")
-print(pris_pos)
+    def_atoms.calc = GPAW(**pbe_params)
+

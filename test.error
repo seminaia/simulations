@@ -2,7 +2,11 @@
 Open MPI failed an OFI Libfabric library call (fi_endpoint).  This is highly
 unusual; your job may behave unpredictably (and/or abort) after this.
 
+<<<<<<< HEAD
   Local host: gpu-5-32
+=======
+  Local host: gpu-5-21
+>>>>>>> 6be45f20a7ce17259a935e2b02c1fb11d5682019
   Location: mtl_ofi_component.c:515
   Error: Invalid argument (22)
 --------------------------------------------------------------------------
@@ -14,3 +18,10 @@ usage: ase [-h] [--version] [-T]
            {help,info,test,gui,db,run,band-structure,build,dimensionality,eos,ulm,find,nebplot,convert,reciprocal,completion,diff,exec} ...
 ase: error: TclError: no display name and no $DISPLAY environment variable
 To get a full traceback, use: ase -T gui ...
+<<<<<<< HEAD
+=======
+usage: ase [-h] [--version] [-T]
+           {help,info,test,gui,db,run,band-structure,build,dimensionality,eos,ulm,find,nebplot,convert,reciprocal,completion,diff,exec} ...
+ase: error: TclError: no display name and no $DISPLAY environment variable
+To get a full traceback, use: ase -T gui ...
+>>>>>>> 6be45f20a7ce17259a935e2b02c1fb11d5682019

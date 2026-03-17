@@ -7,6 +7,8 @@
 __pycache__/
 *.pyc
 *.cif
+*.error
+*.out
 
 # Generated simulation outputs
 Outputs/

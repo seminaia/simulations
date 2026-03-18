@@ -98,7 +98,7 @@ symbols = ('La','Ni','O','O')
 
 # ── Calculation parameters ────────────────────────────────────────────────────
 ECUT_EV = 520
-KPTS    = (1, 1, 1)
+KPTS    = (2, 2, 2)
 SCREEN  = 0.2*Bohr   # HSE06 screening parameter (Å⁻¹)
 
 # Structure setup
@@ -128,11 +128,11 @@ pbe_params = {
     "xc": "PBE",
 }
 hse_params = {
-    "convergence": {"density": 1e-6, "eigenstates": 1e-8, "energy": 1e-4, "forces": 1e-2},
+    "convergence": {"density": 1e-4, "eigenstates": 1e-4, "energy": 1e-3},
     "eigensolver": {"name": "dav", "niter": 5},
     "kpts": {"gamma": True, "size": (1, 1, 1)},
-    "maxiter": 1000,
-    "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
+    "maxiter": 300,
+    "mixer": {"backend": "pulay", "beta": 0.25, "method": "separate", "nmaxold": 5, "weight": 50.0},
     "mode": {"name": "pw", "ecut": ECUT_EV},
     "nbands": "nao",
     "occupations": {"name": "fermi-dirac", "width": 0.01},
@@ -147,11 +147,14 @@ lno_relax_atoms = relax(lno_atoms,
                       logname='LNO_opt.log',
                       trajname='LNO_opt.traj',
                       gpwname='LNO_opt.gpw')
-lno_atoms_hse = lno_relax_atoms.copy()
-lno_atoms_hse.calc = GPAW(**hse_params)
-E_lno_hse = lno_atoms_hse.get_potential_energy()
-lno_pos = lno_atoms_hse.get_positions()
-lno_relax_cell = lno_atoms_hse.get_cell()
+lno_relax_hse = relax(lno_relax_atoms.copy(), hse_params,
+                      fmax=0.01, fixcell=False,
+                      logname='LNO_hse_opt.log',
+                      trajname='LNO_hse_opt.traj',
+                      gpwname='LNO_hse_rlx.gpw')
+E_lno_hse = lno_relax_hse.get_potential_energy()
+lno_pos = lno_relax_hse.get_positions()
+lno_relax_cell = lno_relax_hse.get_cell()
 print("Relaxed cell:")
 print(lno_relax_cell)
 print("PBE Potential energy (eV):", lno_relax_atoms.get_potential_energy())

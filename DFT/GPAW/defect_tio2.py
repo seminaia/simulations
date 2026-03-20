@@ -615,7 +615,18 @@ def run_tio2_defect_workflow(
         gpwname=f'{out_prefix}_opt_mgga.gpw',
     )
     E_mgga = relaxed_mgga.get_potential_energy()
+    cell = relaxed_mgga.cell.cellpar()
     print(f"{phase_name} r2SCAN energy: {E_mgga:.6f} eV")
+    print(f"Relaxed lattice: a={cell[0]:.4f} b={cell[1]:.4f} c={cell[2]:.4f} A, "
+          f"a={cell[3]:.2f} b={cell[4]:.2f} g={cell[5]:.2f} deg")
+
+    # Update global lattice constants with relaxed values
+    if phase_name == "Rutile":
+        global rutile_a, rutile_c
+        rutile_a, rutile_c = cell[0], cell[2]
+    elif phase_name == "Anatase":
+        global anatase_a, anatase_c
+        anatase_a, anatase_c = cell[0], cell[2]
 
     # --- Chemical potentials ---
     CHEMPOTS_JSON = os.path.join(defects_dir, "chemical_potentials.json")

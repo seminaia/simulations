@@ -67,7 +67,7 @@ def relax(
 
     def _log():
         raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
-        fmax_cur = float(np.max(np.linalg.norm(raw.get_forces(), axis=1)))
+        fmax_cur = float(np.max(np.linalg.norm(opt_atoms.get_forces(), axis=1)))
         epot = raw.get_potential_energy() / len(raw)
         print(f"[{datetime.now():%H:%M:%S}]  relax step {bfgs.nsteps:4d}  "
               f"Epot={epot:.4f} eV/atom  fmax={fmax_cur:.4f} eV/A")
@@ -98,7 +98,7 @@ def relax(
 
 
 _MAGMOM_MAP: Dict[str, float] = {
-    'Ti': 0.5, 'O': 0.1,
+    'Ti': 2, 'O': 1,
     'N': 0.5, 'Nb': 0.5, 'Fe': 4.0, 'Co': 3.0,
 }
 
@@ -376,6 +376,7 @@ def _compute_competing_phase_chempots(
         host_formula,
         energy_above_hull=energy_above_hull,
         full_phase_diagram=True,
+        api_key='zBYiak7h6ies4ziNlAWqzXXHhc7rMBDB'
     )
     entries = cp.entries
     print(f"  {len(entries)} phases fetched (before deduplication)")
@@ -507,7 +508,7 @@ _CHARGE_MAP: Dict[str, float] = {'Ti': 4, 'O': -2}
 rutile_a, rutile_c = 4.594, 2.959
 rutile_atoms = crystal(
     ['Ti', 'O'],
-    [(0, 0, 0), (0.3053, 0.3053, 0)],
+    [(1/2, 1/2, 0), (0.695679, 0.695679, 1/2)],
     spacegroup=136,
     cellpar=[rutile_a, rutile_a, rutile_c, 90, 90, 90],
     size=(1, 1, 1),
@@ -515,6 +516,7 @@ rutile_atoms = crystal(
 charges_rutile = [_CHARGE_MAP[s] for s in rutile_atoms.get_chemical_symbols()]
 rutile_atoms.set_initial_charges(charges_rutile)
 _assign_magmoms(rutile_atoms)
+view(rutile_atoms,repeat=(2,2,3))
 rutile_atoms.write('TiO2_rutile_P42mnm.cif', format='cif')
 
 # --- Anatase TiO2: I4_1/amd (141) ---
@@ -523,7 +525,7 @@ rutile_atoms.write('TiO2_rutile_P42mnm.cif', format='cif')
 anatase_a, anatase_c = 3.785, 9.514
 anatase_atoms = crystal(
     ['Ti', 'O'],
-    [(0, 0, 0), (0, 0, 0.2081)],
+    [(1/2, 1/2, 1/2), (0, 1/2, 0.457152)],
     spacegroup=141,
     cellpar=[anatase_a, anatase_a, anatase_c, 90, 90, 90],
     size=(1, 1, 1),
@@ -531,11 +533,11 @@ anatase_atoms = crystal(
 charges_anatase = [_CHARGE_MAP[s] for s in anatase_atoms.get_chemical_symbols()]
 anatase_atoms.set_initial_charges(charges_anatase)
 _assign_magmoms(anatase_atoms)
+view(anatase_atoms,repeat=(3,3,2))
 anatase_atoms.write('TiO2_anatase_I41amd.cif', format='cif')
 
 print(f"Rutile:  {len(rutile_atoms)} atoms, cell = {rutile_atoms.cell.cellpar()[:3]}")
 print(f"Anatase: {len(anatase_atoms)} atoms, cell = {anatase_atoms.cell.cellpar()[:3]}")
-
 # ---------------------------------------------------------------------------
 #  Calculator parameters
 # ---------------------------------------------------------------------------
@@ -585,26 +587,26 @@ def run_tio2_defect_workflow(
     defects_dir = f"defects_{out_prefix}"
     os.makedirs(defects_dir, exist_ok=True)
 
-    # --- PBE relaxation ---
-    pbe_p = pbe_params.copy()
-    pbe_p["txt"] = f"{out_prefix}_scf_pbe.log"
+    # # --- PBE relaxation ---
+    # pbe_p = pbe_params.copy()
+    # pbe_p["txt"] = f"{out_prefix}_scf_pbe.log"
 
-    relaxed_pbe = relax(
-        tio2_atoms,
-        calculator_params=pbe_p,
-        fmax=0.01,
-        fixcell=False,
-        logname=f'{out_prefix}_opt_pbe.log',
-        trajname=f'{out_prefix}_opt_pbe.traj',
-        gpwname=f'{out_prefix}_opt_pbe.gpw',
-    )
+    # relaxed_pbe = relax(
+    #     tio2_atoms,
+    #     calculator_params=pbe_p,
+    #     fmax=0.01,
+    #     fixcell=False,
+    #     logname=f'{out_prefix}_opt_pbe.log',
+    #     trajname=f'{out_prefix}_opt_pbe.traj',
+    #     gpwname=f'{out_prefix}_opt_pbe.gpw',
+    # )
 
     # --- r2SCAN relaxation ---
     mgga_p = mgga_params.copy()
     mgga_p["txt"] = f"{out_prefix}_scf_mgga.log"
 
     relaxed_mgga = relax(
-        relaxed_pbe,
+        tio2_atoms,
         calculator_params=mgga_p,
         fmax=0.01,
         fixcell=False,
@@ -628,10 +630,10 @@ def run_tio2_defect_workflow(
         print("\nComputing chemical potentials from competing phases ...")
         chempots = _compute_competing_phase_chempots(
             host_formula="TiO2",
-            pbe_params=mgga_p,
+            pbe_params=pbe_params,
             output_json=CHEMPOTS_JSON,
-            host_atoms=relaxed_pbe,
-            host_energy=float(relaxed_pbe.get_potential_energy()),
+            host_atoms=relaxed_mgga,
+            host_energy=float(relaxed_mgga.get_potential_energy()),
             energy_above_hull=0.1,
         )
 
@@ -644,7 +646,7 @@ def run_tio2_defect_workflow(
         print("\nComputing dielectric tensor ...")
         DIELECTRIC_TENSOR = _compute_dielectric_tensor(
             atoms=tio2_atoms,
-            pbe_params=mgga_p,
+            pbe_params=pbe_params,
             output_json=DIELECTRIC_JSON,
             kpts_dense=(6, 6, 6),
         )

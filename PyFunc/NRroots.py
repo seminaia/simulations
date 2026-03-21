@@ -35,20 +35,21 @@ def newton_raphson(func, dfunc, x0, es=0.0001, max_iter=50, *args):
 
   return x0, ea, iter
 
-# Example usage
-def f(x):
-  return x**2 - 2  # Replace with your actual function
+if __name__ == "__main__":
+  # Example usage
+  def f(x):
+    return x**2 - 2
 
-print(f)
+  print(f)
 
-def df(x):
-  return 2*x  # Replace with your actual derivative
+  def df(x):
+    return 2*x
 
-x0 = 1.5  # Initial guess
-es = 0.01  # Stopping criteria (optional)
-max_iter = 100  # Maximum iterations (optional)
+  x0 = 1.5
+  es = 0.01
+  max_iter = 100
 
-root, ea, iter = newton_raphson(f, df, x0, es, max_iter)
-print("Root:", root)
-print("Relative error:", ea, "%")
-print("Iterations:", iter)
+  root, ea, iter = newton_raphson(f, df, x0, es, max_iter)
+  print("Root:", root)
+  print("Relative error:", ea, "%")
+  print("Iterations:", iter)

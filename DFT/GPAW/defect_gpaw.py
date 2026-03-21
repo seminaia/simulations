@@ -3,17 +3,9 @@ import os
 import sys
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict
+from ase.units import Bohr
 
-# Force line-buffered output so every print() appears immediately in SLURM logs.
-sys.stdout.reconfigure(line_buffering=True)
-sys.stderr.reconfigure(line_buffering=True)
-
-import matplotlib
-matplotlib.use('Agg')   # non-interactive; safe on HPC
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from gpaw.mpi import world
 import numpy as np
 from ase import Atoms
 from ase.filters import FrechetCellFilter
@@ -22,14 +14,15 @@ from ase.optimize import BFGS
 from ase.spacegroup import crystal
 from ase.units import Bohr
 from ase.visualize import view
+from doped.core import DefectEntry
 from doped.generation import DefectsGenerator
 from gpaw import GPAW, restart
 from gpaw.hybrids.energy import non_self_consistent_energy
 from pymatgen.analysis.defects.core import DefectType
 from pymatgen.io.ase import AseAtomsAdaptor
 from shakenbreak.input import Distortions
+from ase.spacegroup import crystal
 
-# ── Relaxation helper ─────────────────────────────────────────────────────────
 def relax(
     atoms: Atoms,
     calculator_params: Dict[str, Any],
@@ -41,45 +34,58 @@ def relax(
 ) -> Atoms:
     orig_atoms = atoms
     done_file = gpwname.replace('.gpw', '.traj')
-    if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
-        try:
-            atoms, _ = restart(gpwname)
-            if len(atoms) != len(orig_atoms):
-                print(f"Cached GPW has {len(atoms)} atoms but current structure has {len(orig_atoms)}. Starting fresh.")
-                atoms = orig_atoms
-            atoms.calc = GPAW(**calculator_params)
-            print(f"Restarted positions from {gpwname}")
-        except Exception as e:
-            print(f"Restart failed ({e}), starting fresh.")
-            atoms.calc = GPAW(**calculator_params)
+    if os.path.exists(done_file):
+        relaxed = read(done_file, index=0)
+        if len(relaxed) != len(orig_atoms):
+            print(f"Cached structure has {len(relaxed)} atoms but current structure has {len(orig_atoms)}. Ignoring cache.")
+            relaxed = None
+        else:
+            print(f"Loaded converged structure from {done_file}")
     else:
-        atoms.calc = GPAW(**calculator_params)
-        print("Starting fresh calculation")
-    opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
-    print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/Å")
-    bfgs = BFGS(opt_atoms, logfile=logname, trajectory=trajname)
-        
-    def _relax_log():
-        raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
-        fmax_cur = float(np.max(np.linalg.norm(raw.get_forces(), axis=1)))
-        epot = raw.get_potential_energy() / len(raw)
-        print(f"[{datetime.now():%H:%M:%S}]  relax step {bfgs.nsteps:4d}  "
-              f"Epot={epot:.4f} eV/atom  fmax={fmax_cur:.4f} eV/Å")
-        
-    bfgs.attach(_relax_log, interval=1)
-    bfgs.run(fmax=fmax, steps=500)
-    if isinstance(opt_atoms, FrechetCellFilter):
-        opt_atoms = opt_atoms.atoms
-    try:
-        opt_atoms.calc.write(gpwname, mode='all')
-        print(f"Saved to {gpwname}")
-    except Exception as e:
-        print(f"Warning: could not save state: {e}")
-    ase_write(done_file, opt_atoms)
-    print(f"Converged structure saved to {done_file}")
-    forces = opt_atoms.get_forces()
-    print(f"Max force: {np.max(np.linalg.norm(forces, axis=1)):.6f} eV/Å")
-    relaxed = opt_atoms
+        relaxed = None
+    if relaxed is None:
+        if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
+            try:
+                atoms, _ = restart(gpwname)
+                if len(atoms) != len(orig_atoms):
+                    print(f"Cached GPW has {len(atoms)} atoms but current structure has {len(orig_atoms)}. Starting fresh.")
+                    atoms = orig_atoms
+                atoms.calc = GPAW(**calculator_params)
+                print(f"Restarted positions from {gpwname}")
+            except Exception as e:
+                print(f"Restart failed ({e}), starting fresh.")
+                atoms.calc = GPAW(**calculator_params)
+        else:
+            atoms.calc = GPAW(**calculator_params)
+            print("Starting fresh calculation")
+
+        opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
+        print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/Å")
+        bfgs = BFGS(opt_atoms, logfile=logname, trajectory=trajname)
+
+        def _relax_log():
+            raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
+            fmax_cur = float(np.max(np.linalg.norm(raw.get_forces(), axis=1)))
+            epot = raw.get_potential_energy() / len(raw)
+            print(f"[{datetime.now():%H:%M:%S}]  relax step {bfgs.nsteps:4d}  "
+                  f"Epot={epot:.4f} eV/atom  fmax={fmax_cur:.4f} eV/Å")
+
+        bfgs.attach(_relax_log, interval=1)
+        bfgs.run(fmax=fmax, steps=500)
+
+        if isinstance(opt_atoms, FrechetCellFilter):
+            opt_atoms = opt_atoms.atoms
+        try:
+            opt_atoms.calc.write(gpwname, mode='all')
+            print(f"Saved to {gpwname}")
+        except Exception as e:
+            print(f"Warning: could not save state: {e}")
+
+        ase_write(done_file, opt_atoms)
+        print(f"Converged structure saved to {done_file}")
+        forces = opt_atoms.get_forces()
+        print(f"Max force: {np.max(np.linalg.norm(forces, axis=1)):.6f} eV/Å")
+        relaxed = opt_atoms
 
     orig_atoms.set_cell(relaxed.get_cell(), scale_atoms=False)
     orig_atoms.set_positions(relaxed.get_positions())
@@ -334,47 +340,31 @@ def _plot_formation_energies(
 defect_type_map = {
     DefectType.Vacancy.value: "Vacancy",
     DefectType.Interstitial.value: "Interstitial",
-    DefectType.Substitution.value: "Substitution"
+    DefectType.Substitution.value: "Substitution",
 }
-symbols = ('La','Ni','O','O')
 
-# ── Calculation parameters ────────────────────────────────────────────────────
 ECUT_EV = 520
-KPTS    = (1, 1, 1)
-SCREEN  = 0.2*Bohr   # HSE06 screening parameter (Å⁻¹)
+SCREEN = 0.2 * Bohr  # HSE06 screening parameter (Å⁻¹)
 
-# Structure setup
 a0 = 3.92
 c0 = 12.52
 
-magmoms = [0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6,
-           0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 
-           2.0, -2.0, 2.0, -2.0, 2.0, -2.0, 2.0, -2.0, 
-           0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6,
-           0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6,
-           0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6,
-           0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6]
-
-lno_atoms = crystal(['La','Ni','O','O'],[(0,0,0.363473),(0,0,0),(1/2,0,0),(0,0,0.178993)], spacegroup=139, cellpar=[a0, a0, c0, 90, 90, 90],size = (2,2,1))
+magmoms = [0.6, -0.6, 0.6, -0.6, 2.0, -2.0, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6]
+lno_atoms = crystal(['La','Ni','O','O'],[(0,0,0.363473),(0,0,0),(1/2,0,0),(0,0,0.178993)], spacegroup=139, cellpar=[a0, a0, c0, 90, 90, 90])
 
 lno_atoms.set_initial_magnetic_moments(magmoms)
 lno_atoms.write('LNO_I4mmm.cif', format='cif')
-view(lno_atoms)
+view(lno_atoms, repeat=(2, 2, 1))
 extrinsic = {"P": ['Ca', 'Sr'], "Pb": ['Cu', 'Mn']}
 substitution_elements = ['La', 'Ni', 'Ca', 'Sr', 'Co', 'Mn']
-
-
-pbe_params = {
-    "convergence": {"density":1e-8, "eigenstates":1e-10, "energy": 1e-6, "forces":1e-4},
+base_params = {
     "eigensolver": {"name": "dav", "niter": 5},
-    "kpts": {"gamma": True, "size": KPTS},
     "maxiter": 1000,
-    "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
+    "mixer": {"backend": "pulay", "beta": 0.05, "method": "difference", "nmaxold": 5, "weight": 50.0},
     "mode": {"name": "pw", "ecut": ECUT_EV},
     "nbands": "nao",
-    "parallel": {"sl_auto": True, "augment_grids": True},
     "occupations": {"name": "fermi-dirac", "width": 0.01},
-    "txt": "LNO_scf_pbe.log",
+    "txt": "pbe_relax.log",
     "xc": "PBE",
 }
 hse_params = {
@@ -385,50 +375,10 @@ hse_params = {
     "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
     "mode": {"name": "pw", "ecut": ECUT_EV},
     "nbands": "nao",
-    "parallel": {"sl_auto": True, "augment_grids": True},
     "occupations": {"name": "fermi-dirac", "width": 0.01},
-    "txt": "LNO_scf_hse.log",
+    "txt": "hse_relax.log",
     "xc": {"name": "HYB_GGA_XC_HSE06", "omega": SCREEN, "fraction": 0.25, "backend": "pw"},
 }
-
-# ── Dielectric tensor for Kumagai charge correction ───────────────────────────
-# LaNiO3 is anisotropic.  Compute via DFPT/finite-differences and save to
-# defects/dielectric_tensor.json, or set directly here.
-# If the JSON exists it takes priority.
-DIELECTRIC_JSON = "defects/dielectric_tensor.json"
-if os.path.exists(DIELECTRIC_JSON):
-    DIELECTRIC_TENSOR: Optional[np.ndarray] = np.array(json.load(open(DIELECTRIC_JSON)))
-    print(f"Loaded dielectric tensor from {DIELECTRIC_JSON}")
-else:
-    DIELECTRIC_TENSOR = None   # correction will be skipped; set to np.eye(3)*25 as placeholder
-    print("WARNING: DIELECTRIC_TENSOR not set — Kumagai correction will be skipped for "
-          f"charged defects.  Save your computed 3×3 tensor to {DIELECTRIC_JSON}.")
-
-# ── Chemical potentials (μ_i, eV per atom from competing-phase DFT) ───────────
-# Fill in values after running GPAW calculations for La, La2O3, Ni, NiO, ½O2.
-# μ = 0.0 placeholder → formation energies will be printed but are not physical.
-CHEMPOTS_JSON = "defects/chemical_potentials.json"
-_chempot_template = {
-    "__instructions__": (
-        "Replace 0.0 values with GPAW PBE total energy / atom for each competing "
-        "phase reservoir: La→La-metal/atom, Ni→Ni-metal/atom, O→½E(O2), "
-        "Ca/Sr/Co/Mn→ their standard-state elemental energies per atom."
-    ),
-    "La": 0.0, "Ni": 0.0, "O": 0.0,
-    "Ca": 0.0, "Sr": 0.0, "Co": 0.0, "Mn": 0.0,
-}
-if os.path.exists(CHEMPOTS_JSON):
-    _raw = json.load(open(CHEMPOTS_JSON))
-    chempots: Dict[str, float] = {k: v for k, v in _raw.items() if k != "__instructions__"}
-    print(f"Loaded chemical potentials from {CHEMPOTS_JSON}")
-else:
-    os.makedirs("defects", exist_ok=True)
-    with open(CHEMPOTS_JSON, 'w') as _f:
-        json.dump(_chempot_template, _f, indent=2)
-    chempots = {k: v for k, v in _chempot_template.items() if k != "__instructions__"}
-    print(f"WARNING: Chemical potentials not set.  Template written to {CHEMPOTS_JSON}.")
-    print("         Formation energies will be inaccurate until you fill in real μ values.")
-
 # Run relaxation
 lno_relax_atoms = relax(lno_atoms,
                       calculator_params=pbe_params,
@@ -450,7 +400,7 @@ print("All positions (Angstrom):")
 print(lno_pos)
 
 defect_gen = DefectsGenerator(
-    lno_relax_atoms,                                # use PBE-relaxed structure
+    lno_atoms,
     extrinsic=extrinsic,
     interstitial_gen_kwargs=True,
     interstitial_elements=['O'],
@@ -462,253 +412,20 @@ defect_gen = DefectsGenerator(
     supercell_gen_kwargs={'force_diagonal': True, 'min_image_distance': 10},
 )
 
-# ── Bulk supercell reference (same supercell as defects, pristine) ────────────
-# Required for E_f = E_HSE(defect) - E_HSE(bulk_SC) - Σ n_i μ_i + ...
-print("\n" + "=" * 60)
-print("Setting up bulk supercell reference calculation")
-print("=" * 60)
-os.makedirs("defects/bulk_supercell", exist_ok=True)
-bulk_sc_pmg   = defect_gen.bulk_supercell          # pymatgen Structure
-bulk_sc_atoms = AseAtomsAdaptor.get_atoms(bulk_sc_pmg)
-_assign_magmoms(bulk_sc_atoms)
-
-bulk_sc_pbe_params = pbe_params.copy()
-bulk_sc_pbe_params["txt"] = "defects/bulk_supercell/pbe_scf.log"
-
-bulk_sc_atoms = relax(
-    bulk_sc_atoms,
-    calculator_params=bulk_sc_pbe_params,
-    fmax=0.01,
-    fixcell=True,                                   # cell fixed — same as defect SCs
-    logname="defects/bulk_supercell/pbe_relax.log",
-    trajname="defects/bulk_supercell/pbe_relax.traj",
-    gpwname="defects/bulk_supercell/pbe_relax.gpw",
-)
-
-E_bulk_sc_hse, vbm_bulk_sc = _hse_singlepoint(
-    bulk_sc_atoms,
-    base_dir="defects/bulk_supercell",
-    hse_params_template=hse_params,
-)
-print(f"Bulk SC  E_HSE = {E_bulk_sc_hse:.4f} eV  VBM = {vbm_bulk_sc:.4f} eV")
-
-with open("defects/bulk_supercell/reference.txt", "w") as _f:
-    _f.write(f"Bulk supercell reference\n")
-    _f.write(f"  N atoms:    {len(bulk_sc_atoms)}\n")
-    _f.write(f"  E_HSE (eV): {E_bulk_sc_hse:.6f}\n")
-    _f.write(f"  VBM (eV):   {vbm_bulk_sc:.6f}\n")
-
-# ── Defect loop ────────────────────────────────────────────────────────────────
-os.makedirs("defects", exist_ok=True)
-summary_path  = "defects/defects_summary.txt"
-formation_data: List[Dict] = []
-
-with open(summary_path, "w") as sf:
-    sf.write(f"Defect summary  generated {datetime.now():%Y-%m-%d %H:%M:%S}\n")
-    sf.write(f"{'Name':<40} {'Type':<15} {'Charge':>6}  "
-             f"{'E_HSE (eV)':>14}  {'E_corr (eV)':>12}  {'Ef@VBM (eV)':>12}\n")
-    sf.write("-" * 105 + "\n")
 
 for defect_entry in defect_gen.defect_entries.values():
-    defect_name      = defect_entry.name
-    defect_type_val  = defect_entry.defect.defect_type.value
-    defect_type      = defect_type_map.get(defect_type_val, "Unknown")
-    charge           = defect_entry.charge_state
-    sc               = defect_entry.defect_supercell
-    frac_coords      = defect_entry.sc_defect_frac_coords
-    natoms_change    = _get_natoms_change(defect_entry)
-
-    defect_dir = os.path.join("defects", f"{defect_name}_q{charge:+d}")
-    os.makedirs(defect_dir, exist_ok=True)
-
-    print(f"\n{'='*60}")
-    print(f"Defect: {defect_name}  charge: {charge:+d}  type: {defect_type}")
-    print(f"{'='*60}")
-
-    # ── info.txt: human-readable metadata ─────────────────────────────────────
-    cell_params = sc.lattice.abc + sc.lattice.angles
-    with open(os.path.join(defect_dir, "info.txt"), "w") as f:
-        f.write(f"Defect:           {defect_name}\n")
-        f.write(f"Type:             {defect_type}\n")
-        f.write(f"Charge state:     {charge:+d}\n")
-        f.write(f"Frac coords:      "
-                f"{frac_coords[0]:.6f}  {frac_coords[1]:.6f}  {frac_coords[2]:.6f}\n")
-        f.write(f"Supercell sites:  {len(sc)}\n")
-        f.write(f"  a={cell_params[0]:.4f}  b={cell_params[1]:.4f}  c={cell_params[2]:.4f} Å\n")
-        f.write(f"  α={cell_params[3]:.2f}  β={cell_params[4]:.2f}  γ={cell_params[5]:.2f}°\n")
-        f.write(f"Atom count change: {natoms_change}\n")
-
-    # ── ShakeNBreak distortions ────────────────────────────────────────────────
-    snb = Distortions(defect_entry)
-    distorted_dict, distortion_meta = snb.apply_distortions()
-
-    with open(os.path.join(defect_dir, "distortions.json"), "w") as f:
-        json.dump(distortion_meta, f, indent=2, default=str)
-
-    # Navigate the nested SnB output:
-    # distorted_dict[defect_name]['charges'][charge]['structures']
-    #   -> {'Unperturbed': Structure, 'distortions': {key: Structure}}
-    charge_block = (
-        distorted_dict
-        .get(defect_name, {})
-        .get('charges', {})
-        .get(charge, {})
-    )
-    structs_block = charge_block.get('structures', {})
-    unperturbed   = structs_block.get('Unperturbed')
-    dist_structs  = structs_block.get('distortions', {})
-
-    all_structs: Dict[str, Any] = {}
-    if unperturbed is not None:
-        all_structs['Unperturbed'] = unperturbed
-    all_structs.update(dist_structs)
-
-    if not all_structs:
-        print(f"  WARNING: no structures found in SnB output for {defect_name} "
-              f"q={charge:+d}.  Skipping.")
-        continue
-
-    # ── PBE position-only relaxation for each distortion ─────────────────────
-    # Electronic convergence: defects/{name}/Unperturbed/scf.log   (GPAW txt)
-    # Ionic steps:            defects/{name}/Unperturbed/relax.log  (BFGS log)
-    # Trajectory:             defects/{name}/Unperturbed/relax.traj
-    distortion_energies: Dict[str, float] = {}
-    dist_base = defect_dir                         # distortion dirs live inside defect_dir
-
-    for dist_key, pmg_struct in all_structs.items():
-        safe_key = dist_key.replace('/', '_').replace(' ', '_')
-        dist_dir = os.path.join(dist_base, safe_key)
-        os.makedirs(dist_dir, exist_ok=True)
-
-        energy_cache = os.path.join(dist_dir, "energy.txt")
-        if os.path.exists(energy_cache):
-            with open(energy_cache) as _ef:
-                distortion_energies[dist_key] = float(_ef.read().strip())
-            print(f"  {dist_key:40s}  E_PBE = {distortion_energies[dist_key]:.4f} eV  [cached]")
-            continue
-
-        def_atoms = AseAtomsAdaptor.get_atoms(pmg_struct)
-        _assign_magmoms(def_atoms)
-
-        d_pbe_p = pbe_params.copy()
-        d_pbe_p["charge"] = charge          # uniform background charge for charged SC
-        d_pbe_p["txt"]    = os.path.join(dist_dir, "scf.log")
-
-        def_atoms = relax(
-            def_atoms,
-            calculator_params=d_pbe_p,
-            fmax=0.05,                      # looser fmax for distortion screening
-            fixcell=True,
-            logname=os.path.join(dist_dir, "relax.log"),
-            trajname=os.path.join(dist_dir, "relax.traj"),
-            gpwname=os.path.join(dist_dir, "pbe_relax.gpw"),
-        )
-        e_pbe = float(def_atoms.get_potential_energy())
-        distortion_energies[dist_key] = e_pbe
-        with open(energy_cache, 'w') as _ef:
-            _ef.write(str(e_pbe))
-        print(f"  {dist_key:40s}  E_PBE = {e_pbe:.4f} eV")
-
-    # ── distortion_energies.txt ────────────────────────────────────────────────
-    E_unperturbed = distortion_energies.get('Unperturbed')
-    with open(os.path.join(defect_dir, "distortion_energies.txt"), "w") as f:
-        f.write(f"# Distortion screening for {defect_name} q={charge:+d}\n")
-        f.write(f"# {'Distortion':<40} {'E_PBE (eV)':>14}  {'ΔE vs Unperturbed (eV)':>24}\n")
-        for dk, e in sorted(distortion_energies.items(), key=lambda x: x[1]):
-            dE = (e - E_unperturbed) if E_unperturbed is not None else float('nan')
-            f.write(f"  {dk:<40} {e:14.6f}  {dE:+24.6f}\n")
-
-    # ── best_distortion.txt: lowest-energy distortion ─────────────────────────
-    best_key = min(distortion_energies, key=distortion_energies.__getitem__)
-    best_e   = distortion_energies[best_key]
-    dE_best  = (best_e - E_unperturbed) if E_unperturbed is not None else float('nan')
-    print(f"  Best distortion: {best_key}  ΔE = {dE_best:+.4f} eV")
-    with open(os.path.join(defect_dir, "best_distortion.txt"), "w") as f:
-        f.write(f"Best distortion:   {best_key}\n")
-        f.write(f"E_PBE (eV):        {best_e:.6f}\n")
-        f.write(f"ΔE vs Unperturbed: {dE_best:+.6f} eV\n")
-
-    # ── Reload best-distortion relaxed Atoms with its GPAW calculator ─────────
-    best_safe = best_key.replace('/', '_').replace(' ', '_')
-    best_gpw  = os.path.join(dist_base, best_safe, "pbe_relax.gpw")
-    best_atoms, _ = restart(best_gpw)
-
-    # ── HSE single-point on the best distortion ───────────────────────────────
-    # Electronic relaxation log: defects/{name}/hse/hse_scf.log
-    # Energy result:             defects/{name}/hse/hse_energy.txt
-    hse_dir = os.path.join(defect_dir, "hse")
-    e_hse_defect, _ = _hse_singlepoint(
-        best_atoms,
-        base_dir=hse_dir,
-        hse_params_template=hse_params,
-    )
-    print(f"  E_HSE = {e_hse_defect:.6f} eV")
-
-    # ── Kumagai charge correction ──────────────────────────────────────────────
-    bulk_gpw = "defects/bulk_supercell/pbe_relax.gpw"
-    bulk_atoms_corr, _ = restart(bulk_gpw)
-    e_corr = 0.0
-    if DIELECTRIC_TENSOR is not None:
-        e_corr = _kumagai_correction(
-            defect_entry=defect_entry,
-            defect_atoms=best_atoms,
-            bulk_atoms=bulk_atoms_corr,
-            dielectric=DIELECTRIC_TENSOR,
-            corr_dir=os.path.join(defect_dir, "charge_correction"),
-        )
-    else:
-        os.makedirs(os.path.join(defect_dir, "charge_correction"), exist_ok=True)
-        with open(os.path.join(defect_dir, "charge_correction", "kumagai.txt"), 'w') as f:
-            f.write(f"Correction skipped: DIELECTRIC_TENSOR is None.\n"
-                    f"Set it in defects/dielectric_tensor.json and rerun.\n"
-                    f"correction_energy = 0.0 eV (uncorrected)\n")
-
-    # ── Formation energy at VBM (εF = 0) ──────────────────────────────────────
-    ef_at_vbm = _formation_energy(
-        e_hse_defect, e_corr, E_bulk_sc_hse, natoms_change,
-        chempots, charge, vbm_bulk_sc, fermi_level=0.0,
-    )
-
-    # ── Accumulate for the plot ────────────────────────────────────────────────
-    formation_data.append({
-        'label':         f"{defect_name}_q{charge:+d}",
-        'charge':        charge,
-        'e_hse':         e_hse_defect,
-        'e_corr':        e_corr,
-        'e_bulk_sc':     E_bulk_sc_hse,
-        'natoms_change': natoms_change,
-        'vbm':           vbm_bulk_sc,
-    })
-
-    # ── Append to running summary ──────────────────────────────────────────────
-    with open(summary_path, "a") as sf:
-        sf.write(f"{defect_name:<40} {defect_type:<15} {charge:>+6d}  "
-                 f"{e_hse_defect:>14.4f}  {e_corr:>+12.4f}  {ef_at_vbm:>12.4f}\n")
-
-    print(f"[DONE] {defect_name} q={charge:+d}  "
-          f"E_HSE={e_hse_defect:.4f} eV  E_corr={e_corr:+.4f} eV  "
-          f"E_f(VBM)={ef_at_vbm:.4f} eV")
-
-# ── Formation energy diagram ───────────────────────────────────────────────────
-if formation_data:
-    # Estimate PBE bandgap from bulk SC (proxy only; HSE gap will differ)
-    try:
-        _bulk_ref, _ = restart("defects/bulk_supercell/pbe_relax.gpw")
-        _, _lumo = _bulk_ref.calc.get_homo_lumo()
-        bandgap_est = max(float(_lumo) - vbm_bulk_sc, 0.3)
-    except Exception:
-        bandgap_est = 1.0
-        print("Warning: could not extract bandgap from bulk SC; using 1.0 eV placeholder.")
-
-    _plot_formation_energies(
-        formation_data=formation_data,
-        vbm=vbm_bulk_sc,
-        bandgap=bandgap_est,
-        chempots=chempots,
-        output_path="defects/formation_energy_diagram.png",
-    )
-
-with open(summary_path, "a") as sf:
-    sf.write(f"\nCompleted: {datetime.now():%Y-%m-%d %H:%M:%S}\n")
-print(f"\nAll done.  Summary → {summary_path}")
+    defect_name = defect_entry.name
+    defect_type_value = defect_entry.defect.defect_type.value
+    defect_type = defect_type_map.get(defect_type_value, "Unknown")
+    charge = defect_entry.charge_state
+    sc = defect_entry.defect_supercell
+    frac_coords = defect_entry.sc_defect_frac_coords
+    defect_dict, defect_metadata = Distortions(defect_entry)
+    defect_elements = list(OrderedDict.fromkeys([site.species.elements[0].symbol for site in sc]))
+    def_atoms = Atoms(symbols=defect_elements,
+                      scaled_positions=frac_coords,
+                      pbc=True)
+    def_atoms.set_initial_magnetic_moments(magmoms)
+    def_atoms.write(f'{defect_name}_{defect_type}_q{charge}.cif', format='cif')
+    def_atoms.calc = GPAW(**pbe_params)
 

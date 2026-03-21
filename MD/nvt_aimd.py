@@ -127,7 +127,7 @@ BeF2 : {len(bef2_atoms)} atoms  a={bef2_cell_params[0]:.2f} b={bef2_cell_params[
 # ── GPAW calculator factory ───────────────────────────────────────────────────
 def make_gpaw(txt='-', screen=SCREEN, ecut=ECUT_EV, hund=False) -> GPAW:
     return GPAW(
-        convergence={"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-6},
+        convergence={"density": 1e-5, "eigenstates": 1e-7, "energy": 1e-4},
         eigensolver={"name": "dav", "niter": 5},
         hund=hund,
         kpts=KPTS,
@@ -135,11 +135,11 @@ def make_gpaw(txt='-', screen=SCREEN, ecut=ECUT_EV, hund=False) -> GPAW:
         mixer={"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
         mode={"name": "pw", "ecut": ecut},
         nbands="nao",
-        occupations={"name": "fermi-dirac", "width": 0.01},
+        occupations={"name": "fermi-dirac", "width": 0.1},
+        parallel={"sl_auto": True, "augment_grids": True, "band": 2},
         txt=txt,
         xc={"name": "HYB_GGA_XC_HSE06", "omega": screen, "fraction": 0.25},
     )
-
 
 # ── Relaxation helper ─────────────────────────────────────────────────────────
 def relax(
@@ -153,60 +153,45 @@ def relax(
 ) -> Atoms:
     orig_atoms = atoms
     done_file = gpwname.replace('.gpw', '.traj')
-    if os.path.exists(done_file):
-        relaxed = read(done_file, index=0)
-        if len(relaxed) != len(orig_atoms):
-            print(f"Cached structure has {len(relaxed)} atoms but current structure has {len(orig_atoms)}. Ignoring cache.")
-            relaxed = None
-        else:
-            print(f"Loaded converged structure from {done_file}")
-    else:
-        relaxed = None
-    if relaxed is None:
-        if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
-            try:
-                atoms, calc = restart(gpwname, txt=calculator_params.get("txt", "gpaw.log"))
-                if len(atoms) != len(orig_atoms):
-                    print(f"Cached GPW has {len(atoms)} atoms but current structure has {len(orig_atoms)}. Starting fresh.")
-                    atoms = orig_atoms
-                    atoms.calc = GPAW(**calculator_params)
-                else:
-                    atoms.calc = calc
-                    print(f"Restarted from {gpwname}")
-            except Exception as e:
-                print(f"Restart failed ({e}), starting fresh.")
-                atoms.calc = GPAW(**calculator_params)
-        else:
-            atoms.calc = GPAW(**calculator_params)
-            print("Starting fresh calculation")
-
-        opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
-        print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/Å")
-        bfgs = BFGS(opt_atoms, logfile=logname, trajectory=trajname)
-
-        def _relax_log():
-            raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
-            fmax_cur = float(np.max(np.linalg.norm(raw.get_forces(), axis=1)))
-            epot = raw.get_potential_energy() / len(raw)
-            print(f"[{datetime.now():%H:%M:%S}]  relax step {bfgs.nsteps:4d}  "
-                  f"Epot={epot:.4f} eV/atom  fmax={fmax_cur:.4f} eV/Å")
-
-        bfgs.attach(_relax_log, interval=1)
-        bfgs.run(fmax=fmax, steps=500)
-
-        if isinstance(opt_atoms, FrechetCellFilter):
-            opt_atoms = opt_atoms.atoms
+    if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
         try:
-            opt_atoms.calc.write(gpwname, mode='all')
-            print(f"Saved to {gpwname}")
+            atoms, _ = restart(gpwname)
+            if len(atoms) != len(orig_atoms):
+                print(f"Cached GPW has {len(atoms)} atoms but current structure has {len(orig_atoms)}. Starting fresh.")
+                atoms = orig_atoms
+            atoms.calc = GPAW(**calculator_params)
+            print(f"Restarted positions from {gpwname}")
         except Exception as e:
-            print(f"Warning: could not save state: {e}")
-
-        ase_write(done_file, opt_atoms)
-        print(f"Converged structure saved to {done_file}")
-        forces = opt_atoms.get_forces()
-        print(f"Max force: {np.max(np.linalg.norm(forces, axis=1)):.6f} eV/Å")
-        relaxed = opt_atoms
+            print(f"Restart failed ({e}), starting fresh.")
+            atoms.calc = GPAW(**calculator_params)
+    else:
+        atoms.calc = GPAW(**calculator_params)
+        print("Starting fresh calculation")
+    opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
+    print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/Å")
+    bfgs = BFGS(opt_atoms, logfile=logname, trajectory=trajname)
+        
+    def _relax_log():
+        raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
+        fmax_cur = float(np.max(np.linalg.norm(raw.get_forces(), axis=1)))
+        epot = raw.get_potential_energy() / len(raw)
+        print(f"[{datetime.now():%H:%M:%S}]  relax step {bfgs.nsteps:4d}  "
+              f"Epot={epot:.4f} eV/atom  fmax={fmax_cur:.4f} eV/Å")
+        
+    bfgs.attach(_relax_log, interval=1)
+    bfgs.run(fmax=fmax, steps=500)
+    if isinstance(opt_atoms, FrechetCellFilter):
+        opt_atoms = opt_atoms.atoms
+    try:
+        opt_atoms.calc.write(gpwname, mode='all')
+        print(f"Saved to {gpwname}")
+    except Exception as e:
+        print(f"Warning: could not save state: {e}")
+    ase_write(done_file, opt_atoms)
+    print(f"Converged structure saved to {done_file}")
+    forces = opt_atoms.get_forces()
+    print(f"Max force: {np.max(np.linalg.norm(forces, axis=1)):.6f} eV/Å")
+    relaxed = opt_atoms
 
     orig_atoms.set_cell(relaxed.get_cell(), scale_atoms=False)
     orig_atoms.set_positions(relaxed.get_positions())
@@ -293,7 +278,11 @@ pbe_params = {
     "mode": {"name": "pw", "ecut": ECUT_EV},
     "nbands": "nao",
     "parallel": {"sl_auto": True, "augment_grids": True},
+<<<<<<< HEAD
     "occupations": {"name": "fermi-dirac", "width": 0.01},
+=======
+    "occupations": {"name": "fermi-dirac", "width": 0.1},
+>>>>>>> 82602b2512afa3360ad53e137ef1b2d35730b51f
     "txt": "pbe_relax.log",
     "xc": "PBE",
 }
@@ -305,8 +294,13 @@ hse_params = {
     "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
     "mode": {"name": "pw", "ecut": ECUT_EV},
     "nbands": "nao",
+<<<<<<< HEAD
     "occupations": {"name": "fermi-dirac", "width": 0.01},
     "parallel": {"sl_auto": True, "augment_grids": True},
+=======
+    "occupations": {"name": "fermi-dirac", "width": 0.1},
+    "parallel": {"sl_auto": True, "augment_grids": True, "band": 2},
+>>>>>>> 82602b2512afa3360ad53e137ef1b2d35730b51f
     "txt": "hse_relax.log",
     "xc": {"name": "HYB_GGA_XC_HSE06", "omega": SCREEN, "fraction": 0.25, "backend": "pw"},
 }
@@ -317,12 +311,7 @@ mix_params["mode"] = "fd"
 mix_params["kpts"] = (1, 1, 1)
 mix_params["eigensolver"] = "cg"
 mix_params["mixer"] = {"backend": "pulay", "beta": 0.25, "method": "separate", "nmaxold": 5, "weight": 50.0}
-
-
-mix_params = pbe_params.copy()
-mix_params["txt"] = "mix_relax.log"
-mix_params["mode"] = "fd"
-mix_params["kpts"] = None
+mix_params["parallel"] = {"sl_auto": True, "augment_grids": True}
 
 lif_relax  = relax(lif_atoms,  pbe_params, fmax=0.01, fixcell=False,
                    logname=LIF_RLX_LOG, gpwname=LIF_GPW_FILE)

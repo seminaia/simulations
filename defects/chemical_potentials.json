@@ -1,0 +1,10 @@
+{
+  "__instructions__": "Replace 0.0 values with GPAW PBE total energy / atom for each competing phase reservoir: La\u2192La-metal/atom, Ni\u2192Ni-metal/atom, O\u2192\u00bdE(O2), Ca/Sr/Co/Mn\u2192 their standard-state elemental energies per atom.",
+  "La": 0.0,
+  "Ni": 0.0,
+  "O": 0.0,
+  "Ca": 0.0,
+  "Sr": 0.0,
+  "Co": 0.0,
+  "Mn": 0.0
+}

@@ -292,6 +292,7 @@ pbe_params = {
     "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
     "mode": {"name": "pw", "ecut": ECUT_EV},
     "nbands": "nao",
+    "parallel": {"sl_auto": True, "augment_grids": True},
     "occupations": {"name": "fermi-dirac", "width": 0.01},
     "txt": "pbe_relax.log",
     "xc": "PBE",
@@ -305,6 +306,7 @@ hse_params = {
     "mode": {"name": "pw", "ecut": ECUT_EV},
     "nbands": "nao",
     "occupations": {"name": "fermi-dirac", "width": 0.01},
+    "parallel": {"sl_auto": True, "augment_grids": True},
     "txt": "hse_relax.log",
     "xc": {"name": "HYB_GGA_XC_HSE06", "omega": SCREEN, "fraction": 0.25, "backend": "pw"},
 }

@@ -1,12 +1,12 @@
 import json
 import os
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
-
-sys.stdout.reconfigure(line_buffering=True)
-sys.stderr.reconfigure(line_buffering=True)
 
 import matplotlib
 matplotlib.use('Agg')
@@ -15,11 +15,7 @@ import matplotlib.cm as cm
 
 import numpy as np
 from ase import Atoms
-from ase.filters import FrechetCellFilter
-from ase.io import write as ase_write
-from ase.optimize import BFGS
 from ase.spacegroup import crystal
-from ase.units import Bohr
 from ase.visualize import view
 from doped.core import DefectEntry
 from doped.generation import DefectsGenerator
@@ -29,89 +25,7 @@ from pymatgen.analysis.defects.core import DefectType
 from pymatgen.io.ase import AseAtomsAdaptor
 from shakenbreak.input import Distortions
 
-
-# ---------------------------------------------------------------------------
-#  Shared helpers (identical to LNO workflow)
-# ---------------------------------------------------------------------------
-
-def relax(
-    atoms: Atoms,
-    calculator_params: Dict[str, Any],
-    fmax: float = 0.01,
-    fixcell: bool = True,
-    logname: str = 'opt.log',
-    trajname: str | None = None,
-    gpwname: str = 'rlx.gpw',
-) -> Atoms:
-    orig_atoms = atoms
-    struct_out = gpwname.replace('.gpw', '.traj')
-
-    if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
-        try:
-            atoms, _ = restart(gpwname)
-            if len(atoms) != len(orig_atoms):
-                print(f"Cached GPW has {len(atoms)} atoms but current structure has {len(orig_atoms)}. Starting fresh.")
-                atoms = orig_atoms
-            atoms.calc = GPAW(**calculator_params)
-            print(f"Restarted positions from {gpwname}")
-        except Exception as e:
-            print(f"Restart failed ({e}), starting fresh.")
-            atoms.calc = GPAW(**calculator_params)
-    else:
-        atoms.calc = GPAW(**calculator_params)
-        print("Starting fresh calculation")
-
-    opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
-    print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/A")
-    bfgs = BFGS(opt_atoms, logfile=logname, trajectory=trajname)
-
-    def _log():
-        raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
-        fmax_cur = float(np.max(np.linalg.norm(opt_atoms.get_forces(), axis=1)))
-        epot = raw.get_potential_energy() / len(raw)
-        print(f"[{datetime.now():%H:%M:%S}]  relax step {bfgs.nsteps:4d}  "
-              f"Epot={epot:.4f} eV/atom  fmax={fmax_cur:.4f} eV/A")
-
-    bfgs.attach(_log, interval=1)
-    bfgs.run(fmax=fmax, steps=500)
-
-    if isinstance(opt_atoms, FrechetCellFilter):
-        opt_atoms = opt_atoms.atoms
-
-    try:
-        opt_atoms.calc.write(gpwname, mode='all')
-        print(f"Saved to {gpwname}")
-    except Exception as e:
-        print(f"Warning: could not save state: {e}")
-
-    ase_write(struct_out, opt_atoms)
-    print(f"Converged structure saved to {struct_out}")
-    forces = opt_atoms.get_forces()
-    print(f"Max force: {np.max(np.linalg.norm(forces, axis=1)):.6f} eV/A")
-
-    orig_atoms.set_cell(opt_atoms.get_cell(), scale_atoms=False)
-    orig_atoms.set_positions(opt_atoms.get_positions())
-    cell = opt_atoms.cell.cellpar()
-    print(f"  Lattice: a={cell[0]:.4f} b={cell[1]:.4f} c={cell[2]:.4f} A, "
-          f"a={cell[3]:.2f} b={cell[4]:.2f} g={cell[5]:.2f} deg  Volume={opt_atoms.get_volume():.2f} A^3")
-    return opt_atoms
-
-
-_MAGMOM_MAP: Dict[str, float] = {
-    'Ti': 2, 'O': 1,
-    'N': 0.5, 'Nb': 0.5, 'Fe': 4.0, 'Co': 3.0,
-}
-
-
-def _assign_magmoms(atoms: Atoms) -> None:
-    counters: Dict[str, int] = defaultdict(int)
-    moms: List[float] = []
-    for sym in atoms.get_chemical_symbols():
-        mag = _MAGMOM_MAP.get(sym, 0.1)
-        sign = 1 if counters[sym] % 2 == 0 else -1
-        moms.append(sign * mag)
-        counters[sym] += 1
-    atoms.set_initial_magnetic_moments(moms)
+from gpaw_helpers import relax, assign_magmoms, pbe_params, mgga_params
 
 
 def _get_vbm(atoms: Atoms) -> float:
@@ -139,7 +53,7 @@ def _hse_singlepoint(
         scf_p["xc"] = "PBE"
         scf_p["txt"] = os.path.join(base_dir, "pbe_scf.log")
         a = atoms.copy()
-        _assign_magmoms(a)
+        assign_magmoms(a)
         a.calc = GPAW(**scf_p)
         a.get_potential_energy()
         a.calc.write(pbe_scf_gpw, mode='all')
@@ -325,7 +239,7 @@ def _compute_dielectric_tensor(
         p['convergence'] = {'density': 1e-8, 'eigenstates': 1e-10, 'energy': 1e-6}
         p['txt'] = scf_gpw.replace('.gpw', '.log')
         a = atoms.copy()
-        _assign_magmoms(a)
+        assign_magmoms(a)
         a.calc = GPAW(**p)
         a.get_potential_energy()
         a.calc.write(scf_gpw, mode='all')
@@ -352,141 +266,6 @@ def _compute_dielectric_tensor(
     return eps_tensor
 
 
-def _compute_competing_phase_chempots(
-    host_formula: str,
-    pbe_params: Dict[str, Any],
-    output_json: str,
-    host_atoms=None,
-    host_energy: Optional[float] = None,
-    extrinsic_species: Optional[List[str]] = None,
-    energy_above_hull: float = 0.05,
-) -> Dict[str, float]:
-    from doped.chemical_potentials import CompetingPhases as DopedCP, CompetingPhasesAnalyzer
-    from monty.serialization import dumpfn
-    from pymatgen.core import Composition
-    from pymatgen.entries.computed_entries import ComputedStructureEntry
-    from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-
-    base_dir = os.path.join(os.path.dirname(output_json) or 'defects', 'competing_phases')
-    os.makedirs(base_dir, exist_ok=True)
-
-    print(f"\n  Fetching competing phases for {host_formula} "
-          f"(energy_above_hull <= {energy_above_hull} eV/atom) ...")
-    cp = DopedCP(
-        host_formula,
-        energy_above_hull=energy_above_hull,
-        full_phase_diagram=True,
-        api_key='zBYiak7h6ies4ziNlAWqzXXHhc7rMBDB'
-    )
-    entries = cp.entries
-    print(f"  {len(entries)} phases fetched (before deduplication)")
-
-    _best: Dict[str, Any] = {}
-    for ent in entries:
-        key = ent.composition.reduced_formula
-        if key not in _best or ent.energy_per_atom < _best[key].energy_per_atom:
-            _best[key] = ent
-    entries = list(_best.values())
-    print(f"  {len(entries)} unique compositions after deduplication")
-
-    phase_list_txt = os.path.join(base_dir, 'phase_list.txt')
-    with open(phase_list_txt, 'w') as f:
-        f.write(f"Competing phases for {host_formula}  "
-                f"(energy_above_hull <= {energy_above_hull} eV/atom)\n")
-        f.write(f"  {'Formula':<20}  {'mp_id':<25}  {'Spacegroup':<12}  SG#\n")
-        f.write("  " + "-" * 70 + "\n")
-        for ent in entries:
-            try:
-                sga = SpacegroupAnalyzer(ent.structure, symprec=0.1)
-                sg_symbol = sga.get_space_group_symbol()
-                sg_number = sga.get_space_group_number()
-            except Exception:
-                sg_symbol, sg_number = "?", "?"
-            f.write(f"  {ent.composition.reduced_formula:<20}  "
-                    f"{str(getattr(ent, 'entry_id', 'N/A')):<25}  "
-                    f"{sg_symbol:<12}  {sg_number}\n")
-    print(f"  Phase list -> {phase_list_txt}")
-
-    gpaw_entries: List[ComputedStructureEntry] = []
-    _host_reduced = Composition(host_formula).reduced_formula
-
-    for _entry in entries:
-        entry: ComputedStructureEntry = _entry
-        reduced = entry.composition.reduced_formula
-        mp_id = str(getattr(entry, 'entry_id', reduced)).replace('/', '_')
-        ph_dir = os.path.join(base_dir, f"{reduced}_{mp_id}")
-        os.makedirs(ph_dir, exist_ok=True)
-        ph_cache = os.path.join(ph_dir, 'energy.txt')
-        n_atoms = entry.structure.num_sites
-
-        if reduced == _host_reduced and host_atoms is not None and host_energy is not None:
-            host_struct = AseAtomsAdaptor.get_structure(host_atoms)
-            e_total = float(host_energy)
-            sg = SpacegroupAnalyzer(host_struct, symprec=0.1).get_space_group_symbol()
-            print(f"  {reduced:20s}  E = {e_total/len(host_atoms):+.4f} eV/atom  [host, {sg}]")
-            gpaw_entries.append(ComputedStructureEntry(
-                structure=host_struct,
-                energy=e_total,
-                entry_id=getattr(entry, 'entry_id', reduced),
-            ))
-            continue
-
-        if os.path.exists(ph_cache):
-            with open(ph_cache) as cf:
-                e_total = float(cf.read().strip())
-            print(f"  {reduced:20s}  E = {e_total/n_atoms:+.4f} eV/atom  [cached]")
-        else:
-            a = AseAtomsAdaptor.get_atoms(entry.structure)
-            _assign_magmoms(a)
-
-            p = pbe_params.copy()
-            p['kpts'] = {'gamma': True, 'density': 2.0}
-            p['txt'] = os.path.join(ph_dir, 'scf.log')
-            p['parallel'] = {'augment_grids': True, 'sl_auto': True}
-
-            try:
-                a = relax(a, p, fmax=0.01, fixcell=True,
-                          logname=os.path.join(ph_dir, 'relax.log'),
-                          trajname=os.path.join(ph_dir, 'relax.traj'),
-                          gpwname=os.path.join(ph_dir, 'pbe_relax.gpw'))
-                e_total = float(a.get_potential_energy())
-                with open(ph_cache, 'w') as cf:
-                    cf.write(f"{e_total:.10f}\n")
-                print(f"  {reduced:20s}  E = {e_total/len(a):+.4f} eV/atom")
-            except Exception as exc:
-                print(f"  WARNING: {reduced} relaxation failed ({exc}); falling back to MP energy.")
-                e_total = entry.energy
-
-        gpaw_entries.append(ComputedStructureEntry(
-            structure=entry.structure,
-            energy=e_total,
-            entry_id=getattr(entry, 'entry_id', reduced),
-        ))
-
-    cpa = CompetingPhasesAnalyzer(host_formula, gpaw_entries)
-    cpa.calculate_chempots()
-    chempots_all = cpa.chempots
-
-    limits_json = os.path.join(base_dir, 'chempot_limits.json')
-    dumpfn(chempots_all, limits_json)
-    print(f"  All chempot limits -> {limits_json}")
-
-    limits: dict = chempots_all.get('limits', {})
-    if limits:
-        o_rich_key = max(limits, key=lambda k: limits[k].get('O', -1e9))
-        chempots_chosen = dict(limits[o_rich_key])
-        print(f"  Selected O-rich limit: '{o_rich_key}'")
-    else:
-        chempots_chosen = {str(el): float(mu)
-                           for el, mu in chempots_all.get('elemental_refs', {}).items()}
-        print("  WARNING: no stability limits found; using elemental references.")
-
-    with open(output_json, 'w') as f:
-        json.dump(chempots_chosen, f, indent=2)
-    print(f"  Chemical potentials (O-rich) -> {output_json}")
-    return chempots_chosen
-
-
 # ---------------------------------------------------------------------------
 #  TiO2 phase definitions
 # ---------------------------------------------------------------------------
@@ -496,9 +275,6 @@ defect_type_map = {
     DefectType.Interstitial.value: "Interstitial",
     DefectType.Substitution.value: "Substitution",
 }
-
-ECUT_EV = 520
-SCREEN = 0.2 * Bohr  # HSE06 screening (A^-1)
 
 _CHARGE_MAP: Dict[str, float] = {'Ti': 4, 'O': -2}
 
@@ -515,7 +291,7 @@ rutile_atoms = crystal(
 )
 charges_rutile = [_CHARGE_MAP[s] for s in rutile_atoms.get_chemical_symbols()]
 rutile_atoms.set_initial_charges(charges_rutile)
-_assign_magmoms(rutile_atoms)
+assign_magmoms(rutile_atoms)
 view(rutile_atoms,repeat=(2,2,3))
 rutile_atoms.write('TiO2_rutile_P42mnm.cif', format='cif')
 
@@ -532,41 +308,12 @@ anatase_atoms = crystal(
 )
 charges_anatase = [_CHARGE_MAP[s] for s in anatase_atoms.get_chemical_symbols()]
 anatase_atoms.set_initial_charges(charges_anatase)
-_assign_magmoms(anatase_atoms)
+assign_magmoms(anatase_atoms)
 view(anatase_atoms,repeat=(3,3,2))
 anatase_atoms.write('TiO2_anatase_I41amd.cif', format='cif')
 
 print(f"Rutile:  {len(rutile_atoms)} atoms, cell = {rutile_atoms.cell.cellpar()[:3]}")
 print(f"Anatase: {len(anatase_atoms)} atoms, cell = {anatase_atoms.cell.cellpar()[:3]}")
-# ---------------------------------------------------------------------------
-#  Calculator parameters
-# ---------------------------------------------------------------------------
-
-base_params = {
-    "eigensolver": {"name": "dav", "niter": 5},
-    "maxiter": 1000,
-    "mixer": {"backend": "pulay", "beta": 0.05, "method": "difference", "nmaxold": 5, "weight": 50.0},
-    "mode": {"name": "pw", "ecut": ECUT_EV},
-    "nbands": 'nao',
-    "parallel": {"sl_auto": True, "augment_grids": True},
-    "occupations": {"name": "fermi-dirac", "width": 0.1},
-}
-
-pbe_params = base_params.copy()
-pbe_params["convergence"] = {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-4}
-pbe_params['xc'] = 'PBE'
-pbe_params['kpts'] = {"gamma": True, "density": 2.5}
-
-mgga_params = base_params.copy()
-mgga_params["convergence"] = {"density": 1e-6, "eigenstates": 1e-8, "energy": 1e-4, "forces": 1e-2}
-mgga_params["xc"] = "MGGA_X_R2SCAN+MGGA_C_R2SCAN"
-mgga_params["kpts"] = {"gamma": True, "density": 1.5}
-
-hse_params = base_params.copy()
-hse_params["convergence"] = {"density": 1e-6, "eigenstates": 1e-8, "energy": 1e-4, "forces": 1e-2}
-hse_params['xc'] = {"name": "HYB_GGA_XC_HSE06", "omega": SCREEN, "fraction": 0.25, "backend": "pw"}
-hse_params['kpts'] = {"gamma": True, "density": 1.5}
-hse_params['parallel'] = {"sl_auto": True, "augment_grids": True, "band": 2}
 
 
 # ---------------------------------------------------------------------------
@@ -587,23 +334,8 @@ def run_tio2_defect_workflow(
     defects_dir = f"defects_{out_prefix}"
     os.makedirs(defects_dir, exist_ok=True)
 
-    # # --- PBE relaxation ---
-    # pbe_p = pbe_params.copy()
-    # pbe_p["txt"] = f"{out_prefix}_scf_pbe.log"
-
-    # relaxed_pbe = relax(
-    #     tio2_atoms,
-    #     calculator_params=pbe_p,
-    #     fmax=0.01,
-    #     fixcell=False,
-    #     logname=f'{out_prefix}_opt_pbe.log',
-    #     trajname=f'{out_prefix}_opt_pbe.traj',
-    #     gpwname=f'{out_prefix}_opt_pbe.gpw',
-    # )
-
     # --- r2SCAN relaxation ---
-    mgga_p = mgga_params.copy()
-    mgga_p["txt"] = f"{out_prefix}_scf_mgga.log"
+    mgga_p = mgga_params(txt=f"{out_prefix}_scf_mgga.log")
 
     relaxed_mgga = relax(
         tio2_atoms,
@@ -628,25 +360,16 @@ def run_tio2_defect_workflow(
         global anatase_a, anatase_c
         anatase_a, anatase_c = cell[0], cell[2]
 
-    # --- Chemical potentials ---
+    # --- Chemical potentials (pre-computed by comp_phases.py) ---
     CHEMPOTS_JSON = os.path.join(defects_dir, "chemical_potentials.json")
-    if os.path.exists(CHEMPOTS_JSON):
-        _raw = json.load(open(CHEMPOTS_JSON))
-        chempots: Dict[str, float] = {k: v for k, v in _raw.items() if k != "__instructions__"}
-        print(f"Loaded chemical potentials from {CHEMPOTS_JSON}")
-    else:
-        chempots = {"Ti": 0.0, "O": 0.0}
-
-    if all(v == 0.0 for v in chempots.values()):
-        print("\nComputing chemical potentials from competing phases ...")
-        chempots = _compute_competing_phase_chempots(
-            host_formula="TiO2",
-            pbe_params=pbe_params,
-            output_json=CHEMPOTS_JSON,
-            host_atoms=relaxed_mgga,
-            host_energy=float(relaxed_mgga.get_potential_energy()),
-            energy_above_hull=0.1,
-        )
+    if not os.path.exists(CHEMPOTS_JSON):
+        CHEMPOTS_JSON = os.path.join("competing_phases", "chemical_potentials.json")
+    if not os.path.exists(CHEMPOTS_JSON):
+        sys.exit("No chemical_potentials.json found. Run comp_phases.py first.")
+    with open(CHEMPOTS_JSON) as f:
+        chempots: Dict[str, float] = {k: v for k, v in json.load(f).items()
+                                       if k != "__instructions__"}
+    print(f"Loaded chemical potentials from {CHEMPOTS_JSON}")
 
     # --- Dielectric tensor ---
     DIELECTRIC_JSON = os.path.join(defects_dir, "dielectric_tensor.json")
@@ -657,9 +380,8 @@ def run_tio2_defect_workflow(
         print("\nComputing dielectric tensor ...")
         DIELECTRIC_TENSOR = _compute_dielectric_tensor(
             atoms=tio2_atoms,
-            pbe_params=pbe_params,
+            pbe_params=pbe_params(),
             output_json=DIELECTRIC_JSON,
-            kpts_dense=(6, 6, 6),
         )
         print(f"Dielectric tensor:\n{DIELECTRIC_TENSOR}")
 
@@ -684,10 +406,9 @@ def run_tio2_defect_workflow(
     bulk_sc_dir = os.path.join(defects_dir, "bulk_supercell")
     os.makedirs(bulk_sc_dir, exist_ok=True)
     bulk_sc_atoms = AseAtomsAdaptor.get_atoms(defect_gen.bulk_supercell, msonable=False)
-    _assign_magmoms(bulk_sc_atoms)
+    assign_magmoms(bulk_sc_atoms)
 
-    bulk_sc_mgga_p = mgga_params.copy()
-    bulk_sc_mgga_p["txt"] = os.path.join(bulk_sc_dir, "mgga_scf.log")
+    bulk_sc_mgga_p = mgga_params(txt=os.path.join(bulk_sc_dir, "mgga_scf.log"))
 
     bulk_sc_atoms = relax(
         bulk_sc_atoms,
@@ -786,11 +507,9 @@ def run_tio2_defect_workflow(
                 continue
 
             def_atoms = AseAtomsAdaptor.get_atoms(pmg_struct)
-            _assign_magmoms(def_atoms)
+            assign_magmoms(def_atoms)
 
-            d_pbe_p = pbe_params.copy()
-            d_pbe_p["charge"] = charge
-            d_pbe_p["txt"] = os.path.join(dist_dir, "scf.log")
+            d_pbe_p = pbe_params(charge=charge, txt=os.path.join(dist_dir, "scf.log"))
 
             def_atoms = relax(
                 def_atoms,
@@ -834,11 +553,9 @@ def run_tio2_defect_workflow(
                 e_mgga_defect = float(f.read().strip())
             print(f"  Reusing cached MGGA energy: {e_mgga_defect:.6f} eV")
         else:
-            d_mgga_p = mgga_params.copy()
-            d_mgga_p["charge"] = charge
-            d_mgga_p["txt"] = os.path.join(mgga_dir, "mgga_scf.log")
+            d_mgga_p = mgga_params(charge=charge, txt=os.path.join(mgga_dir, "mgga_scf.log"))
             mgga_atoms = best_atoms.copy()
-            _assign_magmoms(mgga_atoms)
+            assign_magmoms(mgga_atoms)
             mgga_atoms.calc = GPAW(**d_mgga_p)
             e_mgga_defect = float(mgga_atoms.get_potential_energy())
             with open(mgga_energy_txt, 'w') as f:

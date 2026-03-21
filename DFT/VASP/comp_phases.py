@@ -30,7 +30,6 @@ material = "La2NiO4"
 target_space_group = "I4/mmm"  # Corrected space group for La₂NiO₄
 output_dir = "CompetingPhases4"
 api_key = "zBYiak7h6ies4ziNlAWqzXXHhc7rMBDB"
-#api_key = "7motzZeCOx4TaH26"
 os.makedirs(output_dir, exist_ok=True)
 
 # User-defined POTCAR and INCAR settings
@@ -58,6 +57,7 @@ try:
         full_phase_diagram=True,
     )
     entries = cp.entries
+    
     cpa = CompetingPhasesAnalyzer(material,
                                   entries)
     cpa.calculate_chempots()

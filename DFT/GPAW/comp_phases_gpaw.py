@@ -1,12 +1,25 @@
 """
 Competing phases for GPAW defect workflows.
 Fetches structures from Materials Project, relaxes with PBE, computes chemical potentials.
+
+Outputs (in OUTPUT_DIR):
+  - entries.json                   Raw MP entries
+  - phase_list.txt                 Competing phases summary
+  - chempot_limits.json            Full doped chempots dict (for DefectThermodynamics)
+  - chempot_limits.csv             All stability region vertices as CSV
+  - formation_energies.csv         Formation energies of all competing phases
+  - elemental_refs.json            Elemental reference energies (eV/atom)
+  - chemical_potentials.json       All limits in {limit_name: {el: mu}} format
+  - chempot_diagram.pdf            Chemical potential phase diagram plot
 """
 
 import json
 import os
 import sys
 from typing import Dict, List, Optional
+
+import matplotlib
+matplotlib.use("Agg")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -154,28 +167,69 @@ def collect_chempots(
         print(f"\n  WARNING: {len(missing)} phases not converged: {missing}")
 
     cpa = CompetingPhasesAnalyzer(material, gpaw_entries)
-    cpa.calculate_chempots()
+    chempots_df = cpa.calculate_chempots()
     chempots_all = cpa.chempots
 
+    # --- 1. Full doped chempots dict (usable with DefectThermodynamics) ---
     limits_json = os.path.join(output_dir, "chempot_limits.json")
     dumpfn(chempots_all, limits_json)
-    print(f"\n  All chempot limits -> {limits_json}")
+    print(f"\n  Full doped chempots dict -> {limits_json}")
 
+    # --- 2. Chemical potential limits as CSV ---
+    limits_csv = os.path.join(output_dir, "chempot_limits.csv")
+    chempots_df.to_csv(limits_csv)
+    print(f"  Chempot limits table -> {limits_csv}")
+    print(chempots_df.to_string())
+
+    # --- 3. Formation energies ---
+    form_df = cpa.get_formation_energy_df(include_dft_energies=True)
+    form_csv = os.path.join(output_dir, "formation_energies.csv")
+    form_df.to_csv(form_csv)
+    print(f"\n  Formation energies -> {form_csv}")
+    print(form_df.to_string())
+
+    # --- 4. Elemental reference energies ---
+    el_refs = {str(el): float(entry.energy_per_atom)
+               for el, entry in cpa.elemental_energies.items()}
+    el_refs_path = os.path.join(output_dir, "elemental_refs.json")
+    with open(el_refs_path, "w") as f:
+        json.dump(el_refs, f, indent=2)
+    print(f"\n  Elemental references (eV/atom) -> {el_refs_path}")
+    for el, mu in el_refs.items():
+        print(f"    {el}: {mu:.6f} eV/atom")
+
+    # --- 5. All limits as {limit_name: {element: mu}} JSON ---
     limits: dict = chempots_all.get("limits", {})
-    if limits:
-        o_rich_key = max(limits, key=lambda k: limits[k].get("O", -1e9))
-        chempots_chosen = dict(limits[o_rich_key])
-        print(f"  Selected O-rich limit: '{o_rich_key}'")
-    else:
-        chempots_chosen = {str(el): float(mu)
-                           for el, mu in chempots_all.get("elemental_refs", {}).items()}
-        print("  WARNING: no stability limits; using elemental references.")
-
+    all_limits_clean = {}
+    for name, mus in limits.items():
+        all_limits_clean[name] = {str(el): float(mu) for el, mu in mus.items()}
     output_path = os.path.join(output_dir, output_json)
     with open(output_path, "w") as f:
-        json.dump(chempots_chosen, f, indent=2)
-    print(f"  Chemical potentials (O-rich) -> {output_path}")
-    return chempots_chosen
+        json.dump(all_limits_clean, f, indent=2)
+    print(f"\n  All chemical potential limits -> {output_path}")
+
+    # --- 6. Phase diagram plot ---
+    try:
+        import matplotlib.pyplot as plt
+        fig = cpa.plot_chempot_heatmap()
+        diagram_path = os.path.join(output_dir, "chempot_diagram.pdf")
+        fig.savefig(diagram_path, bbox_inches="tight", dpi=200)
+        plt.close(fig)
+        print(f"  Phase diagram plot -> {diagram_path}")
+    except Exception as e:
+        print(f"  WARNING: Could not generate phase diagram plot: {e}")
+
+    # --- 7. LaTeX table ---
+    try:
+        latex_str = cpa.to_LaTeX_table()
+        latex_path = os.path.join(output_dir, "formation_energies.tex")
+        with open(latex_path, "w") as f:
+            f.write(latex_str)
+        print(f"  LaTeX table -> {latex_path}")
+    except Exception as e:
+        print(f"  WARNING: Could not generate LaTeX table: {e}")
+
+    return chempots_all
 
 
 # ---------------------------------------------------------------------------

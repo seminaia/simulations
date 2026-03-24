@@ -408,12 +408,10 @@ def build_latex_pdf():
 \\usepackage[margin=1in]{{geometry}}
 \\usepackage{{amsmath}}
 \\usepackage{{graphicx}}
-\\usepackage{{booktabs}}
 \\usepackage{{float}}
 
-\\setmainfont{{Times New Roman}}
-
 \\title{{CHE 555 -- Homework 1}}
+\\author{{}}
 \\date{{}}
 
 \\begin{{document}}
@@ -433,13 +431,10 @@ D_{{min}} &= {p1_d:.6f}
 \\section*{{Problem 2}}
 
 \\begin{{tabular}}{{ll}}
-\\toprule
 Quantity & Value \\\\
-\\midrule
 Base length $x^*$ & {p2_x:.4f} cm \\\\
 Height $h^*$ & {p2_h:.4f} cm \\\\
 Surface area $S^*$ & {p2_S:.4f} cm$^2$ \\\\
-\\bottomrule
 \\end{{tabular}}
 
 \\section*{{Problem 3}}
@@ -449,14 +444,11 @@ Degrees of freedom = 1
 \\section*{{Problem 4}}
 
 \\begin{{tabular}}{{ll}}
-\\toprule
 Case & Value \\\\
-\\midrule
 Min cost production & {p4a_P:.0f} barrels/day \\\\
-Cost per barrel & ${p4a_C:.2f} \\\\
+Cost per barrel & ${p4a_C:.2f}$ \\\\
 Max profit production & {p4b_P:.0f} barrels/day \\\\
-Profit & ${p4b_profit:,.2f}/day \\\\
-\\bottomrule
+Profit & ${p4b_profit:,.2f}/day$ \\\\
 \\end{{tabular}}
 
 \\section*{{Problem 5}}
@@ -474,9 +466,9 @@ Best model: {best_model}
 
     Path(TEX_FILE).write_text(latex)
 
-    engine = shutil.which("xelatex")
+    engine = shutil.which("lualatex")
     if engine is None:
-        raise RuntimeError("xelatex not found")
+        raise RuntimeError("lualatex not found")
 
     subprocess.run([engine, TEX_FILE], check=True)
     subprocess.run([engine, TEX_FILE], check=True)

@@ -375,14 +375,154 @@ ra.close()
 
 print(f"Full solution written to  {OUTPUT_FILE}")
 print(f"Plot saved to            {PLOT_FILE}")
+import re
+import shutil
 import subprocess
 from pathlib import Path
-import shutil
 
-def build_latex_pdf(report_file=OUTPUT_FILE,
-                    plot_file=PLOT_FILE,
-                    tex_filename="CHE555_HW1.tex",
-                    title="CHE 555 -- Homework 1"):
+# ============================================================
+# Configure these if they are not already defined elsewhere
+# ============================================================
+OUTPUT_FILE = "HW1_CHE555_results.txt"
+PLOT_FILE = "HW1_CHE555_plot.png"
+
+
+def latex_escape(text: str) -> str:
+    """Escape text for normal LaTeX paragraphs/tables."""
+    replacements = {
+        "\\": r"\textbackslash{}",
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\textasciicircum{}",
+    }
+    return "".join(replacements.get(c, c) for c in text)
+
+
+def line_to_latex(line: str) -> str:
+    """
+    Convert a plain text line into cleaner LaTeX:
+    - headings -> sections/subsections
+    - label/value lines -> 2-column table rows
+    - everything else -> paragraph text
+    """
+    stripped = line.strip()
+    if not stripped:
+        return ""
+
+    # Problem headings
+    if re.match(r"^\s*problem\s+\d+", stripped, flags=re.IGNORECASE):
+        return rf"\section*{{{latex_escape(stripped)}}}"
+
+    # Subheadings like "Solution", "Answer", "Given", etc.
+    if re.match(r"^(solution|answer|given|results?|discussion|method|calculation)s?\b[:\-]?\s*$",
+                stripped, flags=re.IGNORECASE):
+        return rf"\subsection*{{{latex_escape(stripped.rstrip(':'))}}}"
+
+    # Horizontal rule style lines
+    if re.fullmatch(r"[-=]{4,}", stripped):
+        return r"\medskip\hrule\medskip"
+
+    return latex_escape(stripped)
+
+
+def parse_report_to_latex(report_text: str) -> str:
+    """
+    Convert the report text into structured LaTeX with:
+    - sections for problem headings
+    - longtable for label/value lines
+    - regular paragraphs otherwise
+    """
+    lines = report_text.splitlines()
+    body = []
+
+    in_table = False
+
+    def close_table():
+        nonlocal in_table
+        if in_table:
+            body.append(r"\end{longtable}")
+            body.append("")
+            in_table = False
+
+    for raw_line in lines:
+        line = raw_line.rstrip()
+
+        if not line.strip():
+            close_table()
+            body.append("")
+            continue
+
+        # Match "label = value" or "label: value"
+        m = re.match(r"^\s*([^:=]{1,120}?)\s*([:=])\s*(.+?)\s*$", line)
+        if m:
+            label = latex_escape(m.group(1).strip())
+            value = latex_escape(m.group(3).strip())
+
+            if not in_table:
+                body.append(r"\begin{longtable}{@{}p{0.38\textwidth}p{0.58\textwidth}@{}}")
+                body.append(r"\toprule")
+                body.append(r"\textbf{Quantity} & \textbf{Value} \\")
+                body.append(r"\midrule")
+                body.append(r"\endfirsthead")
+                body.append(r"\toprule")
+                body.append(r"\textbf{Quantity} & \textbf{Value} \\")
+                body.append(r"\midrule")
+                body.append(r"\endhead")
+                in_table = True
+
+            body.append(rf"{label} & {value} \\")
+            continue
+
+        # Match multiple spaces as if user tried to align columns manually
+        # Example: "x*    -0.1234"
+        m2 = re.match(r"^\s*(\S(?:.*\S)?)\s{3,}(\S(?:.*\S)?)\s*$", line)
+        if m2 and len(m2.group(1)) < 80:
+            label = latex_escape(m2.group(1).strip())
+            value = latex_escape(m2.group(2).strip())
+
+            if not in_table:
+                body.append(r"\begin{longtable}{@{}p{0.38\textwidth}p{0.58\textwidth}@{}}")
+                body.append(r"\toprule")
+                body.append(r"\textbf{Quantity} & \textbf{Value} \\")
+                body.append(r"\midrule")
+                body.append(r"\endfirsthead")
+                body.append(r"\toprule")
+                body.append(r"\textbf{Quantity} & \textbf{Value} \\")
+                body.append(r"\midrule")
+                body.append(r"\endhead")
+                in_table = True
+
+            body.append(rf"{label} & {value} \\")
+            continue
+
+        close_table()
+
+        latex_line = line_to_latex(line)
+        if latex_line:
+            # If this looks like a display equation in plain text, keep monospace-ish feel
+            if any(sym in line for sym in ["->", "<-", "**", "sqrt", "exp(", "sin(", "cos(", "tan("]):
+                body.append(r"\begin{quote}\ttfamily")
+                body.append(latex_escape(line))
+                body.append(r"\end{quote}")
+            else:
+                body.append(latex_line + r"\par")
+
+    close_table()
+    return "\n".join(body)
+
+
+def build_latex_pdf(
+    report_file=OUTPUT_FILE,
+    plot_file=PLOT_FILE,
+    tex_filename="CHE555_HW1_clean.tex",
+    title="CHE 555 -- Homework 1",
+):
     report_path = Path(report_file)
     plot_path = Path(plot_file)
     tex_path = Path(tex_filename)
@@ -392,20 +532,27 @@ def build_latex_pdf(report_file=OUTPUT_FILE,
     if not plot_path.exists():
         raise FileNotFoundError(f"Plot file not found: {plot_path}")
 
+    report_text = report_path.read_text(encoding="utf-8", errors="replace")
+    report_body = parse_report_to_latex(report_text)
+
     latex_doc = rf"""\documentclass[12pt]{{article}}
 \usepackage{{fontspec}}
-\usepackage{{graphicx}}
 \usepackage[margin=1in]{{geometry}}
-\usepackage{{fancyvrb}}
-\usepackage{{fvextra}}
+\usepackage{{graphicx}}
 \usepackage{{hyperref}}
-\usepackage{{titlesec}}
 \usepackage{{float}}
+\usepackage{{booktabs}}
+\usepackage{{longtable}}
+\usepackage{{array}}
+\usepackage{{parskip}}
+\usepackage{{titlesec}}
+\usepackage{{amsmath,amssymb}}
 
 \setmainfont{{DejaVu Serif}}
+\setsansfont{{DejaVu Sans}}
 \setmonofont{{DejaVu Sans Mono}}
 
-\title{{{title}}}
+\title{{{latex_escape(title)}}}
 \author{{}}
 \date{{}}
 
@@ -415,38 +562,41 @@ def build_latex_pdf(report_file=OUTPUT_FILE,
 \tableofcontents
 \newpage
 
-\section{{Full Solution}}
-\VerbatimInput[
-    fontsize=\small,
-    breaklines=true,
-    breakanywhere=true,
-    frame=single,
-    framesep=2mm,
-    samepage=false
-]{{{report_path.name}}}
+\section*{{Full Solution}}
+\addcontentsline{{toc}}{{section}}{{Full Solution}}
+
+{report_body}
 
 \newpage
-\section{{Plot}}
+\section*{{Plot}}
+\addcontentsline{{toc}}{{section}}{{Plot}}
+
 \begin{{figure}}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{{{plot_path.name}}}
+\includegraphics[width=0.95\textwidth]{{{latex_escape(plot_path.name)}}}
 \caption{{Curve fitting comparison for Problem 5.}}
 \end{{figure}}
 
 \end{{document}}
 """
 
-    tex_path.write_text(latex_doc, encoding='utf-8')
+    tex_path.write_text(latex_doc, encoding="utf-8")
     print(f"LaTeX document written to {tex_path}")
 
-    engine = shutil.which('xelatex') or shutil.which('lualatex')
+    engine = shutil.which("xelatex") or shutil.which("lualatex")
     if engine is None:
-        print("No XeLaTeX or LuaLaTeX engine found. .tex file was created, but PDF was not compiled.")
-        return
+        raise RuntimeError(
+            "No XeLaTeX or LuaLaTeX engine found. Install a TeX distribution with xelatex or lualatex."
+        )
 
-    cmd = [engine, '-interaction=nonstopmode', tex_path.name]
+    cmd = [engine, "-interaction=nonstopmode", tex_path.name]
     subprocess.run(cmd, check=True, timeout=120)
     subprocess.run(cmd, check=True, timeout=120)
-    print(f"PDF generated: {tex_path.with_suffix('.pdf').name}")
 
-build_latex_pdf()
+    pdf_path = tex_path.with_suffix(".pdf")
+    print(f"PDF generated: {pdf_path.name}")
+    return tex_path, pdf_path
+
+
+if __name__ == "__main__":
+    build_latex_pdf()

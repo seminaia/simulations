@@ -403,7 +403,6 @@ def build_latex_pdf():
 
 \VerbatimInput[
     fontsize=\scriptsize,
-    breaklines=false,
     frame=single,
     framesep=2mm
 ]{{{Path(OUTPUT_FILE).resolve()}}}

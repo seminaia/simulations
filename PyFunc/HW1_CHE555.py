@@ -375,9 +375,9 @@ ra.close()
 
 print(f"Full solution written to  {OUTPUT_FILE}")
 print(f"Plot saved to            {PLOT_FILE}")
-import subprocess
-import shutil
 from pathlib import Path
+import shutil
+import subprocess
 
 def build_latex_pdf():
     tex_file = "CHE555_HW1.tex"
@@ -422,9 +422,9 @@ def build_latex_pdf():
 
     Path(tex_file).write_text(latex, encoding="utf-8")
 
-    engine = shutil.which("lualatex")
+    engine = shutil.which("xelatex")
     if engine is None:
-        raise RuntimeError("lualatex not found")
+        raise RuntimeError("xelatex not found")
 
     subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
     subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
@@ -432,14 +432,3 @@ def build_latex_pdf():
     print("PDF generated")
 
 build_latex_pdf()
-
-  File "/home/soki/simulations/PyFunc/HW1_CHE555.py", line 434, in <module>
-    build_latex_pdf()
-    ~~~~~~~~~~~~~~~^^
-  File "/home/soki/simulations/PyFunc/HW1_CHE555.py", line 429, in build_latex_pdf
-    subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
-    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/subprocess.py", line 577, in run
-    raise CalledProcessError(retcode, process.args,
-                             output=stdout, stderr=stderr)
-subprocess.CalledProcessError: Command '['/usr/bin/lualatex', '-interaction=nonstopmode', 'CHE555_HW1.tex']' returned non-zero exit status 1.

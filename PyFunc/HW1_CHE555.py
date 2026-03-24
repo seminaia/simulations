@@ -397,19 +397,8 @@ def build_latex_pdf():
 
 \begin{{document}}
 
-<<<<<<< HEAD
 \maketitle
-=======
-    latex = f"""
-\\documentclass[12pt]{{article}}
-\\usepackage{{fontspec}}
-\\usepackage[margin=1in]{{geometry}}
-\\usepackage{{amsmath}}
-\\usepackage{{graphicx}}
-\\usepackage{{float}}
->>>>>>> 5306aa7d150e0e2630c5e856fab2c365cc0d449c
 
-<<<<<<< HEAD
 \section*{{Full Solution}}
 
 \VerbatimInput[
@@ -418,11 +407,6 @@ def build_latex_pdf():
     frame=single,
     framesep=2mm
 ]{{{OUTPUT_FILE}}}
-=======
-\\title{{CHE 555 -- Homework 1}}
-\\author{{}}
-\\date{{}}
->>>>>>> 5306aa7d150e0e2630c5e856fab2c365cc0d449c
 
 \newpage
 \section*{{Plot}}
@@ -433,69 +417,14 @@ def build_latex_pdf():
 \caption{{Curve fitting comparison for Problem 5.}}
 \end{{figure}}
 
-<<<<<<< HEAD
 \end{{document}}
-=======
-\\section*{{Problem 1}}
-
-\\[
-\\begin{{aligned}}
-x^* &= {p1_x:.6f} \\\\
-y(x^*) &= {p1_y:.6f} \\\\
-D_{{min}} &= {p1_d:.6f}
-\\end{{aligned}}
-\\]
-
-\\section*{{Problem 2}}
-
-\\begin{{tabular}}{{ll}}
-Quantity & Value \\\\
-Base length $x^*$ & {p2_x:.4f} cm \\\\
-Height $h^*$ & {p2_h:.4f} cm \\\\
-Surface area $S^*$ & {p2_S:.4f} cm$^2$ \\\\
-\\end{{tabular}}
-
-\\section*{{Problem 3}}
-
-Degrees of freedom = 1
-
-\\section*{{Problem 4}}
-
-\\begin{{tabular}}{{ll}}
-Case & Value \\\\
-Min cost production & {p4a_P:.0f} barrels/day \\\\
-Cost per barrel & ${p4a_C:.2f}$ \\\\
-Max profit production & {p4b_P:.0f} barrels/day \\\\
-Profit & ${p4b_profit:,.2f}/day$ \\\\
-\\end{{tabular}}
-
-\\section*{{Problem 5}}
-
-Best model: {best_model}
-
-\\begin{{figure}}[H]
-\\centering
-\\includegraphics[width=0.9\\textwidth]{{{PLOT_FILE}}}
-\\caption{{Curve fitting results}}
-\\end{{figure}}
-
-\\end{{document}}
->>>>>>> 5306aa7d150e0e2630c5e856fab2c365cc0d449c
 """
 
     Path(tex_file).write_text(latex, encoding="utf-8")
 
-<<<<<<< HEAD
-    engine = shutil.which("xelatex") or shutil.which("lualatex")
-=======
     engine = shutil.which("lualatex")
->>>>>>> 5306aa7d150e0e2630c5e856fab2c365cc0d449c
     if engine is None:
-<<<<<<< HEAD
-        raise RuntimeError("xelatex or lualatex not found")
-=======
         raise RuntimeError("lualatex not found")
->>>>>>> 5306aa7d150e0e2630c5e856fab2c365cc0d449c
 
     subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
     subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
@@ -503,3 +432,14 @@ Best model: {best_model}
     print("PDF generated")
 
 build_latex_pdf()
+
+  File "/home/soki/simulations/PyFunc/HW1_CHE555.py", line 434, in <module>
+    build_latex_pdf()
+    ~~~~~~~~~~~~~~~^^
+  File "/home/soki/simulations/PyFunc/HW1_CHE555.py", line 429, in build_latex_pdf
+    subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/usr/bin/lualatex', '-interaction=nonstopmode', 'CHE555_HW1.tex']' returned non-zero exit status 1.

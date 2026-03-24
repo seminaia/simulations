@@ -405,14 +405,14 @@ def build_latex_pdf():
     fontsize=\scriptsize,
     frame=single,
     framesep=2mm
-]{{{Path(OUTPUT_FILE).resolve()}}}
+]{{{OUTPUT_FILE}}}
 
 \newpage
 \section*{{Plot}}
 
 \begin{{figure}}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{{{Path(PLOT_FILE).resolve()}}}
+\includegraphics[width=0.95\textwidth]{{{PLOT_FILE}}}
 \caption{{Curve fitting comparison for Problem 5.}}
 \end{{figure}}
 

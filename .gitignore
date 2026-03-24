@@ -21,6 +21,8 @@ __pycache__/
 *.csv
 *.json
 *.pkl
+*.pdf
+
 # Generated simulation outputs
 Outputs/
 log.lammps

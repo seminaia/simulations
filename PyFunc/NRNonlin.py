@@ -52,35 +52,37 @@ def NR_nonlin(func, x0, es=0.0001, max_iter=50, *args):
 
     return x, f, ea, iter
 
-def test_function(x, ):
-    """
-    A test function for the Newton-Raphson method.
+if __name__ == "__main__":
+    
+    def test_function(x, a):
+        """
+        A test function for the Newton-Raphson method.
 
-    Args:
-        x: The current solution vector.
-        a: A constant parameter.
+        Args:
+            x: The current solution vector.
+            a: A constant parameter.
 
-    Returns:
-        A tuple contaaining the Jacobian matrix (J) and the function evaluation (f).
-    """
-    f1 = x[0]**2 - a * x[1] + 1
-    f2 = x[0] * x[1] - 2 * x[1]**2 + a
-    f = np.array([f1, f2])
+        Returns:
+            A tuple contaaining the Jacobian matrix (J) and the function evaluation (f).
+        """
+        f1 = x[0]**2 - a * x[1] + 1
+        f2 = x[0] * x[1] - 2 * x[1]**2 + a
+        f = np.array([f1, f2])
 
-    # Jacobian matrix
-    J = np.array([
-        [2*x[0], -a],
-        [x[1], x[0] - 4*x[1]]
-    ])
-    return J, f
+        # Jacobian matrix
+        J = np.array([
+            [2*x[0], -a],
+            [x[1], x[0] - 4*x[1]]
+        ])
+        return J, f
 
-# Example usage
-x0 = np.array([1, 1])
-a = 2
-test_function(x0)
+    # Example usage
+    x0 = np.array([1, 1])
+    a = 2
+    test_function(x0, a)
 
-x, f, ea, iter = NR_nonlin(test_function, x0, 0.001,50)
-print("Solution for test function:", x)
-print("Function evaluation at solution:", f)
-print("Relative error:", ea, "%")
-print("Iterations:", iter)
+    x, f, ea, iter = NR_nonlin(test_function, x0, 0.001,50)
+    print("Solution for test function:", x)
+    print("Function evaluation at solution:", f)
+    print("Relative error:", ea, "%")
+    print("Iterations:", iter)

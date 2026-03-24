@@ -59,9 +59,11 @@ def dist_sq_p1(x):
     return x**2 + y**2
 def dx_dist_sq_p1(x):
     return 2*x + 2*(2*x**2 + 3*x + 1)*(4*x + 3)
+def dx2_dist_sq_p1(x):
+    return 2 + 2*(4*x + 3)**2 + 16*(2*x**2 + 3*x + 1)
 
-x0 = 1.5
-x_opt, es, iter = newton_raphson(dist_sq_p1, dx_dist_sq_p1 ,x0)
+x0 = 5
+x_opt, es, iter = newton_raphson(dx_dist_sq_p1, dx2_dist_sq_p1 ,x0)
 x1   = x_opt
 y1   = 2*x1**2 + 3*x1 + 1
 d1   = np.sqrt(dist_sq_p1(x1))
@@ -78,8 +80,8 @@ w("  ANSWER")
 w("  ──────")
 w(f"  Nearest point : ({x1:.6f},  {y1:.6f})")
 w(f"  Distance      : {d1:.6f}")
-
-
+w(f"  error estimate : {es:.2e}")
+w(f"  iterations     : {iter}")
 # ══════════════════════════════════════════════════════════════════════════════
 #  PROBLEM 2
 #  Minimise material (surface area) for a square-base, open-top box with

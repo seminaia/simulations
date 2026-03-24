@@ -65,3 +65,19 @@ def bisect(func, xl, xu, es=0.0001, maxit=100, *args):
    root = xr
    fx = func(xr, *args)
    return root, fx, ea, iter
+
+if __name__ == "__main__":
+    # Example usage
+    def f(x):
+        return x**3 - 6*x**2 + 11*x - 6
+
+    xl = 1
+    xu = 3
+    es = 0.01
+    maxit = 100
+
+    root, fx, ea, iter = bisect(f, xl, xu, es, maxit)
+    print("Root:", root)
+    print("Function value at root:", fx)
+    print("Approximate relative error:", ea, "%")
+    print("Iterations:", iter)

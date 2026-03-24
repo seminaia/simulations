@@ -84,7 +84,7 @@ class RegressionAnalysis:
                  verbose: bool = True):
         self._w = _Writer(output_file, verbose)
         self._w.write("=" * 80)
-        self._w.write("  REGRESSION ANALYSIS REPORT")
+
     # ── public interface ──────────────────────────────────────────────────────
 
     def linear_regression(self,

@@ -37,13 +37,13 @@ def GaussNaive(A, b):
 
   return x
 
-
-# Example usage
-A = np.array([[4, 1, 2], [3, 5, 1], [1, 1, 3]])
-b = np.array([4, 7, 3])
-x = GaussNaive(A, b)
-
-xt=np.linalg.solve(A,b)
-print("True Solution",xt)
-if x is not None:
-  print("Solution:", x)
+if __name__ == "__main__":
+  # Example usage
+  A = np.array([[4, 1, 2], [3, 5, 1], [1, 1, 3]])
+  b = np.array([4, 7, 3])
+  x = GaussNaive(A, b)
+  
+  xt=np.linalg.solve(A,b)
+  print("True Solution",xt)
+  if x is not None:
+    print("Solution:", x)

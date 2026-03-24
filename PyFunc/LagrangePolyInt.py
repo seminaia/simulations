@@ -1,4 +1,4 @@
-def lagrange(x, y, xx):
+def lagrange_poly(x, y, xx):
   """
   Calculates the Lagrange interpolating polynomial for a given set of data points.
 
@@ -30,5 +30,5 @@ x = [1, 2, 3]
 y = [2, 5, 7]
 xx = 2.5
 
-y_interp = lagrange(x, y, xx)
+y_interp = lagrange_poly(x, y, xx)
 print("Interpolated value at", xx, ":", y_interp)

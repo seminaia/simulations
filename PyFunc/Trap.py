@@ -31,11 +31,12 @@ def trap(f, a, b, n=100, *args):
     I = (b - a) * s / (2 * n)
     return I
 
-# Example usage:
-# Define the function to be integrated
-def f(x):
-    return x**2
-
-# Calculate the integral of f(x) from 0 to 1 using the trapezoidal rule
-integral = trap(f, 0, 1)
-print("Approximate integral:", integral)
+if __name__ == "__main__":
+    # Example usage:
+    # Define the function to be integrated
+    def f(x):
+        return x**2
+    
+    # Calculate the integral of f(x) from 0 to 1 using the trapezoidal rule
+    integral = trap(f, 0, 1)
+    print("Approximate integral:", integral)

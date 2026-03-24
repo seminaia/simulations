@@ -36,21 +36,20 @@ def eulode(dydt, tspan, y0, h, *args):
 
     return t, y
 
-def dydt(y,t):
-    return -2*y**2-2*y*t
-
-tspan=(0,5)
-y0=1
-
-t, y=eulode(dydt,tspan,y0,0.1)
-print("Time (t):\n",t)
-print("\nSolution (y):\n",y)
-
-plt.plot(t,y,label="y")
-
-plt.xlabel('Time (t)')
-plt.ylabel('y')
-plt.title('Solution (y) vs. Time (Euler\'s Method)')
-plt.legend()
-plt.grid(True)
-plt.show()
+if __name__ == "__main__":
+    
+    def dydt(t, y):
+        return -2*y**2-2*y*t
+    tspan=(0,5)
+    y0=1
+    t, y=eulode(dydt,tspan,y0,0.1)
+    print("Time (t):\n",t)
+    print("\nSolution (y):\n",y)
+    
+    plt.plot(t,y,label="y")
+    plt.xlabel('Time (t)')
+    plt.ylabel('y')
+    plt.title('Solution (y) vs. Time (Euler\'s Method)')
+    plt.legend()
+    plt.grid(True)
+    plt.show()

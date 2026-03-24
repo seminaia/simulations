@@ -64,12 +64,12 @@ def GaussSeidel(A, b, maxit=50, es=1e-5):
       break
 
   return x, iter, ea
-
-# Example usage
-A = np.array([[4, 1, 2], [3, 5, 1], [1, 1, 3]])
-b = np.array([4, 7, 3])
-x, iterations, error = GaussSeidel(A, b,)
-
-print("Solution:", x)
-print("Iterations:", iterations)
-print("Errors:", error)
+if __name__ == "__main__":
+  # Example usage
+  A = np.array([[4, 1, 2], [3, 5, 1], [1, 1, 3]])
+  b = np.array([4, 7, 3])
+  x, iterations, error = GaussSeidel(A, b,)
+  
+  print("Solution:", x)
+  print("Iterations:", iterations)
+  print("Errors:", error)

@@ -46,53 +46,54 @@ def rk4sys(dydt, tspan, y0, h, *args):
 
     return tp, y
 
-
-# Example usage (assuming your dydt function is defined)
-tspan =[0, 10]
-y0 = [-10,0]
-h = 0.1
-
-def sdho(t, y):
-    """
-    Defines the system of ordinary differential equations for a simple harmonic oscillator.
-
-    Args:
-        t: The current time point.
-        y: A list or array containing the state variables (position and velocity).
-
-    Returns:
-        A list containing the derivatives of the state variables (velocity and acceleration).
-    """
-    m = 10.0  # Mass of the oscillator (kg)
-    k = 10.0  # Spring constant (N/m)
-    c = 10.0  # Viscous damping coefficient 
+if __name__ == "__main__":
     
-    gamma=c/(2*np.sqrt(k*m))   # damping coefficient
-    omega=np.sqrt(k/m)       # Angular Frequency
-
-    # Extract position and velocity from y
-    position, velocity = y
-
-    # Calculate acceleration (Newton's second law)
-    acceleration = -2*gamma*omega * position -  (omega**2)* velocity
+    # Example usage (assuming your dydt function is defined)
+    tspan =[0, 10]
+    y0 = [-10,0]
+    h = 0.1
     
-    # Return derivatives (velocity, acceleration)
-    return np.array([velocity, acceleration])
-def dydt(t,y):
-    return -2*y-20*t
-
-tp, yp = rk4sys(sdho, tspan, y0, h)
-
-# Use tp and yp for further analysis or plotting
-print("Time (t):\n", tp)
-print("\Position (x):\n", yp[:,0])
-print("\Velocity (v):\n", yp[:,1])
-
-plt.scatter(tp, yp[:,0], label="Position")
-plt.scatter(tp, yp[:, 1], label="Velocity")
-plt.xlabel('Time (s)')
-plt.ylabel('Position / Velocity (m, m/s)')
-plt.title('Solution (Position and Velocity) vs. Time (Runge-Kutta\'s Method)')
-plt.legend()
-plt.grid(True)
-plt.show()
+    def sdho(t, y):
+        """
+        Defines the system of ordinary differential equations for a simple harmonic oscillator.
+    
+        Args:
+            t: The current time point.
+            y: A list or array containing the state variables (position and velocity).
+    
+        Returns:
+            A list containing the derivatives of the state variables (velocity and acceleration).
+        """
+        m = 10.0  # Mass of the oscillator (kg)
+        k = 10.0  # Spring constant (N/m)
+        c = 10.0  # Viscous damping coefficient 
+        
+        gamma=c/(2*np.sqrt(k*m))   # damping coefficient
+        omega=np.sqrt(k/m)       # Angular Frequency
+    
+        # Extract position and velocity from y
+        position, velocity = y
+    
+        # Calculate acceleration (Newton's second law)
+        acceleration = -2*gamma*omega * position -  (omega**2)* velocity
+        
+        # Return derivatives (velocity, acceleration)
+        return np.array([velocity, acceleration])
+    def dydt(t,y):
+        return -2*y-20*t
+    
+    tp, yp = rk4sys(sdho, tspan, y0, h)
+    
+    # Use tp and yp for further analysis or plotting
+    print("Time (t):\n", tp)
+    print("\Position (x):\n", yp[:,0])
+    print("\Velocity (v):\n", yp[:,1])
+    
+    plt.scatter(tp, yp[:,0], label="Position")
+    plt.scatter(tp, yp[:, 1], label="Velocity")
+    plt.xlabel('Time (s)')
+    plt.ylabel('Position / Velocity (m, m/s)')
+    plt.title('Solution (Position and Velocity) vs. Time (Runge-Kutta\'s Method)')
+    plt.legend()
+    plt.grid(True)
+    plt.show()

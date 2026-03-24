@@ -31,11 +31,12 @@ def simps(func, a, b, n=100):
     
     return integral
 
-# Example usage:
-# Define the function to be integrated
-def f(x):
-    return x**2 + 2*x+ 4
+if __name__ == "__main__":
+    # Example usage:
+    # Define the function to be integrated
+    def f(x):
+        return x**2 + 2*x+ 4
 
-# Calculate the integral of f(x) from 0 to 1 using Composite Simpson's rule
-integral = simps(f, 0, 1)
-print("Approximate integral:", integral)
+    # Calculate the integral of f(x) from 0 to 1 using Composite Simpson's rule
+    integral = simps(f, 0, 1)
+    print("Approximate integral:", integral)

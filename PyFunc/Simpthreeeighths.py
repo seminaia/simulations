@@ -37,11 +37,12 @@ def simp(f, a, b, n=100):
     I = 3 * h * s / 8
     return I
 
-# Example usage:
-# Define the function to be integrated
-def f(x):
-    return x**2 + 2*x+4
-
-# Calculate the integral of f(x) from 0 to 1 using Simpson's 3/8 rule
-integral = simp(f, 0, 1)
-print("Approximate integral:", integral)
+if __name__ == "__main__":
+    # Example usage:
+    # Define the function to be integrated
+    def f(x):
+        return x**2 + 2*x+4
+    
+    # Calculate the integral of f(x) from 0 to 1 using Simpson's 3/8 rule
+    integral = simp(f, 0, 1)
+    print("Approximate integral:", integral)

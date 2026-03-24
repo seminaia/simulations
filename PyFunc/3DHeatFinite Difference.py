@@ -113,7 +113,8 @@ def plot_temperature(U, x, y, z, t, time_step, slice_index=None, aspect='auto'):
   ax.set_zlabel('Temperature')
   ax.set_aspect(aspect)  # Adjust aspect ratio for better visualization
   plt.show()
-
-# Example usage with plot function
-time_step = 50  # Choose a specific time step to plot
-plot_temperature(U, x, y, z, t, time_step)
+  
+if __name__ == "__main__":
+    # Example usage with plot function
+    time_step = 50  # Choose a specific time step to plot
+    plot_temperature(U, x, y, z, t, time_step)

@@ -33,11 +33,12 @@ def newton_polynomial(x, y, xx):
     yint += b[0][j] * xt
 
   return yint
-
-# Example usage
-x = [1, 2, 3]
-y = [2, 5, 7]
-xx = 2.5
-
-y_interp = newton_polynomial(x, y, xx)
-print("Interpolated value at", xx, ":", y_interp)
+if __name__ == "__main__":
+  
+  # Example usage
+  x = [1, 2, 3]
+  y = [2, 5, 7]
+  xx = 2.5
+  
+  y_interp = newton_polynomial(x, y, xx)
+  print("Interpolated value at", xx, ":", y_interp)

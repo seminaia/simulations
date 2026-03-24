@@ -50,13 +50,13 @@ def GaussPivot(A, b):
     x[i] = (Aug[i, nb - 1] - np.dot(Aug[i, i + 1:n], x[i + 1:n])) / Aug[i, i]
 
   return x
-
-# Example usage
-A = np.array([[4, 1, 2], [3, 5, 1], [1, 1, 3]])
-b = np.array([4, 7, 3])
-x = GaussPivot(A, b)
-xt=np.linalg.solve(A,b)
-print("True Solution",xt)
-if x is not None:
-  print("Solution:", x)
+if __name__ == "__main__":
+  # Example usage
+  A = np.array([[4, 1, 2], [3, 5, 1], [1, 1, 3]])
+  b = np.array([4, 7, 3])
+  x = GaussPivot(A, b)
+  xt = np.linalg.solve(A, b)
+  print("True Solution", xt)
+  if x is not None:
+    print("Solution:", x)
 

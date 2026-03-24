@@ -380,28 +380,26 @@ import shutil
 from pathlib import Path
 
 def build_latex_pdf():
-    TEX_FILE = "CHE555_HW1.tex"
+    tex_file = "CHE555_HW1.tex"
 
-    # ==== pull values you already computed ====
-    # Problem 1
-    p1_x = x1
-    p1_y = y1
-    p1_d = d1
+    latex = rf"""
+\documentclass[12pt]{{article}}
+\usepackage{{fontspec}}
+\usepackage[margin=1in]{{geometry}}
+\usepackage{{fancyvrb}}
+\usepackage{{graphicx}}
+\usepackage{{float}}
 
-    # Problem 2
-    p2_x = x2
-    p2_h = h2
-    p2_S = S2
+\setmonofont{{DejaVu Sans Mono}}
 
-    # Problem 4
-    p4a_P = P4a
-    p4a_C = C4a
-    p4b_P = P4b
-    p4b_profit = Pi4
+\title{{CHE 555 -- Homework 1}}
+\date{{}}
 
-    # Problem 5
-    best_model = best5
+\begin{{document}}
 
+<<<<<<< HEAD
+\maketitle
+=======
     latex = f"""
 \\documentclass[12pt]{{article}}
 \\usepackage{{fontspec}}
@@ -409,15 +407,35 @@ def build_latex_pdf():
 \\usepackage{{amsmath}}
 \\usepackage{{graphicx}}
 \\usepackage{{float}}
+>>>>>>> 5306aa7d150e0e2630c5e856fab2c365cc0d449c
 
+<<<<<<< HEAD
+\section*{{Full Solution}}
+
+\VerbatimInput[
+    fontsize=\scriptsize,
+    breaklines=false,
+    frame=single,
+    framesep=2mm
+]{{{OUTPUT_FILE}}}
+=======
 \\title{{CHE 555 -- Homework 1}}
 \\author{{}}
 \\date{{}}
+>>>>>>> 5306aa7d150e0e2630c5e856fab2c365cc0d449c
 
-\\begin{{document}}
+\newpage
+\section*{{Plot}}
 
-\\maketitle
+\begin{{figure}}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{{{PLOT_FILE}}}
+\caption{{Curve fitting comparison for Problem 5.}}
+\end{{figure}}
 
+<<<<<<< HEAD
+\end{{document}}
+=======
 \\section*{{Problem 1}}
 
 \\[
@@ -462,16 +480,25 @@ Best model: {best_model}
 \\end{{figure}}
 
 \\end{{document}}
+>>>>>>> 5306aa7d150e0e2630c5e856fab2c365cc0d449c
 """
 
-    Path(TEX_FILE).write_text(latex)
+    Path(tex_file).write_text(latex, encoding="utf-8")
 
+<<<<<<< HEAD
+    engine = shutil.which("xelatex") or shutil.which("lualatex")
+=======
     engine = shutil.which("lualatex")
+>>>>>>> 5306aa7d150e0e2630c5e856fab2c365cc0d449c
     if engine is None:
+<<<<<<< HEAD
+        raise RuntimeError("xelatex or lualatex not found")
+=======
         raise RuntimeError("lualatex not found")
+>>>>>>> 5306aa7d150e0e2630c5e856fab2c365cc0d449c
 
-    subprocess.run([engine, TEX_FILE], check=True)
-    subprocess.run([engine, TEX_FILE], check=True)
+    subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
+    subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
 
     print("PDF generated")
 

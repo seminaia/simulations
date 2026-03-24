@@ -376,105 +376,77 @@ ra.close()
 print(f"Full solution written to  {OUTPUT_FILE}")
 print(f"Plot saved to            {PLOT_FILE}")
 import subprocess
-import re
+from pathlib import Path
+import shutil
 
-# ------------------------------------------------------------
-#  Generate LaTeX document from the text report and the plot
-# ------------------------------------------------------------
+def build_latex_pdf(report_file=OUTPUT_FILE,
+                    plot_file=PLOT_FILE,
+                    tex_filename="CHE555_HW1.tex",
+                    title="CHE 555 -- Homework 1"):
+    report_path = Path(report_file)
+    plot_path = Path(plot_file)
+    tex_path = Path(tex_filename)
 
-# Read the existing text report
-with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
-    report_text = f.read()
+    if not report_path.exists():
+        raise FileNotFoundError(f"Report file not found: {report_path}")
+    if not plot_path.exists():
+        raise FileNotFoundError(f"Plot file not found: {plot_path}")
 
-# Replace Unicode box‑drawing characters with ASCII equivalents
-# These are common in your output (e.g., "━" * 80)
-replacements = {
-    '━': '-',   # U+2501
-    '─': '-',   # U+2500
-    '│': '|',   # U+2502
-    '┌': '+',   # U+250C
-    '┐': '+',   # U+2510
-    '└': '+',   # U+2514
-    '┘': '+',   # U+2518
-    '├': '+',   # U+251C
-    '┤': '+',   # U+2524
-    '┬': '+',   # U+252C
-    '┴': '+',   # U+2534
-    '┼': '+',   # U+253C
-    '█': '#',   # block
-    '▄': '#',
-    '▀': '#',
-}
-for old, new in replacements.items():
-    report_text = report_text.replace(old, new)
+    latex_doc = rf"""\documentclass[12pt]{{article}}
+\usepackage{{fontspec}}
+\usepackage{{graphicx}}
+\usepackage[margin=1in]{{geometry}}
+\usepackage{{fancyvrb}}
+\usepackage{{fvextra}}
+\usepackage{{hyperref}}
+\usepackage{{titlesec}}
+\usepackage{{float}}
 
-# Escape LaTeX special characters
-def escape_latex(s):
-    # These characters need to be escaped for LaTeX
-    escapes = {
-        '&': r'\&',
-        '%': r'\%',
-        '$': r'\$',
-        '#': r'\#',
-        '_': r'\_',
-        '{': r'\{',
-        '}': r'\}',
-        '~': r'\textasciitilde{}',
-        '^': r'\textasciicircum{}',
-        '\\': r'\textbackslash{}',
-    }
-    for old, new in escapes.items():
-        s = s.replace(old, new)
-    return s
+\setmainfont{{DejaVu Serif}}
+\setmonofont{{DejaVu Sans Mono}}
 
-escaped_text = escape_latex(report_text)
+\title{{{title}}}
+\author{{}}
+\date{{}}
 
-# Build the LaTeX document
-latex_doc = r"""\documentclass[12pt]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{graphicx}
-\usepackage[margin=1in]{geometry}
-\usepackage{fancyvrb}
-\DefineVerbatimEnvironment{code}{Verbatim}{breaklines=true, frame=single, fontsize=\small, framesep=2mm, xleftmargin=0mm}
+\begin{{document}}
 
-\begin{document}
-
-\title{CHE 555 -- Homework 1}
-\author{}
-\date{}
 \maketitle
-
 \tableofcontents
 \newpage
 
-\section*{Full Solution}
-\begin{code}
-""" + escaped_text + r"""
-\end{code}
+\section{{Full Solution}}
+\VerbatimInput[
+    fontsize=\small,
+    breaklines=true,
+    breakanywhere=true,
+    frame=single,
+    framesep=2mm,
+    samepage=false
+]{{{report_path.name}}}
 
 \newpage
-\section*{Plot}
-\begin{figure}[htbp]
+\section{{Plot}}
+\begin{{figure}}[H]
 \centering
-\includegraphics[width=\textwidth]{HW1_CHE555_plot.png}
-\caption{Curve fitting comparison for Problem 5.}
-\end{figure}
+\includegraphics[width=0.95\textwidth]{{{plot_path.name}}}
+\caption{{Curve fitting comparison for Problem 5.}}
+\end{{figure}}
 
-\end{document}
+\end{{document}}
 """
 
-# Write the .tex file
-tex_filename = "CHE555_HW1.tex"
-with open(tex_filename, 'w', encoding='utf-8') as f:
-    f.write(latex_doc)
+    tex_path.write_text(latex_doc, encoding='utf-8')
+    print(f"LaTeX document written to {tex_path}")
 
-print(f"LaTeX document written to {tex_filename}")
+    engine = shutil.which('xelatex') or shutil.which('pdflatex')
+    if engine is None:
+        print("No LaTeX engine found. .tex file was created, but PDF was not compiled.")
+        return
 
-# Try to compile with pdflatex
-try:
-    subprocess.run(['pdflatex', '-interaction=nonstopmode', tex_filename], check=True, timeout=60)
-    print("PDF generated: CHE555_HW1.pdf")
-except Exception as e:
-    print("Could not run pdflatex automatically. Please compile the .tex file manually.")
-    print(f"Error: {e}")
+    cmd = [engine, '-interaction=nonstopmode', tex_path.name]
+    subprocess.run(cmd, check=True, timeout=120)
+    subprocess.run(cmd, check=True, timeout=120)
+    print(f"PDF generated: {tex_path.with_suffix('.pdf').name}")
+
+build_latex_pdf()

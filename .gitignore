@@ -9,7 +9,13 @@ __pycache__/
 *.cif
 *.error
 *.out
-
+*.txt
+*.png
+*.pdf
+*.dat
+*.csv
+*.json
+*.pkl
 # Generated simulation outputs
 Outputs/
 log.lammps

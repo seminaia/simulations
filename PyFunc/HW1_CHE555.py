@@ -326,10 +326,8 @@ w()
 w("  CONCLUSION")
 w("  ──────────")
 w(f"  The exp-quadratic model has the highest adjusted R²")
-w(f"  among the three candidates (see MODEL COMPARISON SUMMARY above).")
+w(f"  among the three candidates.")
 w(f"  Best model: {best5}")
-w(f"  Interpretation: y = exp(a + b·x + c·x²) captures the accelerating")
-w(f"  growth in the data far better than the exp-linear or power-law forms.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -377,3 +375,106 @@ ra.close()
 
 print(f"Full solution written to  {OUTPUT_FILE}")
 print(f"Plot saved to            {PLOT_FILE}")
+import subprocess
+import re
+
+# ------------------------------------------------------------
+#  Generate LaTeX document from the text report and the plot
+# ------------------------------------------------------------
+
+# Read the existing text report
+with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
+    report_text = f.read()
+
+# Replace Unicode box‑drawing characters with ASCII equivalents
+# These are common in your output (e.g., "━" * 80)
+replacements = {
+    '━': '-',   # U+2501
+    '─': '-',   # U+2500
+    '│': '|',   # U+2502
+    '┌': '+',   # U+250C
+    '┐': '+',   # U+2510
+    '└': '+',   # U+2514
+    '┘': '+',   # U+2518
+    '├': '+',   # U+251C
+    '┤': '+',   # U+2524
+    '┬': '+',   # U+252C
+    '┴': '+',   # U+2534
+    '┼': '+',   # U+253C
+    '█': '#',   # block
+    '▄': '#',
+    '▀': '#',
+}
+for old, new in replacements.items():
+    report_text = report_text.replace(old, new)
+
+# Escape LaTeX special characters
+def escape_latex(s):
+    # These characters need to be escaped for LaTeX
+    escapes = {
+        '&': r'\&',
+        '%': r'\%',
+        '$': r'\$',
+        '#': r'\#',
+        '_': r'\_',
+        '{': r'\{',
+        '}': r'\}',
+        '~': r'\textasciitilde{}',
+        '^': r'\textasciicircum{}',
+        '\\': r'\textbackslash{}',
+    }
+    for old, new in escapes.items():
+        s = s.replace(old, new)
+    return s
+
+escaped_text = escape_latex(report_text)
+
+# Build the LaTeX document
+latex_doc = r"""\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[margin=1in]{geometry}
+\usepackage{fancyvrb}
+\DefineVerbatimEnvironment{code}{Verbatim}{breaklines=true, frame=single, fontsize=\small, framesep=2mm, xleftmargin=0mm}
+
+\begin{document}
+
+\title{CHE 555 -- Homework 1}
+\author{}
+\date{}
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section*{Full Solution}
+\begin{code}
+""" + escaped_text + r"""
+\end{code}
+
+\newpage
+\section*{Plot}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{HW1_CHE555_plot.png}
+\caption{Curve fitting comparison for Problem 5.}
+\end{figure}
+
+\end{document}
+"""
+
+# Write the .tex file
+tex_filename = "CHE555_HW1.tex"
+with open(tex_filename, 'w', encoding='utf-8') as f:
+    f.write(latex_doc)
+
+print(f"LaTeX document written to {tex_filename}")
+
+# Try to compile with pdflatex
+try:
+    subprocess.run(['pdflatex', '-interaction=nonstopmode', tex_filename], check=True, timeout=60)
+    print("PDF generated: CHE555_HW1.pdf")
+except Exception as e:
+    print("Could not run pdflatex automatically. Please compile the .tex file manually.")
+    print(f"Error: {e}")

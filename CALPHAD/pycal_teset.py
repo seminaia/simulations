@@ -1,68 +1,48 @@
 import matplotlib.pyplot as plt
-from pycalphad import Database, binplot
+from pycalphad import Database, binplot, equilibrium
 import pycalphad.variables as v
 
-dbf = Database('PrecHiMn-04.tdb')
-
-components = ['FE', 'CR', 'C', 'N', 'VA']
-phases = ['LIQUID', 'FCC_A1', 'BCC_A2', 'HCP_A3', 'FE4N_L1']
-
+dbf = Database('cost507.tdb')
+components = ['FE', 'C', 'N', 'VA']
+phases = ['LIQUID', 'FCC_A1', 'BCC_A2', 'HCP_A3', 'N2GAS','CR']
 fig, ax = plt.subplots()
+print("Components:", components)
+print("Number of components:", len(components))
+print("Phases:", phases)
+print("Number of phases:", len(phases))
+dof = len(components) - len(phases) + 2
+print("Degrees of freedom:", dof)
 
 binplot(
     dbf,
     components,
     phases,
     {
-        v.X('CR'): (0, 0.5, 0.01),
-        v.X('C'): 0.01,
-        v.X('N'): 0.01,
-        v.T: (300, 2000, 10),
+        v.X('C'): (0, 0.1, 0.01),
+        v.X('N'): 0.005,
+        v.T: (300, 1000, 10),
         v.P: 101325,
         v.N: 1
-    },
-    ax=ax
+    }
 )
-
 plt.show()
-
-/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/io/tdb.py:287: UserWarning: Type definitions using IF/THEN logic is not supported
-  warnings.warn("Type definitions using IF/THEN logic is not supported")
 Traceback (most recent call last):
-  File "/home/soki/simulations/CALPHAD/pycal_teset.py", line 12, in <module>
-    binplot(
-    ~~~~~~~^
-        dbf,
-        ^^^^
-    ...<10 lines>...
-        ax=ax
-        ^^^^^
-    )
-    ^
-  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/mapping/compat_api.py", line 53, in binplot
-    strategy.do_map()
-    ~~~~~~~~~~~~~~~^^
-  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/mapping/strategy/strategy_base.py", line 268, in do_map
-    self.generate_automatic_starting_points()
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
-  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/mapping/strategy/binary_strategy.py", line 97, in generate_automatic_starting_points
-    step.do_map()
-    ~~~~~~~~~~~^^
-  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/mapping/strategy/strategy_base.py", line 268, in do_map
-    self.generate_automatic_starting_points()
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
-  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/mapping/strategy/step_strategy.py", line 27, in generate_automatic_starting_points
-    self.add_nodes_from_conditions(mid_conds, None, True)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/mapping/strategy/strategy_base.py", line 176, in add_nodes_from_conditions
-    point = point_from_equilibrium(self.dbf, self.components, self.phases, conditions, models=self.models, phase_record_factory=self.phase_records)
-  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/mapping/starting_points.py", line 33, in point_from_equilibrium
-    chemical_potentials = np.squeeze(wks.eq.MU)
-                                     ^^^^^^
-  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/core/workspace.py", line 282, in __get__
-    default_value = obj.recompute()
-  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/core/workspace.py", line 362, in recompute
-    properties = starting_point(unitless_conds, state_variables, self.phase_record_factory, grid)
-  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/core/starting_point.py", line 84, in starting_point
-    raise ValueError('Number of degrees of freedom is not zero')
-ValueError: Number of degrees of freedom is not zero
+  File "/home/soki/simulations/CALPHAD/pycal_teset.py", line 5, in <module>
+    dbf = Database('cost507.tdb')
+  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/io/database.py", line 115, in __new__
+    return cls.from_file(fname, fmt=fmt)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/io/database.py", line 224, in from_file
+    format_registry[fmt.lower()].read(dbf, fd)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/io/tdb.py", line 985, in read_tdb
+    raise e
+  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pycalphad/io/tdb.py", line 968, in read_tdb
+    tokens = grammar.parseString(command)
+  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pyparsing/util.py", line 466, in _inner
+    return fn(self, *args, **kwargs)
+  File "/home/soki/miniconda3/envs/myCALPHADenv/lib/python3.13/site-packages/pyparsing/core.py", line 1346, in parse_string
+    raise exc.with_traceback(None)
+pyparsing.exceptions.ParseException: Invalid TDB syntax.
+ ELEMENT  Y    HCP_A3              8.89059+01  5.9664E+03  4.4434E+01 
+                                          ^, found '+'  (at char 2013), (line:138, col:42)

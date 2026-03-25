@@ -1,12 +1,10 @@
 """
-HW1_CHE555.py
+HW1_CHE565.py
 =============
-CHE 555 – Homework 1
+CHE 565 – Homework 1
 All five problems solved with full work shown.
-Results are written to HW1_CHE555_results.txt and mirrored to the console.
-
-Requires:  numpy, scipy, matplotlib, regression_analysis.py (same directory)
-Run:       python HW1_CHE555.py
+Results are written to HW1_CHE565_results.txt and mirrored to the console.
+Run:       python HW1_CHE565.py
 """
 
 import numpy as np
@@ -24,12 +22,12 @@ from matplotlib.backends.backend_pdf import PdfPages
 #  complete solution ends up in one tidy file.
 # ══════════════════════════════════════════════════════════════════════════════
 
-OUTPUT_FILE = "HW1_CHE555_results.txt"
+OUTPUT_FILE = "HW1_CHE565_results.txt"
 ra = RegressionAnalysis(output_file=OUTPUT_FILE, verbose=True)
 w  = ra._w.write      # shortcut to the writer
 
 w()
-w("  CHE 555 — Homework 1")
+w("  CHE 565 — Homework 1")
 w("=" * 80)
 
 

@@ -29,179 +29,66 @@ from gpaw import GPAW, PW, restart
 import pickle
 from ase.filters import FrechetCellFilter
 from ase.optimize import BFGS, QuasiNewton
-
-def relax(atoms: Atoms,
-          calculator_params: Dict[str, Any],
-          fmax: float = 0.01,
-          fixcell: bool = True,
-          logname: str = 'opt.log',
-          trajname: str = 'opt.traj',
-          gpwname: str = 'rlx.gpw') -> Atoms:
-    """
-    Relax atomic structure using GPAW.
-    
-    Parameters:
-    -----------
-    atoms : Atoms
-        ASE Atoms object to relax
-    calculator_params : dict
-        Parameters for GPAW calculator
-    fmax : float
-        Maximum force tolerance (eV/Å)
-    fixcell : bool
-        If True, only relax atomic positions (ISIF=2 equivalent)
-        If False, relax both atoms and cell (ISIF=3 equivalent)
-    logname : str
-        Name of optimization log file
-    trajname : str
-        Name of trajectory file
-    gpwname : str
-        Name of GPAW restart file
-    
-    Returns:
-    --------
-    Atoms
-        Relaxed atomic structure
-    """
-    
-    # -------------------------
-    # Restart or initialize GPAW
-    # -------------------------
-    calc_dft = None
-    
+# ── Relaxation helper ─────────────────────────────────────────────────────────
+def relax(
+    atoms: Atoms,
+    calculator_params: Dict[str, Any],
+    fmax: float = 0.01,
+    fixcell: bool = True,
+    logname: str = 'opt.log',
+    trajname: str | None = None,
+    gpwname: str = 'rlx.gpw',
+) -> Atoms:
+    orig_atoms = atoms
+    done_file = gpwname.replace('.gpw', '.traj')
     if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
         try:
-            atoms, calc_dft = restart(gpwname)
-            atoms.calc = calc_dft
-            print(f"Successfully restarted from {gpwname}")
+            atoms, _ = restart(gpwname)
+            if len(atoms) != len(orig_atoms):
+                print(f"Cached GPW has {len(atoms)} atoms but current structure has {len(orig_atoms)}. Starting fresh.")
+                atoms = orig_atoms
+            atoms.calc = GPAW(**calculator_params)
+            print(f"Restarted positions from {gpwname}")
         except Exception as e:
-            print(f"Restart failed ({e}). Starting fresh calculation.")
-            calc_dft = GPAW(**calculator_params)
-            atoms.calc = calc_dft
+            print(f"Restart failed ({e}), starting fresh.")
+            atoms.calc = GPAW(**calculator_params)
     else:
-        calc_dft = GPAW(**calculator_params)
-        atoms.calc = calc_dft
+        atoms.calc = GPAW(**calculator_params)
         print("Starting fresh calculation")
-    # -------------------------
-    # Choose relaxation mode
-    # -------------------------
-    if fixcell:
-        # ISIF = 2 equivalent - only relax atoms
-        opt_atoms = atoms
-        print("Relaxation mode: fixed cell (ISIF=2 equivalent)")
-    else:
-        # ISIF = 3 equivalent - relax both atoms and cell
-        opt_atoms = FrechetCellFilter(atoms)
-        print("Relaxation mode: variable cell (ISIF=3 equivalent)")
-
-    # -------------------------
-    # Run optimizer
-    # -------------------------
-    # Add observer to save checkpoints during optimization
-
-    # Create optimizer
-    opt = BFGS(opt_atoms, 
-               logfile=logname,
-               trajectory=trajname)
+    opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
+    print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/Å")
+    bfgs = BFGS(opt_atoms, logfile=logname, trajectory=trajname)
         
-    # Run relaxation
-    print(f"Starting relaxation with fmax={fmax} eV/Å")
-    opt.run(fmax=fmax, steps=500)  # Added steps limit for safety
-
+    def _relax_log():
+        raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
+        fmax_cur = float(np.max(np.linalg.norm(raw.get_forces(), axis=1)))
+        epot = raw.get_potential_energy() / len(raw)
+        print(f"[{datetime.now():%H:%M:%S}]  relax step {bfgs.nsteps:4d}  "
+              f"Epot={epot:.4f} eV/atom  fmax={fmax_cur:.4f} eV/Å")
+        
+    bfgs.attach(_relax_log, interval=1)
+    bfgs.run(fmax=fmax, steps=500)
     if isinstance(opt_atoms, FrechetCellFilter):
         opt_atoms = opt_atoms.atoms
-
-    # -------------------------
-    # Save final state
-    # -------------------------
     try:
-        # Write final calculator state
         opt_atoms.calc.write(gpwname, mode='all')
-        print(f"Final state saved to {gpwname}")        
+        print(f"Saved to {gpwname}")
     except Exception as e:
-        print(f"Warning: Could not save final state: {e}")
-    
-    # Get final forces f or reporting
-    if hasattr(opt_atoms, 'get_forces'):
-        forces = opt_atoms.get_forces()
-        max_force = np.max(np.linalg.norm(forces, axis=1))
-        print(f"Relaxation completed. Maximum force: {max_force:.6f} eV/Å")
-    return opt_atoms
+        print(f"Warning: could not save state: {e}")
+    ase_write(done_file, opt_atoms)
+    print(f"Converged structure saved to {done_file}")
+    forces = opt_atoms.get_forces()
+    print(f"Max force: {np.max(np.linalg.norm(forces, axis=1)):.6f} eV/Å")
+    relaxed = opt_atoms
 
-conv_frac_positions = [  
-    (0.50,  0.50,  0.14),
-    (0.00,  0.00,  0.36),
-    (0.00,  0.00,  0.64),
-    (0.50,  0.50,  0.86),
-    (0.00,  0.00,  0.00),
-    (0.50,  0.50,  0.50),
-    (0.50,  0.00,  0.00),
-    (0.00,  0.50,  0.00),
-    (0.00,  0.00,  0.18),
-    (0.50,  0.50,  0.32),
-    (0.50,  0.00,  0.50),
-    (0.00,  0.50,  0.50),
-    (0.50,  0.50,  0.68),
-    (0.00,  0.00,  0.82)]
-LNO_symbols = ['La','La','La','La','Ni','Ni','O','O','O','O','O','O','O','O']
-a_lno = 3.80
-c_lno = 12.45
-conv_cell = [
-    [a_lno, 0, 0],
-    [0, a_lno, 0],
-    [0, 0, c_lno]
-]
+    orig_atoms.set_cell(relaxed.get_cell(), scale_atoms=False)
+    orig_atoms.set_positions(relaxed.get_positions())
+    cell = relaxed.cell.cellpar()
+    print(f"""  Lattice: a={cell[0]:.4f} b={cell[1]:.4f} c={cell[2]:.4f} Å,
+          α={cell[3]:.2f} β={cell[4]:.2f} γ={cell[5]:.2f}° Volume={relaxed.get_volume():.2f} Å³""")
+    return relaxed
 
-LNO_atoms = Atoms(LNO_symbols, 
-                  scaled_positions=conv_frac_positions,
-                  cell=conv_cell,
-                  pbc=True)
-magmoms = [0.6, -0.6, 0.6, -0.6, 2.0, -2.0, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6, 0.6, -0.6]
-LNO_atoms.set_initial_magnetic_moments(magmoms)
-LNO_atoms.write('La2NiO4_conv.cif', format='cif')
-view(LNO_atoms, repeat=(2, 2, 1))
 
-bcc_scaled_positions = [
-    (0.00, 0.00, 0.00),
-    (0.50, 0.50, 0.50)
-]
-a_w = 3.16
-bcc_conv_cell = [
-            [a_w, 0, 0],
-            [0, a_w, 0],
-            [0, 0, a_w]
-            ]
-w_symbol = ['W', 'W']
-w_atoms = Atoms(symbols=w_symbol,
-    scaled_positions=bcc_scaled_positions,
-    cell=bcc_conv_cell,
-    pbc=True,
-)
-view(w_atoms, repeat=(2, 2, 2))
-
-a_si = 5.43
-si_symbols = ['Si', 'Si', 'Si', 'Si', 'Si', 'Si', 'Si', 'Si'] 
-diamond_scaled_positions = [
-       (0.75, 0.75, 0.25),
-       (0.00, 0.50, 0.50),
-       (0.75, 0.25, 0.75),
-       (0.00, 0.00, 0.00),
-       (0.25, 0.75, 0.75),
-       (0.50, 0.50, 0.00),
-       (0.25, 0.25, 0.25),
-       (0.50, 0.00, 0.50)]
-
-dia_conv_cell = [
-    [a_si, 0, 0],
-    [0, a_si, 0],
-    [0, 0, a_si]
-]
-si_atoms = Atoms(symbols=si_symbols,
-    scaled_positions=diamond_scaled_positions,
-    cell=dia_conv_cell,
-    pbc=True,
-)
-view(si_atoms, repeat=(2, 2, 2))
 base_params = {
     "convergence": {"density": 1e-4,
                     "eigenstates": 1e-8,

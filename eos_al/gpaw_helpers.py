@@ -26,8 +26,13 @@ sys.stderr.reconfigure(line_buffering=True)
 #  Magnetic moments
 # ---------------------------------------------------------------------------
 
+MAGMOM_MAP: Dict[str, float] = {
+    'Ti': 2, 'O': 1,
+    'N': 0.5, 'Nb': 0.5, 'Fe': 4.0, 'Co': 3.0,
+}
 
-def assign_magmoms(atoms: Atoms, MAGMOM_MAP: Dict[str, float]) -> None:
+
+def assign_magmoms(atoms: Atoms) -> None:
     counters: Dict[str, int] = defaultdict(int)
     moms: List[float] = []
     for sym in atoms.get_chemical_symbols():

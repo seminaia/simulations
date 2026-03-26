@@ -8,16 +8,13 @@ from ase.io import read, write
 from ase.md.verlet import VelocityVerlet
 from ase.calculators.kim.kim import KIM
 from ase.visualize import view
-
+from ase.calculators.lammpsrun import LAMMPS
+from gpaw import GPAW, restart
 # ============================================================
 #  SETTINGS – modify these as needed
 # ============================================================
 # Input file containing the equilibrated atoms (positions, velocities, cell)
 # Supported formats: .traj, .xyz, .pickle (ASE restart), .cif (no velocities)
-input_file = 'Si_equilibrated.xyz'   # Replace with your equilibrated file
-
-# KIM model to use (must match the one used in NVT)
-kim_model = "SNAP_ZuoChenLi_2019quadratic_Si__MO_721469752060_000"
 
 # NVE simulation parameters
 timestep_fs = 1.0                 # timestep in femtoseconds
@@ -28,34 +25,7 @@ collect_interval = 10            # collect data every this many steps
 traj_output = 'nve_check.traj'    # optional trajectory file
 plot_output = 'nve_energy_drift.png'
 
-# ============================================================
-#  LOAD EQUILIBRATED CONFIGURATION
-# ============================================================
-print("="*60)
-print("Loading equilibrated configuration...")
-print("="*60)
 
-# Try different input formats
-if input_file.endswith('.pickle'):
-    with open(input_file, 'rb') as f:
-        data = pickle.load(f)
-    atoms = Atoms(symbols=['Si']*len(data['positions']),  # need symbols
-                  positions=data['positions'],
-                  cell=data['cell'],
-                  pbc=True)
-    if 'velocities' in data and data['velocities'] is not None:
-        atoms.set_velocities(data['velocities'])
-else:
-    # ASE readable format (traj, xyz, cif, ...)
-    atoms = read(input_file)
-    # Ensure velocities exist – if not, warn but continue (they will be zero)
-    if atoms.get_velocities() is None:
-        print("Warning: No velocities found in input file. Setting to zero.")
-        atoms.set_velocities(np.zeros((len(atoms), 3)))
-
-# Attach the KIM calculator
-print(f"Attaching KIM calculator: {kim_model}")
-calc = KIM(kim_model)
 atoms.calc = calc
 
 # Optionally view the structure

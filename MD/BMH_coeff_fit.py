@@ -21,7 +21,9 @@ Method (reference subtraction):
 Cation–cation pairs (Li–Li, Li–Be, Be–Be, H–H, H–Li, H–Be)
 are purely Coulombic → A = C = D = 0 in LAMMPS.
 """
-
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
@@ -29,7 +31,7 @@ from scipy.constants import epsilon_0, e
 from ase.units import eV, Ang, Bohr
 from ase import Atoms
 from gpaw import GPAW, PW, FermiDirac, Mixer
-
+from gpaw_helpers import relax, assign_magmoms, pbe_params, mgga_params, hse_params
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 # Ionic charges (must match LAMMPS charge_map in classical_md.py)
@@ -91,40 +93,7 @@ K_COULOMB = e * 1e10 / (4 * np.pi * epsilon_0)
 # Relative dielectric constant ε_r (1 = vacuum; set >1 for screened Coulomb)
 # Must match the 'dielectric' command in LAMMPS.
 EPSILON_R = 1.0
-SCREEN = 0.25*Ang  # Å^-1 screening parameter 
 # ── GPAW helpers ──────────────────────────────────────────────────────────────
-def make_gpaw(txt='-',SCREEN=SCREEN, ECUT_EV=ECUT_EV, hunds = False):
-    """GPAW PW calculator for isolated dimers (Γ-point, mild smearing)."""
-    base_params = {
-        "convergence": {"density": 1e-8,
-                        "eigenstates": 1e-10,
-                        "energy": 1e-6, 
-                        "forces": 1e-6},
-        "eigensolver": {"name": "rmm-diis",
-                        "niter": 5},
-        "hund": hunds,
-        "kpts": (1, 1, 1),
-        "maxiter": 1000,
-        "mixer": {"backend": "pulay", 
-                  "beta": 0.25,
-                  "method": "fullspin",
-                  "nmaxold": 5,
-                  "weight": 50.0},
-        "mode": {"name": "pw",
-                 "ecut": ECUT_EV},
-        "nbands": "nao",
-        #"symmetry": "off",
-        "occupations": {"name": "methfessel-paxton",
-                        "width": 0.01},
-        "txt": txt,  
-        "xc": { 'backend': 'pw',
-               'fraction': 0.25,
-               'omega': SCREEN * Bohr,  #bohr^-1
-               'name': 'HYB_GGA_XC_HSE06',
-               },
-    }
-    
-    return GPAW(**base_params)
 
 
 def dimer_atoms(sym1, sym2, r, magmoms=None, vacuum=VACUUM):
@@ -143,7 +112,8 @@ def get_energy(atoms, log_tag, hunds=False):
         calc = GPAW(gpw_file)
         atoms.calc = calc
         return calc.get_potential_energy(atoms), calc.get_homo_lumo()
-    calc = make_gpaw(txt=f'gpaw_{log_tag}.log',hunds=hunds)
+    bulk_pbe_params = pbe_params(txt=f'gpaw_{log_tag}.txt')
+    calc = GPAW(**bulk_pbe_params)
     atoms.calc = calc
     energy = calc.get_potential_energy(atoms)
     e_homo, e_lumo = calc.get_homo_lumo()
@@ -323,10 +293,6 @@ def main():
         r_values = np.linspace(r_lo, r_hi, N_R)
         IP = IONIZATION_POTENTIAL.get(pair, IONIZATION_POTENTIAL.get((sym2, sym1), None))
         magmoms = MAGMOMS.get(pair, MAGMOMS.get((sym2, sym1), (0, 0)))
-        if magmoms == (0,1):
-            hunds = True
-        else:
-            hunds = False
         print(f"\n{'='*60}")
         print(f"Pair  {sym1}–{sym2}  Ionization potential: {IP:.1f} eV" 
               f"(q₁={CHARGES.get(sym1,0):+.0f}, q₂={CHARGES.get(sym2,0):+.0f})  "
@@ -335,7 +301,7 @@ def main():
               f"Cutoff: {ECUT_EV} eV")
         print(f"{'='*60}")
 
-        e_pot, e_homo, e_lumo = scan_pair(sym1, sym2, r_values, magmoms,hunds)
+        e_pot, e_homo, e_lumo = scan_pair(sym1, sym2, r_values, magmoms)
         tier1, tier2, tier3      = fit_bmh(sym1, sym2, r_values, e_pot)
         params1, err1              = tier1        # tier1 (full BMH) → LAMMPS output
         params2, err2              = tier2
@@ -386,7 +352,7 @@ def main():
         plt.ylabel('Energy (eV)')
         plt.title(f'Fit for {sym1}–{sym2}')
         plt.legend(fontsize=7)
-        plt.show()
+        plt.savefig(f'BMH_fit_{sym1}_{sym2}.png', dpi=300)
 
     # ── LAMMPS pair_coeff table ───────────────────────────────────────────────
     # pair_style born/coul/long: pair_coeff i j  A  rho  sigma  C  D
@@ -431,9 +397,8 @@ def main():
             fh.write(ln + "\n")
     print(f"\nPair coefficients written → {out_file}")
 
-    # ── Python list for classical_md.py ──────────────────────────────────────
     print(f"\n{'='*60}")
-    print("Python  pair_coeff  list  (pair_style born/coul/long)")
+    print("Python  pair_coeff  list  (pair_style buck/coul/long)")
     print(f"{'='*60}")
     print("pair_coeff = [")
     for i, s1 in enumerate(SPECORDER, 1):
@@ -524,3 +489,9 @@ def main():
     print(f"Plot saved → {plot_file}")
 if __name__ == '__main__':
     main()
+Traceback (most recent call last):
+  File "/home/soki/simulations/MD/BMH_coeff_fit.py", line 493, in <module>
+  File "/home/soki/simulations/MD/BMH_coeff_fit.py", line 464, in main
+    eps_lj, sig_lj = dat['lj_params']
+                          ^^^^^^^^
+KeyError: 'A'

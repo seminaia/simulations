@@ -2,9 +2,9 @@ import matplotlib.pyplot as plt
 from pycalphad import Database, binplot, equilibrium
 import pycalphad.variables as v
 
-dbf = Database('cost507.tdb')
-components = ['FE', 'C', 'N', 'VA']
-phases = ['LIQUID', 'FCC_A1', 'BCC_A2', 'HCP_A3', 'N2GAS','CR']
+dbf = Database('Fe-C.TDB')
+components = ['FE','C','VA']
+phases = list(dbf.phases.keys())
 fig, ax = plt.subplots()
 print("Components:", components)
 print("Number of components:", len(components))
@@ -18,9 +18,8 @@ binplot(
     components,
     phases,
     {
-        v.X('C'): (0, 0.1, 0.01),
-        v.X('N'): 0.005,
-        v.T: (300, 1000, 10),
+        v.X('C'): (0, 0.6, 0.01),
+        v.T: (300, 1600, 10),
         v.P: 101325,
         v.N: 1
     }

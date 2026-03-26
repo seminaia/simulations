@@ -1,18 +1,14 @@
 import json
 import os
 import sys
-
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
-
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-
 import numpy as np
 from ase import Atoms
 from ase.spacegroup import crystal
@@ -24,7 +20,6 @@ from gpaw.hybrids.energy import non_self_consistent_energy
 from pymatgen.analysis.defects.core import DefectType
 from pymatgen.io.ase import AseAtomsAdaptor
 from shakenbreak.input import Distortions
-
 from gpaw_helpers import relax, assign_magmoms, pbe_params, mgga_params
 
 

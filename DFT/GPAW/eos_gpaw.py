@@ -2,47 +2,38 @@ from ase.eos import EquationOfState
 from gpaw import GPAW, PW
 import numpy as np
 import matplotlib.pyplot as plt
+from ase import Atoms
+from ase.spacegroup import crystal
+from ase.visualize import view
+from gpaw_helpers import relax, assign_magmoms, pbe_params, mgga_params
 
-print("\nStarting Birch–Murnaghan EOS scan for Al...\n")
+print("\nStarting Birch–Murnaghan EOS scan for Fe...\n")
+a_bcc = 2.86
+bcc_fe_atoms = crystal(symbols=['Fe'], basis=[0,0,0],spacegroup=229,cellpar=[a_bcc,a_bcc,a_bcc, 90, 90, 90])
+assign_magmoms(bcc_fe_atoms)
+view(bcc_fe_atoms,repeat=(2,2,2),block=True)
 
-# ---- Settings ----
-a_ref = a_al              # initial guess (4.05)
-n_points = 9              # number of scan points
-strain = 0.03             # ±3%
-ecut = 600                # use well-converged cutoff
-kpts = (16, 16, 16)       # dense k-grid for metal
-smearing = 0.1            # good for metal
-
+strain = 0.01
 # Generate scaling factors
-scales = np.linspace(1 - strain, 1 + strain, n_points)
+scales = np.linspace(1 - strain, 1 + strain, 9)
 
 volumes = []
 energies = []
 
 for s in scales:
-    a = a_ref * s
-    
+    a = a_bcc* s
     # Build scaled structure
-    atoms = al_conv_atoms.copy()
-    atoms.set_cell([[a,0,0],[0,a,0],[0,0,a]], scale_atoms=True)
-    
+    atoms = bcc_fe_atoms.copy()
+    atoms.set_cell([[a,0,0],[0,a,0],[0,0,a]])
+    bulk_mgga_params = mgga_params(txt=f"eos_{a}.txt")
     # Fresh calculator each time
-    calc = GPAW(mode=PW(ecut),
-                xc='PBE',
-                kpts=kpts,
-                occupations={'name':'fermi-dirac','width':smearing},
-                txt=f'eos_{a:.3f}.txt')
-    
+    calc = GPAW(**bulk_mgga_params)
     atoms.calc = calc
-    
     E = atoms.get_potential_energy()
     V = atoms.get_volume()
-    
     volumes.append(V)
     energies.append(E)
-    
     print(f"a = {a:.4f} Å   V = {V:.4f} Å^3   E = {E:.6f} eV")
-    
     calc.write(f'eos_{a:.3f}.gpw')
 
 volumes = np.array(volumes)

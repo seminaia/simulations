@@ -1,3 +1,6 @@
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ase.eos import EquationOfState
 from gpaw import GPAW, PW
 import numpy as np
@@ -6,7 +9,6 @@ from ase import Atoms
 from ase.spacegroup import crystal
 from ase.visualize import view
 from gpaw_helpers import relax, assign_magmoms, pbe_params, mgga_params
-
 print("\nStarting Birch–Murnaghan EOS scan for Fe...\n")
 a_bcc = 2.86
 bcc_fe_atoms = crystal(symbols=['Fe'], basis=[0,0,0],spacegroup=229,cellpar=[a_bcc,a_bcc,a_bcc, 90, 90, 90])
@@ -25,9 +27,9 @@ for s in scales:
     # Build scaled structure
     atoms = bcc_fe_atoms.copy()
     atoms.set_cell([[a,0,0],[0,a,0],[0,0,a]])
-    bulk_mgga_params = mgga_params(txt=f"eos_{a}.txt")
+    bulk_mgga_params = mgga_params()
     # Fresh calculator each time
-    calc = GPAW(**bulk_mgga_params)
+    calc = relax(atoms,bulk_mgga_params,fmax=0.01,fixcell=True,logname=f'eos_{a:.3f}.log',trajname=f'eos_{a:.3f}.traj',gpwname=f'eos_{a:.3f}.gpw')
     atoms.calc = calc
     E = atoms.get_potential_energy()
     V = atoms.get_volume()
@@ -49,8 +51,7 @@ a0_eq = (V0)**(1/3)
 print("\n===== Birch–Murnaghan Fit Results =====")
 print(f"Equilibrium volume V0 = {V0:.6f} Å^3")
 print(f"Equilibrium lattice constant a0 = {a0_eq:.6f} Å")
-print(f"Bulk modulus B = {B/1e9:.2f} GPa (if GPAW in eV/Å^3 units)")
+print(f"Bulk modulus B = {B/1e9:.2f} eV/Å^3")
 
 # ---- Plot ----
-eos.plot('Fe_EOS.png')
-plt.show()
+eos.plot('Fe_EOS.png', show=True)

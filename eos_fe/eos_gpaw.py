@@ -15,10 +15,10 @@ print(f"\nStarting Birch–Murnaghan EOS scan for {symbols['Fe']}...\n")
 magmom_map = {'Fe': 2.0, 'Al': 0.1}
 a_bcc = 2.86
 bcc_fe_atoms = crystal(symbols=[symbols['Fe']], basis=[0,0,0],spacegroup=229,cellpar=[a_bcc,a_bcc,a_bcc, 90, 90, 90])
-assign_magmoms(bcc_fe_atoms, magmom_map, magnetization='AFM')
+assign_magmoms(bcc_fe_atoms, magmom_map)
 a_al = 4.05
 fcc_al_atoms = crystal(symbols=[symbols['Al']], basis=[0,0,0],spacegroup=225,cellpar=[a_al,a_al,a_al, 90, 90, 90])
-assign_magmoms(fcc_al_atoms, magmom_map, magnetization='AFM')
+assign_magmoms(fcc_al_atoms, magmom_map)
 
 strain = 0.05
 # Generate scaling factors

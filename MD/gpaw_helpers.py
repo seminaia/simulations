@@ -113,7 +113,7 @@ ECUT_EV = 520
 SCREEN = 0.2 * Bohr  # HSE06 screening (A^-1)
 
 BASE_PARAMS = {
-    "eigensolver": {"name": "rmm-diis", "niter": 5},
+    "eigensolver": {"name": "dav", "niter": 5},
     "maxiter": 1000,
     "mixer": {"backend": "pulay", "beta": 0.05, "method": "difference", "nmaxold": 5, "weight": 50.0},
     "mode": {"name": "pw", "ecut": ECUT_EV},

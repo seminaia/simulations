@@ -112,8 +112,9 @@ def get_energy(atoms, log_tag, hunds=False):
         calc = GPAW(gpw_file)
         atoms.calc = calc
         return calc.get_potential_energy(atoms), calc.get_homo_lumo()
-    bulk_pbe_params = pbe_params(txt=f'gpaw_{log_tag}.txt')
-    calc = GPAW(**bulk_pbe_params)
+    #bulk_pbe_params = pbe_params(txt=f'gpaw_{log_tag}.txt')
+    bulk_mgga_params = mgga_params(txt=f'gpaw_{log_tag}.txt')
+    calc = GPAW(**bulk_mgga_params)
     atoms.calc = calc
     energy = calc.get_potential_energy(atoms)
     e_homo, e_lumo = calc.get_homo_lumo()
@@ -297,7 +298,6 @@ def main():
         print(f"Pair  {sym1}–{sym2}  Ionization potential: {IP:.1f} eV" 
               f"(q₁={CHARGES.get(sym1,0):+.0f}, q₂={CHARGES.get(sym2,0):+.0f})  "
               f"σ={sigma_pair:.3f} Å  r=[{r_lo:.2f}, {r_hi:.2f}] Å, "
-              f"Screening:{SCREEN:.2f} Å^-1 {SCREEN*Bohr:.2f} bohr⁻¹"
               f"Cutoff: {ECUT_EV} eV")
         print(f"{'='*60}")
 
@@ -459,7 +459,7 @@ def main():
     axes_flat = axes.flatten()
 
     for ax, ((s1, s2), dat) in zip(axes_flat, results.items()):
-        A, sigma, rho, C, D = dat['A'], dat['sigma'], dat['rho'], dat['C'], dat['D']
+        A, sigma, rho, C, D = dat['tier1']['A'], dat['tier1']['sigma'], dat['tier1']['rho'], dat['tier1']['C'], dat['tier1']['D']
         eps_lj, sig_lj = dat['lj_params']
         ax.scatter(dat['r'], dat['e_pot'], color='steelblue', s=50,
                    zorder=3, label='GPAW E_pot')
@@ -489,9 +489,3 @@ def main():
     print(f"Plot saved → {plot_file}")
 if __name__ == '__main__':
     main()
-Traceback (most recent call last):
-  File "/home/soki/simulations/MD/BMH_coeff_fit.py", line 493, in <module>
-  File "/home/soki/simulations/MD/BMH_coeff_fit.py", line 464, in main
-    eps_lj, sig_lj = dat['lj_params']
-                          ^^^^^^^^
-KeyError: 'A'

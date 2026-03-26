@@ -9,7 +9,6 @@ import sys
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List
-
 import numpy as np
 from ase import Atoms
 from ase.filters import FrechetCellFilter
@@ -27,16 +26,32 @@ sys.stderr.reconfigure(line_buffering=True)
 # ---------------------------------------------------------------------------
 
 
-def assign_magmoms(atoms: Atoms, MAGMOM_MAP: Dict[str, float]) -> None:
+def assign_magmoms(atoms: Atoms, MAGMOM_MAP: Dict[str, float], magnetization: str) -> None:
     counters: Dict[str, int] = defaultdict(int)
     moms: List[float] = []
-    for sym in atoms.get_chemical_symbols():
-        mag = MAGMOM_MAP.get(sym, 0.1)
-        sign = 1 if counters[sym] % 2 == 0 else -1
-        moms.append(sign * mag)
-        counters[sym] += 1
-    atoms.set_initial_magnetic_moments(moms)
-
+    if magnetization == 'AFM':
+        for sym in atoms.get_chemical_symbols():
+            mag = MAGMOM_MAP.get(sym, 0.1)
+            sign = 1 if counters[sym] % 2 == 0 else -1
+            moms.append(sign * mag)
+            counters[sym] += 1
+        return atoms.set_initial_magnetic_moments(moms)
+    elif magnetization == 'FM':
+        for sym in atoms.get_chemical_symbols():
+            mag = MAGMOM_MAP.get(sym, 0.1)
+            moms.append(mag)
+        return atoms.set_initial_magnetic_moments(moms)
+    elif magnetization == 'PM':
+        for sym in atoms.get_chemical_symbols():
+            mag = MAGMOM_MAP.get(sym, 0.1)
+            moms.append(mag)
+        return atoms.set_initial_magnetic_moments(moms)
+    else:
+        for sym in atoms.get_chemical_symbols():
+            mag = MAGMOM_MAP.get(sym, 0)
+            moms.append(mag)
+        return atoms.set_initial_magnetic_moments(moms)
+    
 
 # ---------------------------------------------------------------------------
 #  Relaxation

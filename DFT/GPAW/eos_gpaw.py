@@ -87,13 +87,13 @@ for mag_label, atoms0 in configs.items():
     V0, E0, B = eos.fit()
 
     a0_eq = V0 ** (1 / 3)
-    B_GPa = B * 160.21766208
+
 
     print(f"\n{mag_label} results:")
     print(f"V0 = {V0:.6f} Å^3")
     print(f"a0 = {a0_eq:.6f} Å")
     print(f"E0 = {E0:.6f} eV")
-    print(f"B  = {B_GPa:.2f} GPa")
+    print(f"B  = {B:.2f} eV/Å^3  ({B*160.21766208:.2f} GPa)")
 
     eos.plot(os.path.join(outdir, f"{mag_label.lower()}_EOS.png"))
 
@@ -104,7 +104,7 @@ for mag_label, atoms0 in configs.items():
         "E0": E0,
         "B": B,
         "a0": a0_eq,
-        "B_GPa": B_GPa,
+        "B_GPa": B * 160.21766208,
     }
 
 print("\nComparison:")

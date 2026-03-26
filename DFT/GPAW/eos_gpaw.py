@@ -1,79 +1,113 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from ase.eos import EquationOfState
-from gpaw import GPAW, PW, restart
+from gpaw import GPAW
 import numpy as np
 import matplotlib.pyplot as plt
-from ase import Atoms
 from ase.spacegroup import crystal
-from ase.visualize import view
-from gpaw_helpers import relax, assign_magmoms, pbe_params, mgga_params
+from gpaw_helpers import assign_magmoms, mgga_params
 
 symbols = {'Fe': 'Fe'}
-print(f"\nStarting Birch–Murnaghan EOS scan for {symbols['Fe']}...\n")
 magmom_map = {'Fe': 2.0}
 a_bcc = 2.86
-afm_bcc_atoms = crystal(symbols=[symbols['Fe']], basis=[0,0,0],spacegroup=229,cellpar=[a_bcc,a_bcc,a_bcc, 90, 90, 90])
-assign_magmoms(afm_bcc_atoms, magmom_map, magnetization='AFM')
-fm_bcc_atoms = crystal(symbols=[symbols['Fe']], basis=[0,0,0],spacegroup=229,cellpar=[a_bcc,a_bcc,a_bcc, 90, 90, 90])
-assign_magmoms(fm_bcc_atoms, magmom_map, magnetization='FM')
-atoms_con= [afm_bcc_atoms, fm_bcc_atoms]
-strain = 0.1
-# Generate scaling factors
-scales = np.linspace(1 - strain, 1 + strain, 5)
 
-volumes = []
-energies = []
-for atoms in atoms_con:
+print(f"\nStarting EOS scans for {symbols['Fe']}...\n")
+
+# Build starting structures
+afm_bcc_atoms = crystal(
+    symbols=[symbols['Fe']],
+    basis=[(0, 0, 0)],
+    spacegroup=229,
+    cellpar=[a_bcc, a_bcc, a_bcc, 90, 90, 90]
+)
+assign_magmoms(afm_bcc_atoms, magmom_map, magnetization='AFM')
+
+fm_bcc_atoms = crystal(
+    symbols=[symbols['Fe']],
+    basis=[(0, 0, 0)],
+    spacegroup=229,
+    cellpar=[a_bcc, a_bcc, a_bcc, 90, 90, 90]
+)
+assign_magmoms(fm_bcc_atoms, magmom_map, magnetization='FM')
+
+configs = {
+    "AFM": afm_bcc_atoms,
+    "FM": fm_bcc_atoms,
+}
+
+strain = 0.03
+scales = np.linspace(1 - strain, 1 + strain, 9)
+
+results = {}
+
+for mag_label, atoms0 in configs.items():
     print(f"\n{'='*60}")
-    print(f"Starting EOS scan for {atoms.get_chemical_symbols()[0]} with magnetization: {'AFM' if atoms.get_initial_magnetic_moments()[0] > 0 else 'FM'}")
+    print(f"Starting EOS scan for Fe ({mag_label})")
     print(f"{'='*60}")
-    os.makedirs('afm_eos', exist_ok=True)
-    os.makedirs('fm_eos', exist_ok=True)
+
+    outdir = f"{mag_label.lower()}_eos"
+    os.makedirs(outdir, exist_ok=True)
+
+    volumes = []
+    energies = []
+
     for s in scales:
         a = a_bcc * s
-        if os.path.exists(f'eos_{a:.3f}.gpw'):
-            print(f"Loading existing calculation for a = {a:.3f} Å")
-            calc = GPAW(f'eos_{a:.3f}.gpw')
-            atoms = afm_bcc_atoms.copy()
-            atoms.set_cell([[a,0,0],[0,a,0],[0,0,a]])
+        gpw_file = os.path.join(outdir, f"eos_{mag_label.lower()}_{a:.3f}.gpw")
+        txt_file = os.path.join(outdir, f"eos_{mag_label.lower()}_{a:.3f}.txt")
+
+        atoms = atoms0.copy()
+        atoms.set_cell([[a, 0, 0], [0, a, 0], [0, 0, a]], scale_atoms=True)
+
+        if os.path.exists(gpw_file):
+            print(f"Loading existing calculation for {mag_label}, a = {a:.3f} Å")
+            calc = GPAW(gpw_file)
             atoms.calc = calc
-            E = atoms.get_potential_energy()
-            V = atoms.get_volume()
-            volumes.append(V)
-            energies.append(E)
         else:
-
-            # Build scaled structure
-            atoms = afm_bcc_atoms.copy()
-            atoms.set_cell([[a,0,0],[0,a,0],[0,0,a]])
-            bulk_mgga_params = mgga_params(txt= f"afm_eos_{a:.3f}.txt")
-            # Fresh calculator each time
-            calc = GPAW(**bulk_mgga_params)
+            params = mgga_params(txt=txt_file)
+            calc = GPAW(**params)
             atoms.calc = calc
-            E = atoms.get_potential_energy()
-            V = atoms.get_volume()
-            volumes.append(V)
-            energies.append(E)
-            print(f"a = {a:.4f} Å   V = {V:.4f} Å^3   E = {E:.6f} eV")
-            calc.write(f'afm_eos_{a:.3f}.gpw')
+            atoms.get_potential_energy()
+            calc.write(gpw_file)
 
-volumes = np.array(volumes)
-energies = np.array(energies)
+        E = atoms.get_potential_energy()
+        V = atoms.get_volume()
 
-# ---- Fit Birch–Murnaghan EOS ----
-eos = EquationOfState(volumes, energies, eos='birchmurnaghan')
-V0, E0, B = eos.fit()
+        volumes.append(V)
+        energies.append(E)
 
+        print(f"{mag_label}  a = {a:.4f} Å   V = {V:.4f} Å^3   E = {E:.6f} eV")
 
-# Convert equilibrium volume → lattice constant (cubic)
-a0_eq = (V0)**(1/3)
+    volumes = np.array(volumes)
+    energies = np.array(energies)
 
-print("\n===== Birch–Murnaghan Fit Results =====")
-print(f"Equilibrium volume V0 = {V0:.6f} Å^3")
-print(f"Equilibrium lattice constant a0 = {a0_eq:.6f} Å")
-print(f"Bulk modulus B = {B:.2f} eV/Å^3")
+    eos = EquationOfState(volumes, energies, eos='birchmurnaghan')
+    V0, E0, B = eos.fit()
 
-# ---- Plot ----
-eos.plot(f"{symbols['Fe']}_EOS.png", show=True)
+    a0_eq = V0 ** (1 / 3)
+    B_GPa = B * 160.21766208
+
+    print(f"\n{mag_label} results:")
+    print(f"V0 = {V0:.6f} Å^3")
+    print(f"a0 = {a0_eq:.6f} Å")
+    print(f"E0 = {E0:.6f} eV")
+    print(f"B  = {B_GPa:.2f} GPa")
+
+    eos.plot(os.path.join(outdir, f"{mag_label.lower()}_EOS.png"))
+
+    results[mag_label] = {
+        "volumes": volumes,
+        "energies": energies,
+        "V0": V0,
+        "E0": E0,
+        "B": B,
+        "a0": a0_eq,
+        "B_GPa": B_GPa,
+    }
+
+print("\nComparison:")
+print(f"FM  E0 = {results['FM']['E0']:.6f} eV")
+print(f"AFM E0 = {results['AFM']['E0']:.6f} eV")
+print(f"AFM - FM = {results['AFM']['E0'] - results['FM']['E0']:.6f} eV")

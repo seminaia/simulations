@@ -25,33 +25,33 @@ sys.stderr.reconfigure(line_buffering=True)
 #  Magnetic moments
 # ---------------------------------------------------------------------------
 
-
 def assign_magmoms(atoms: Atoms, MAGMOM_MAP: Dict[str, float], magnetization: str) -> None:
-    counters: Dict[str, int] = defaultdict(int)
+    counters = defaultdict(int)
     moms: List[float] = []
+
+    magnetization = magnetization.upper()
+
     if magnetization == 'AFM':
         for sym in atoms.get_chemical_symbols():
             mag = MAGMOM_MAP.get(sym, 0.1)
             sign = 1 if counters[sym] % 2 == 0 else -1
             moms.append(sign * mag)
             counters[sym] += 1
-        return atoms.set_initial_magnetic_moments(moms)
+
     elif magnetization == 'FM':
         for sym in atoms.get_chemical_symbols():
             mag = MAGMOM_MAP.get(sym, 0.1)
             moms.append(mag)
-        return atoms.set_initial_magnetic_moments(moms)
+
     elif magnetization == 'PM':
-        for sym in atoms.get_chemical_symbols():
-            mag = MAGMOM_MAP.get(sym, 0.1)
-            moms.append(mag)
-        return atoms.set_initial_magnetic_moments(moms)
+        moms = [0.0] * len(atoms)
+
     else:
         for sym in atoms.get_chemical_symbols():
-            mag = MAGMOM_MAP.get(sym, 0)
+            mag = MAGMOM_MAP.get(sym, 0.0)
             moms.append(mag)
-        return atoms.set_initial_magnetic_moments(moms)
-    
+
+    atoms.set_initial_magnetic_moments(moms)
 
 # ---------------------------------------------------------------------------
 #  Relaxation

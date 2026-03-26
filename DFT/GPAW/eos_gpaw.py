@@ -52,5 +52,5 @@ print(f"Equilibrium lattice constant a0 = {a0_eq:.6f} Å")
 print(f"Bulk modulus B = {B/1e9:.2f} GPa (if GPAW in eV/Å^3 units)")
 
 # ---- Plot ----
-eos.plot('Al_EOS.png')
+eos.plot('Fe_EOS.png')
 plt.show()

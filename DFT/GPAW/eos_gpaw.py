@@ -37,7 +37,7 @@ configs = {
     "FM": fm_bcc_atoms,
 }
 
-strain = 0.03
+strain = 0.5
 scales = np.linspace(1 - strain, 1 + strain, 9)
 
 results = {}

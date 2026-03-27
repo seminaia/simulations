@@ -23,22 +23,35 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 OUTPUT_FILE = "HW2_CHE565_results.txt"
 PLOT_FILE = "HW2_CHE565_plot.png"
-
 report_lines = []
 
+def tex_escape(s):
+    return (str(s)
+            .replace("\\", r"\textbackslash{}")
+            .replace("&", r"\&")
+            .replace("%", r"\%")
+            .replace("$", r"\$")
+            .replace("#", r"\#")
+            .replace("_", r"\_")
+            .replace("{", r"\{")
+            .replace("}", r"\}")
+            .replace("~", r"\textasciitilde{}")
+            .replace("^", r"\textasciicircum{}"))
 
 def w(text=""):
-    report_lines.append(str(text))
-    print(text)
+    s = str(text)
+    report_lines.append(tex_escape(s) + r"\\")
+    print(s)
 
+def wm(tex=""):
+    report_lines.append(tex + r"\\")
+    print(tex)
+    
 w("  CHE 565 - Homework 2")
 w("=" * 80)
-
-
 # ══════════════════════════════════════════════════════════════════════════════
 #  PROBLEM 1
 # ══════════════════════════════════════════════════════════════════════════════
-
 w()
 w("-" * 80)
 w("  PROBLEM 1")
@@ -53,8 +66,8 @@ w("             FV_B = $1,410,000/yr")
 w("   a.) 10 year lifetime, no salvage value, and 10 % yearly interest rate. What is the NPV of each option?,")
 w("       and which is preferred under these assumptions?")
 w()
-w("       NPV = PV + C0")
-w("       PV = FV*[((1+r)^n - 1)/(r*(1+r)^n)]")
+wm(r"$NPV = PV + C_0$")
+wm(r"$PV = F\left[\frac{(1+r)^n - 1}{r(1+r)^n}\right]$")
 w("       PV = present value, FV = future value (annual cash flow), r = yearly interest rate, n = number of years")
 w("       n= 10 years, r = 0.10")
 
@@ -142,62 +155,3 @@ def build_latex_pdf():
     print("PDF generated")
 
 build_latex_pdf()
-[]\T1/cmr/m/n/12 CHE 565 - Home-work 2 ========================================
-======================================== 
-! Missing $ inserted.
-<inserted text> 
-                $
-l.25   Option A:  C0_
-                     A = $3,800,000
-! Missing $ inserted.
-<inserted text> 
-                $
-l.26              FV_
-                     A = $1,100,000/yr
-! Missing $ inserted.
-<inserted text> 
-                $
-l.27   Option B:  C0_
-                     B = $5,000,000
-! Missing $ inserted.
-<inserted text> 
-                $
-l.28              FV_
-                     B = $1,410,000/yr
-! Missing $ inserted.
-<inserted text> 
-                $
-l.33        PV = FV*[((1+r)^
-                            n - 1)/(r*(1+r)^n)]
-! Missing $ inserted.
-<inserted text> 
-                $
-l.38 
-     
-
-Overfull \hbox (8.53867pt too wide) in paragraph at lines 32--38
-\OML/cmm/m/it/12 futurevalue\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 annualcashflow\OT
-1/cmr/m/n/12 )\OML/cmm/m/it/12 ; r \OT1/cmr/m/n/12 = \OML/cmm/m/it/12 yearlyint
-erestrate; n \OT1/cmr/m/n/12 = \OML/cmm/m/it/12 numberofyearsn \OT1/cmr/m/n/12 
-= 10\OML/cmm/m/it/12 years; r \OT1/cmr/m/n/12 =
-[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/en
-c/dvips/cm-super/cm-super-t1.enc}] (./CHE565_HW2.aux) )
-(see the transcript file for additional information)</usr/share/texlive/texmf-d
-ist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/share/texlive/texmf-dist/fo
-nts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/typ
-e1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
-ic/amsfonts/cm/cmsy10.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm120
-0.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm2074.pfb>
-Output written on CHE565_HW2.pdf (1 page, 75790 bytes).
-Transcript written on CHE565_HW2.log.
-Traceback (most recent call last):
-  File "/home/soki/simulations/PyFunc/HW2_CHE565.py", line 144, in <module>
-    build_latex_pdf()
-    ~~~~~~~~~~~~~~~^^
-  File "/home/soki/simulations/PyFunc/HW2_CHE565.py", line 140, in build_latex_pdf
-    subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
-    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/subprocess.py", line 577, in run
-    raise CalledProcessError(retcode, process.args,
-                             output=stdout, stderr=stderr)
-subprocess.CalledProcessError: Command '['/usr/bin/pdflatex', '-interaction=nonstopmode', 'CHE565_HW2.tex']' returned non-zero exit status 1.

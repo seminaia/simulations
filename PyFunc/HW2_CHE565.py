@@ -112,12 +112,8 @@ def build_latex_pdf():
 
     latex = rf"""
 \documentclass[12pt]{{article}}
-\usepackage[T1]{{fontenc}}
-\usepackage[utf8]{{inputenc}}
+\usepackage{{amsmath}}
 \usepackage[margin=1in]{{geometry}}
-\usepackage{{fancyvrb}}
-\usepackage{{graphicx}}
-\usepackage{{float}}
 
 \title{{CHE 565 -- Homework 2}}
 \date{{}}
@@ -126,11 +122,9 @@ def build_latex_pdf():
 
 \maketitle
 
-\VerbatimInput[
-    fontsize=\scriptsize,
-    frame=single,
-    framesep=2mm
-]{{{OUTPUT_FILE}}}
+\section*{{Problem 1}}
+
+{"\n".join(report_lines)}
 
 \end{{document}}
 """

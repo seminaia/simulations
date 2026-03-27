@@ -249,16 +249,20 @@ class WorkLog:
         return path
 
     def save_pdf(self, clean_tex: bool = False) -> str | None:
-        engine = shutil.which("pdflatex")
-        if engine is None:
-            print("pdflatex not found; wrote .txt/.tex only")
-            self.doc.generate_tex(self.base_name)
+        try:
+            self.doc.generate_pdf(self.base_name, clean_tex=clean_tex,
+                                  compiler="pdflatex",compiler_args=["-interaction=nonstopmode"])
+            return f"{self.base_name}.pdf"
+        except Exception as e:
+            print(f"Error generating PDF: {e}")
             return None
-        self.doc.generate_pdf(self.base_name, clean_tex=clean_tex)
-        return f"{self.base_name}.pdf"
-
+        
     def save_all(self, clean_tex: bool = False) -> tuple[str, str, str | None]:
         txt = self.save_txt()
         tex = self.save_tex()
-        pdf = self.save_pdf(clean_tex=clean_tex)
+        try:
+            pdf = self.save_pdf(clean_tex=clean_tex)
+        except Exception as e:
+            print(f"Error generating PDF: {e}")
+            pdf = None
         return txt, tex, pdf

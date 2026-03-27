@@ -68,12 +68,8 @@ x_opt, es, iter = newton_raphson(dx_dist_sq_p1, dx2_dist_sq_p1 ,x0)
 x1   = x_opt
 y1   = 2*x1**2 + 3*x1 + 1
 d1   = np.sqrt(dist_sq_p1(x1))
-problem_1_roots = np.roots([16, 36, 28, 6])
 
 w("  ────")
-w("  Cubic roots")
-for idx, root in enumerate(problem_1_roots, start=1):
-    w(f"      x{idx} = {root.real:.8f}{root.imag:+.8f}i")
 w()
 w(f"  Optimal x      = {x1:.8f}")
 w(f"  y(x*)          = 2({x1:.6f})² + 3({x1:.6f}) + 1")
@@ -412,10 +408,6 @@ def latex_safe_text(text: str) -> str:
 
 def build_latex_pdf():
     tex_file = "CHE565_HW1.tex"
-    latex_roots = "\n".join(
-        rf"\item $x_{{{idx}}} = {root.real:.8f}{root.imag:+.8f}i$"
-        for idx, root in enumerate(problem_1_roots, start=1)
-    )
     report_text = Path(OUTPUT_FILE).read_text(encoding="utf-8")
     Path(LATEX_REPORT_FILE).write_text(
         "\n".join(latex_safe_text(line) for line in report_text.splitlines()) + "\n",
@@ -438,21 +430,9 @@ def build_latex_pdf():
 
 \maketitle
 
-\section*{{Full Solution}}
 
-\subsection*{{Problem 1 Cubic Solver}}
+\subsection*{{Problem 1}}
 
-\[
-2x + 2(2x^2 + 3x + 1)(4x + 3) = 0
-\]
-
-\[
-16x^3 + 36x^2 + 28x + 6 = 0
-\]
-
-\begin{{itemize}}
-{latex_roots}
-\end{{itemize}}
 
 \subsection*{{Text Report}}
 

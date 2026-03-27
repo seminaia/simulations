@@ -17,6 +17,8 @@ from scipy.stats import t as t_dist
 from NRroots import newton_raphson
 from regression_analysis import RegressionAnalysis
 from matplotlib.backends.backend_pdf import PdfPages
+from pathlib import Path
+from pylatex import Document, Section, Subsection, Figure, NoEscape, Command
 # ══════════════════════════════════════════════════════════════════════════════
 #  Output file setup
 #  All problems write through the same RegressionAnalysis writer so the
@@ -27,26 +29,14 @@ OUTPUT_FILE = "HW1_CHE565_results.txt"
 ra = RegressionAnalysis(output_file=OUTPUT_FILE, verbose=True)
 report_lines = []
 
-def tex_escape(s):
-    return (str(s)
-            .replace("\\", r"\textbackslash{}")
-            .replace("&", r"\&")
-            .replace("%", r"\%")
-            .replace("$", r"\$")
-            .replace("#", r"\#")
-            .replace("_", r"\_")
-            .replace("{", r"\{")
-            .replace("}", r"\}")
-            .replace("~", r"\textasciitilde{}")
-            .replace("^", r"\textasciicircum{}"))
+ra = RegressionAnalysis(output_file=OUTPUT_FILE, verbose=False)
 
-def w (text=""):
+text_lines = []
+
+def w(text=""):
     s = str(text)
-    ra._w.write(tex_escape(s) + r"\\")
+    text_lines.append(s)
     print(s)
-def wm(tex=""):
-    ra._w.write(tex + r"\\")
-    print(tex)
 w()
 w("  CHE 565 — Homework 1")
 w("=" * 80)
@@ -401,90 +391,3 @@ ra.close()
 
 print(f"Full solution written to  {OUTPUT_FILE}")
 print(f"Plot saved to            {PLOT_FILE}")
-from pathlib import Path
-import shutil
-import subprocess
-
-LATEX_REPORT_FILE = "HW1_CHE565_results_latex.txt"
-
-
-def latex_safe_text(text: str) -> str:
-    replacements = {
-        "—": "--",
-        "–": "-",
-        "−": "-",
-        "·": "*",
-        "²": "^2",
-        "₁": "_1",
-        "₂": "_2",
-        "β": "beta",
-        "Π": "Pi",
-        "√": "sqrt",
-        "═": "=",
-        "━": "-",
-        "─": "-",
-    }
-    for source, target in replacements.items():
-        text = text.replace(source, target)
-    return text.encode("ascii", "replace").decode("ascii")
-
-def build_latex_pdf():
-    tex_file = "CHE565_HW1.tex"
-    report_text = Path(OUTPUT_FILE).read_text(encoding="utf-8")
-    Path(LATEX_REPORT_FILE).write_text(
-        "\n".join(latex_safe_text(line) for line in report_text.splitlines()) + "\n",
-        encoding="utf-8",
-    )
-
-    latex = rf"""
-\documentclass[12pt]{{article}}
-\usepackage[T1]{{fontenc}}
-\usepackage[utf8]{{inputenc}}
-\usepackage[margin=1in]{{geometry}}
-\usepackage{{fancyvrb}}
-\usepackage{{graphicx}}
-\usepackage{{float}}
-
-\title{{CHE 565 -- Homework 1}}
-\date{{}}
-
-\begin{{document}}
-
-\maketitle
-
-
-\subsection*{{Problem 1}}
-
-
-\subsection*{{Text Report}}
-
-\VerbatimInput[
-    fontsize=\scriptsize,
-    frame=single,
-    framesep=2mm
-]{{{LATEX_REPORT_FILE}}}
-
-\newpage
-\section*{{Plot}}
-
-\begin{{figure}}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{{{PLOT_FILE}}}
-\caption{{Curve fitting comparison for Problem 5.}}
-\end{{figure}}
-
-\end{{document}}
-"""
-
-    Path(tex_file).write_text(latex, encoding="utf-8")
-
-    engine = shutil.which("pdflatex")
-    if engine is None:
-        print("pdflatex not found; wrote the .tex file only")
-        return
-
-    subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
-
-    print("PDF generated")
-
-build_latex_pdf()

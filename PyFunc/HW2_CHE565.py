@@ -60,7 +60,7 @@ def NPV(PV, C0=0):
     """
     return PV + C0
 
-def future_value(P0, r, n, k):
+def annual_payment(P0, r, n, k):
     return P0 * ((1 + r)**n*r)/((1+r)**n-1)
 
 def present_value(F, r, n):
@@ -76,28 +76,26 @@ C0_B = -5.0e6
 P0_A = -C0_A
 P0_B = -C0_B
 
-for i in range(1, n + 1):
-    PV_A = present_value(F_A, i_npv, i)
-    PV_B = present_value(F_B, i_npv, i)
-    w(f"  n = {i:.0f} year(s): PV(A) = ${PV_A:,.2f}   PV(B) = ${PV_B:,.2f}")
-NPV_A = present_value(F_A, i_npv, n)
-NPV_B = present_value(F_B, i_npv, n)
+PV_A = present_value(F_A, i_npv, n)
+PV_B = present_value(F_B, i_npv, n)
+NPV_A = NPV(PV_A, C0_A)
+NPV_B = NPV(PV_B, C0_B)
 w(f"\nNPV(A) = ${NPV_A:,.2f}   NPV(B) = ${NPV_B:,.2f}")
 
-if NPV_A + C0_A > NPV_B + C0_B:
+if NPV_A > NPV_B:
     w(f"\nNPV is higher for option A at 10% interest, so A is preferred under these assumptions.")
 else:
     w(f"\nNPV is higher for option B at 10% interest, so B is preferred under these assumptions.")
 
 for i in range(1, n + 1):
-    fv_A = future_value(P0_A, i_loan, i, 1)
-    fv_B = future_value(P0_B, i_loan, i, 1)
+    pay_A = annual_payment(P0_A, i_loan, i, 1)
+    pay_B = annual_payment(P0_B, i_loan, i, 1)
     PV_A = present_value(F_A, i_npv, i)
     PV_B = present_value(F_B, i_npv, i)
-    w(f"  n = {i:.0f} year(s): FV(A) = ${fv_A:,.2f}   FV(B) = ${fv_B:,.2f}")
-    total_A = fv_A + PV_A
-    total_B = fv_B + PV_B
-    w(f"  n = {i:.0f} year(s): T(A) = ${total_A:,.2f}   T(B) = ${total_B:,.2f}")
+    w(f"  n = {i:.0f} year(s): Pay(A) = ${pay_A:,.2f}   Pay(B) = ${pay_B:,.2f}")
+    #total_A = pay_A + PV_A
+    #total_B = pay_B + PV_B
+    #w(f"  n = {i:.0f} year(s): T(A) = ${total_A:,.2f}   T(B) = ${total_B:,.2f}")
 
 from pathlib import Path
 import shutil

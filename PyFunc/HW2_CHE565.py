@@ -126,9 +126,6 @@ def build_latex_pdf():
 
 \maketitle
 
-\section*{{Full Solution}}
-\subsection*{{Text Report}}
-
 \VerbatimInput[
     fontsize=\scriptsize,
     frame=single,

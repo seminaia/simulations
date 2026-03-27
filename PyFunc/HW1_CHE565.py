@@ -9,7 +9,6 @@ Results are written to HW1_CHE565_results.txt and mirrored to the console.
 import numpy as np
 import matplotlib
 
-from PyFunc.HW2_CHE565 import tex_escape
 matplotlib.use("Agg")          # non-interactive backend (no display needed)
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize_scalar, minimize
@@ -19,6 +18,7 @@ from regression_analysis import RegressionAnalysis
 from matplotlib.backends.backend_pdf import PdfPages
 from pathlib import Path
 from pylatex import Document, Section, Subsection, Figure, NoEscape, Command
+from worklog import WorkLog
 # ══════════════════════════════════════════════════════════════════════════════
 #  Output file setup
 #  All problems write through the same RegressionAnalysis writer so the
@@ -26,17 +26,20 @@ from pylatex import Document, Section, Subsection, Figure, NoEscape, Command
 # ══════════════════════════════════════════════════════════════════════════════
 
 OUTPUT_FILE = "HW1_CHE565_results.txt"
-ra = RegressionAnalysis(output_file=OUTPUT_FILE, verbose=True)
+log = WorkLog("HW1_CHE565","CHE 565 Homework 1")
+log.title("CHE 565 - Homework 1")
+log.section("Problem 1")
+log.text("")
+
 report_lines = []
 
 ra = RegressionAnalysis(output_file=OUTPUT_FILE, verbose=False)
 
-text_lines = []
 
 def w(text=""):
-    s = str(text)
-    text_lines.append(s)
-    print(s)
+    log.text(text)
+def wm(tex=""):
+    log.math(tex)
 w()
 w("  CHE 565 — Homework 1")
 w("=" * 80)
@@ -388,6 +391,42 @@ PLOT_FILE = "HW1_CHE565_plot.png"
 plt.savefig(PLOT_FILE, dpi=150)
 plt.close()
 ra.close()
-
+log.save_all()
 print(f"Full solution written to  {OUTPUT_FILE}")
 print(f"Plot saved to            {PLOT_FILE}")
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.233   ──────────
+                                      \\
+
+Underfull \hbox (badness 10000) in paragraph at lines 232--237
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 232--237
+
+[5] (./HW1_CHE565.aux) )
+(see the transcript file for additional information)</usr/share/texmf/fonts/typ
+e1/public/cm-super/sfbx1728.pfb></usr/share/texmf/fonts/type1/public/cm-super/s
+frm1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm2074.pfb>
+Output written on HW1_CHE565.pdf (5 pages, 52571 bytes).
+Transcript written on HW1_CHE565.log.
+Traceback (most recent call last):
+  File "/home/soki/simulations/PyFunc/HW1_CHE565.py", line 394, in <module>
+    log.save_all()
+    ~~~~~~~~~~~~^^
+  File "/home/soki/simulations/PyFunc/worklog.py", line 122, in save_all
+    subprocess.run(
+    ~~~~~~~~~~~~~~^
+        [engine, "-interaction=nonstopmode", f"{self.base_name}.tex"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        check=True
+        ^^^^^^^^^^
+    )
+    ^
+  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/usr/bin/pdflatex', '-interaction=nonstopmode', 'HW1_CHE565.tex']' returned non-zero exit status 1.
+(myGPAWenv) soki@soki-Dell-Pro-14-Plus-PB14250:~/simulations$ 

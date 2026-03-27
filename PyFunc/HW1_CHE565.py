@@ -26,9 +26,7 @@ from worklog import WorkLog
 # ══════════════════════════════════════════════════════════════════════════════
 
 OUTPUT_FILE = "HW1_CHE565_results.txt"
-
-log = WorkLog("HW1_CHE565", "CHE 565 -- Homework 1")
-log.title("CHE 565 - Homework 1")
+log = WorkLog("HW1_CHE565","CHE 565 Homework 1")
 log.section("Problem 1")
 log.text("")
 
@@ -39,18 +37,8 @@ ra = RegressionAnalysis(output_file=OUTPUT_FILE, verbose=False)
 
 def w(text=""):
     log.text(text)
-
 def wm(tex=""):
     log.math(tex)
-
-def wa(*lines):
-    log.align(*lines)
-
-def wt(headers, rows, caption=None, label=None, float_fmt=".4f"):
-    log.table(headers, rows, caption=caption, label=label, float_fmt=float_fmt)
-
-def fig(path, caption=None, label=None):
-    log.figure(path, caption=caption, label=label)
 w()
 w("  CHE 565 — Homework 1")
 w("=" * 80)
@@ -403,3 +391,24 @@ ra.close()
 log.save_all()
 print(f"Full solution written to  {OUTPUT_FILE}")
 print(f"Plot saved to            {PLOT_FILE}")
+  File "/home/soki/simulations/PyFunc/HW1_CHE565.py", line 391, in <module>
+    log.save_all()
+    ~~~~~~~~~~~~^^
+  File "/home/soki/simulations/PyFunc/worklog.py", line 263, in save_all
+    pdf = self.save_pdf(clean_tex=clean_tex)
+  File "/home/soki/simulations/PyFunc/worklog.py", line 257, in save_pdf
+    self.doc.generate_pdf(self.base_name, clean_tex=clean_tex)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/site-packages/pylatex/document.py", line 276, in generate_pdf
+    output = subprocess.check_output(
+        command, stderr=subprocess.STDOUT, **check_output_kwargs
+    )
+  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/subprocess.py", line 472, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+               **kwargs).stdout
+               ^^^^^^^^^
+  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['latexmk', '--pdf', '--interaction=nonstopmode', '/home/soki/simulations/HW1_CHE565.tex']' returned non-zero exit status 12.

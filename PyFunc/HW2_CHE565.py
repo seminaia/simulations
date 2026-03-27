@@ -53,42 +53,52 @@ w("             F=1.41e6/yr")
 w("   a.) 10 year lifetime, no salvage value, and 10\\% interest rate.")
 w("   NPV = F*[((1+r)^n - 1)/(r*(1+r)^n)]")
 
-def NPV(F, r, n, C0=0):
+def NPV(PV, C0=0):
     """
-    F = annual cash flow, 
-    r = interest rate,
-    n = number of years,
+    PV = present value, 
     C0 = initial cost (default 0)
     """
-    return F * (((1 + r)**n - 1) / (r * (1 + r)**n)) + C0
+    return PV + C0
 
 def future_value(P0, r, n, k):
-    return P0 * ((1 + r)**(n - k + 1))
-    
-lifetime_interest = 0.10 # 10% interest rate
-loan_interest = 0.05     # 5% loan interest rate
-start=0
-stop=10
-n = np.linspace(start, stop, 10) # 10 year lifetime
+    return P0 * ((1 + r)**n*r)/((1+r)**n-1)
+
+def present_value(F, r, n):
+    return F * ((1+r)**n - 1) / (r * (1+r)**n)
+
+i_npv = 0.10 # 10% interest rate
+i_loan = 0.05     # 5% loan interest rate
+n=10
 F_A = 1.1e6
 F_B = 1.41e6
 C0_A = -3.8e6
 C0_B = -5.0e6
 P0_A = -C0_A
 P0_B = -C0_B
-for i in n:
-    npv_A = NPV(F_A, lifetime_interest, i, C0_A)
-    npv_B = NPV(F_B, lifetime_interest, i, C0_B)
-    w(f"  n = {i:.0f} year(s): NPV(A) = ${npv_A:,.2f}   NPV(B) = ${npv_B:,.2f}")
-w("NPV is higher for option B at 10% interest, so B is preferred under these assumptions.")
-for i in n:
-    fv_A = future_value(P0_A, loan_interest, i, start)
-    fv_B = future_value(P0_B, loan_interest, i, start)
+
+for i in range(1, n + 1):
+    PV_A = present_value(F_A, i_npv, i)
+    PV_B = present_value(F_B, i_npv, i)
+    w(f"  n = {i:.0f} year(s): PV(A) = ${PV_A:,.2f}   PV(B) = ${PV_B:,.2f}")
+NPV_A = present_value(F_A, i_npv, n)
+NPV_B = present_value(F_B, i_npv, n)
+w(f"\nNPV(A) = ${NPV_A:,.2f}   NPV(B) = ${NPV_B:,.2f}")
+
+if NPV_A + C0_A > NPV_B + C0_B:
+    w(f"\nNPV is higher for option A at 10% interest, so A is preferred under these assumptions.")
+else:
+    w(f"\nNPV is higher for option B at 10% interest, so B is preferred under these assumptions.")
+
+for i in range(1, n + 1):
+    fv_A = future_value(P0_A, i_loan, i, 1)
+    fv_B = future_value(P0_B, i_loan, i, 1)
+    PV_A = present_value(F_A, i_npv, i)
+    PV_B = present_value(F_B, i_npv, i)
     w(f"  n = {i:.0f} year(s): FV(A) = ${fv_A:,.2f}   FV(B) = ${fv_B:,.2f}")
-for i in n:
-    total_A = future_value(P0_A, loan_interest, i, stop) + NPV(F_A, lifetime_interest, i, C0_A)
-    total_B = future_value(P0_B, loan_interest, i, stop) + NPV(F_B, lifetime_interest, i, C0_B)
+    total_A = fv_A + PV_A
+    total_B = fv_B + PV_B
     w(f"  n = {i:.0f} year(s): T(A) = ${total_A:,.2f}   T(B) = ${total_B:,.2f}")
+
 from pathlib import Path
 import shutil
 import subprocess

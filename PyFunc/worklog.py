@@ -31,6 +31,12 @@ def latex_safe_text(text: str) -> str:
         text = text.replace(old, new)
     return text
 
+def is_separator_line(s: str) -> bool:
+    stripped = s.strip()
+    if not stripped:
+        return False
+    return len(set(stripped)) == 1 and stripped[0] in "-=*_~|"
+
 class WorkLog:
 
 
@@ -89,9 +95,14 @@ class WorkLog:
         self.txt_lines.append(s)
 
         s_tex = latex_safe_text(s)
-        if s_tex.strip():
-            self.tex_lines.append(escape_latex(s_tex) + r"\\")
+
+        if not s_tex.strip():
+            self.tex_lines.append("")
+        elif is_separator_line(s_tex):
+            self.tex_lines.append(r"\hrule")
+            self.tex_lines.append("")
         else:
+            self.tex_lines.append(escape_latex(s_tex))
             self.tex_lines.append("")
 
     def math(self, latex: str):

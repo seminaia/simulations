@@ -8,6 +8,8 @@ Results are written to HW1_CHE565_results.txt and mirrored to the console.
 
 import numpy as np
 import matplotlib
+
+from PyFunc.HW2_CHE565 import tex_escape
 matplotlib.use("Agg")          # non-interactive backend (no display needed)
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize_scalar, minimize
@@ -24,7 +26,13 @@ from matplotlib.backends.backend_pdf import PdfPages
 OUTPUT_FILE = "HW1_CHE565_results.txt"
 ra = RegressionAnalysis(output_file=OUTPUT_FILE, verbose=True)
 w  = ra._w.write      # shortcut to the writer
-
+def w (text=""):
+    s = str(text)
+    ra._w.write(tex_escape(s) + r"\\")
+    print(s)
+def wm(tex=""):
+    ra._w.write(tex + r"\\")
+    print(tex)
 w()
 w("  CHE 565 — Homework 1")
 w("=" * 80)

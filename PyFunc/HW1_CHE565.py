@@ -4,7 +4,6 @@ HW1_CHE565.py
 CHE 565 – Homework 1
 All five problems solved with full work shown.
 Results are written to HW1_CHE565_results.txt and mirrored to the console.
-Run:       python HW1_CHE565.py
 """
 
 import numpy as np
@@ -49,7 +48,11 @@ w("      D(x) = sqrt[ x² + y(x)² ]")
 w("  Minimising D² :")
 w("      D²(x) = x² + (2x² + 3x + 1)²")
 w("      dD²(x*)/dx = 2x + 2(2x² + 3x + 1)(4x + 3) = 0")
-w("      2x + 2(2x² + 3x + 1)(4x + 3) = 0 -> 8x³ + 22x² + 19x + 3 = 0")
+w("      2x + 2(2x² + 3x + 1)(4x + 3) = 0 ")
+w("      2x + (4x^2 + 6x + 2)(4x + 3) = 0 ")
+w("      2x + 16x^3 + 24x^2 + 8x + 12x^2 + 18x + 6 = 0")
+w("      16x^3 + 36x^2 + 28x + 6 = 0")
+w("      or, dividing by 2: 8x^3 + 18x^2 + 14x + 3 = 0")
 w("      The roots of this cubic equations were solved numerically using the Newton-Raphson method.")
 
 def dist_sq_p1(x):
@@ -65,8 +68,13 @@ x_opt, es, iter = newton_raphson(dx_dist_sq_p1, dx2_dist_sq_p1 ,x0)
 x1   = x_opt
 y1   = 2*x1**2 + 3*x1 + 1
 d1   = np.sqrt(dist_sq_p1(x1))
+problem_1_roots = np.roots([16, 36, 28, 6])
 
 w("  ────")
+w("  Cubic roots")
+for idx, root in enumerate(problem_1_roots, start=1):
+    w(f"      x{idx} = {root.real:.8f}{root.imag:+.8f}i")
+w()
 w(f"  Optimal x      = {x1:.8f}")
 w(f"  y(x*)          = 2({x1:.6f})² + 3({x1:.6f}) + 1")
 w(f"                 = {y1:.8f}")
@@ -368,7 +376,7 @@ ax2.set_xlabel("x"); ax2.set_ylabel("Residual  (y_obs − y_fit)")
 ax2.set_title("Residuals"); ax2.legend(fontsize=8); ax2.grid(alpha=0.4)
 
 plt.tight_layout()
-PLOT_FILE = "HW1_CHE555_plot.png"
+PLOT_FILE = "HW1_CHE565_plot.png"
 plt.savefig(PLOT_FILE, dpi=150)
 plt.close()
 ra.close()
@@ -379,20 +387,51 @@ from pathlib import Path
 import shutil
 import subprocess
 
+LATEX_REPORT_FILE = "HW1_CHE565_results_latex.txt"
+
+
+def latex_safe_text(text: str) -> str:
+    replacements = {
+        "—": "--",
+        "–": "-",
+        "−": "-",
+        "·": "*",
+        "²": "^2",
+        "₁": "_1",
+        "₂": "_2",
+        "β": "beta",
+        "Π": "Pi",
+        "√": "sqrt",
+        "═": "=",
+        "━": "-",
+        "─": "-",
+    }
+    for source, target in replacements.items():
+        text = text.replace(source, target)
+    return text.encode("ascii", "replace").decode("ascii")
+
 def build_latex_pdf():
-    tex_file = "CHE555_HW1.tex"
+    tex_file = "CHE565_HW1.tex"
+    latex_roots = "\n".join(
+        rf"\item $x_{{{idx}}} = {root.real:.8f}{root.imag:+.8f}i$"
+        for idx, root in enumerate(problem_1_roots, start=1)
+    )
+    report_text = Path(OUTPUT_FILE).read_text(encoding="utf-8")
+    Path(LATEX_REPORT_FILE).write_text(
+        "\n".join(latex_safe_text(line) for line in report_text.splitlines()) + "\n",
+        encoding="utf-8",
+    )
 
     latex = rf"""
 \documentclass[12pt]{{article}}
-\usepackage{{fontspec}}
+\usepackage[T1]{{fontenc}}
+\usepackage[utf8]{{inputenc}}
 \usepackage[margin=1in]{{geometry}}
 \usepackage{{fancyvrb}}
 \usepackage{{graphicx}}
 \usepackage{{float}}
 
-\setmonofont{{DejaVu Sans Mono}}
-
-\title{{CHE 555 -- Homework 1}}
+\title{{CHE 565 -- Homework 1}}
 \date{{}}
 
 \begin{{document}}
@@ -401,11 +440,27 @@ def build_latex_pdf():
 
 \section*{{Full Solution}}
 
+\subsection*{{Problem 1 Cubic Solver}}
+
+\[
+2x + 2(2x^2 + 3x + 1)(4x + 3) = 0
+\]
+
+\[
+16x^3 + 36x^2 + 28x + 6 = 0
+\]
+
+\begin{{itemize}}
+{latex_roots}
+\end{{itemize}}
+
+\subsection*{{Text Report}}
+
 \VerbatimInput[
     fontsize=\scriptsize,
     frame=single,
     framesep=2mm
-]{{{OUTPUT_FILE}}}
+]{{{LATEX_REPORT_FILE}}}
 
 \newpage
 \section*{{Plot}}
@@ -421,9 +476,10 @@ def build_latex_pdf():
 
     Path(tex_file).write_text(latex, encoding="utf-8")
 
-    engine = shutil.which("lualatex")
+    engine = shutil.which("pdflatex")
     if engine is None:
-        raise RuntimeError("lualatex not found")
+        print("pdflatex not found; wrote the .tex file only")
+        return
 
     subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
 

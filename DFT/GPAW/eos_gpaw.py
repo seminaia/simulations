@@ -46,7 +46,6 @@ for mag_label, atoms0 in configs.items():
     print(f"\n{'='*60}")
     print(f"Starting EOS scan for Fe ({mag_label})")
     print(f"{'='*60}")
-
     outdir = f"{mag_label.lower()}_eos"
     os.makedirs(outdir, exist_ok=True)
 

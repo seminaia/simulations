@@ -2,8 +2,38 @@ from pathlib import Path
 from pylatex import Document, Section, Subsection, Figure, NoEscape, Command
 from pylatex.utils import escape_latex
 
+def latex_safe_text(text: str) -> str:
+    replacements = {
+        "—": "--",
+        "–": "-",
+        "−": "-",
+        "━": "-",
+        "─": "-",
+        "═": "=",
+        "│": "|",
+        "•": "*",
+        "·": "*",
+        "²": "^2",
+        "³": "^3",
+        "₀": "_0",
+        "₁": "_1",
+        "₂": "_2",
+        "₃": "_3",
+        "√": "sqrt",
+        "Π": "Pi",
+        "π": "pi",
+        "≤": "<=",
+        "≥": ">=",
+        "≠": "!=",
+        "×": "x",
+        }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text
 
 class WorkLog:
+
+
     def __init__(self, base_name: str, title: str):
         self.base_name = base_name
         self.title_text = title
@@ -42,8 +72,8 @@ class WorkLog:
         self.txt_lines.append("")
         self.txt_lines.append(text)
         self.txt_lines.append("-" * 80)
-
-        self.tex_lines.append(rf"\section*{{{escape_latex(text)}}}")
+        safe = escape_latex(latex_safe_text(text))
+        self.tex_lines.append(rf"\section*{{{safe}}}")
         self.tex_lines.append("")
 
     def subsection(self, text: str):
@@ -53,13 +83,14 @@ class WorkLog:
 
         self.tex_lines.append(rf"\subsection*{{{escape_latex(text)}}}")
         self.tex_lines.append("")
-
+        
     def text(self, text: str = ""):
         s = str(text)
         self.txt_lines.append(s)
 
-        if s.strip():
-            self.tex_lines.append(escape_latex(s) + r"\\")
+        s_tex = latex_safe_text(s)
+        if s_tex.strip():
+            self.tex_lines.append(escape_latex(s_tex) + r"\\")
         else:
             self.tex_lines.append("")
 
@@ -113,16 +144,14 @@ class WorkLog:
     def save_all(self, clean_tex=False):
         txt_path = self.save_txt()
         tex_path = self.save_tex()
-        # safest: generate pdf from the .tex file you already made
         import shutil
         import subprocess
 
         engine = shutil.which("pdflatex")
         if engine is not None:
-            subprocess.run(
-                [engine, "-interaction=nonstopmode", f"{self.base_name}.tex"],
-                check=True
-            )
+            result = subprocess.run([engine, "-interaction=nonstopmode", f"{self.base_name}.tex"])
+        if result.returncode != 0:
+            print("pdflatex returned a nonzero exit code; check the .log file")
         else:
             print("pdflatex not found; wrote .txt and .tex only")
 

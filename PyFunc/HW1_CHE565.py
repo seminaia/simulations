@@ -409,3 +409,25 @@ txt_file, tex_file, pdf_file = doc.save_all()
 print(f"Wrote text log: {txt_file}")
 print(f"Wrote LaTeX source: {tex_file}")
 print(f"Wrote PDF: {pdf_file}")
+
+
+
+! LaTeX Error: Unicode character Π (U+03A0)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.294 ...ng daily profit: P = 1250 barrels/day, Π
+                                                   = \$147,250.00/day
+[6] [7] [8 <./HW1_CHE565_plot.png>] (./HW1_CHE565.aux)
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+
+Package rerunfilecheck Warning: File `HW1_CHE565.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+ )

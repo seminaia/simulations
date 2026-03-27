@@ -25,7 +25,21 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 OUTPUT_FILE = "HW1_CHE565_results.txt"
 ra = RegressionAnalysis(output_file=OUTPUT_FILE, verbose=True)
-w  = ra._w.write      # shortcut to the writer
+report_lines = []
+
+def tex_escape(s):
+    return (str(s)
+            .replace("\\", r"\textbackslash{}")
+            .replace("&", r"\&")
+            .replace("%", r"\%")
+            .replace("$", r"\$")
+            .replace("#", r"\#")
+            .replace("_", r"\_")
+            .replace("{", r"\{")
+            .replace("}", r"\}")
+            .replace("~", r"\textasciitilde{}")
+            .replace("^", r"\textasciicircum{}"))
+
 def w (text=""):
     s = str(text)
     ra._w.write(tex_escape(s) + r"\\")

@@ -46,13 +46,17 @@ w("-" * 80)
 w()
 w("  SETUP")
 w("  -----")
-w("  Option A: C0_A=$3.8e6 ")
-w("             FV_A=$1.1e6/yr")
-w("  Option B: C0_B=$5.0e6")
-w("             FV_B=$1.41e6/yr")
-w("   a.) 10 year lifetime, no salvage value, and 10 % interest rate. What is the NPV of each option?")
-w("       NPV = PV + C0, where PV is the present value of the future cash flows and C0 is the initial cost.")
+w("  Option A:  C0_A = $3.8e6 ")
+w("             FV_A = $1.1e6/yr")
+w("  Option B:  C0_B = $5.0e6")
+w("             FV_B = $1.41e6/yr")
+w("   a.) 10 year lifetime, no salvage value, and 10 % yearly interest rate. What is the NPV of each option?,")
+w("       and which is preferred under these assumptions?")
+w()
+w("       NPV = PV + C0")
 w("       PV = FV*[((1+r)^n - 1)/(r*(1+r)^n)]")
+w("       PV = present value, FV = future value (annual cash flow), r = yearly interest rate, n = number of years")
+w("       n= 10 years, r = 0.10")
 
 def NPV(PV, C0=0):
     """
@@ -61,8 +65,8 @@ def NPV(PV, C0=0):
     """
     return PV + C0
 
-def annual_payment(P0, r, n, k):
-    return P0 * ((1 + r)**n*r)/((1+r)**n-1)
+def annual_payment(C0, r, n, k):
+    return C0 * ((1 + r)**n*r)/((1+r)**n-1)
 
 def present_value(F, r, n):
     return F * ((1+r)**n - 1) / (r * (1+r)**n)
@@ -81,16 +85,20 @@ PV_A = present_value(F_A, i_npv, n)
 PV_B = present_value(F_B, i_npv, n)
 NPV_A = NPV(PV_A, C0_A)
 NPV_B = NPV(PV_B, C0_B)
-w(f"\nNPV(A) = ${NPV_A:,.2f}   NPV(B) = ${NPV_B:,.2f}")
+P_A = annual_payment(C0_A, i_loan, n, 1)
+P_B = annual_payment(C0_B, i_loan, n, 1)
+w(f"       NPV(A) = ${NPV_A:,.2f}   NPV(B) = ${NPV_B:,.2f}")
 
 if NPV_A > NPV_B:
-    w(f"\nNPV is higher for option A at 10% interest, so A is preferred under these assumptions.")
+    w(f"    NPV is higher for option A at 10% yearly interest, so A is preferred under these assumptions.")
 else:
-    w(f"\nNPV is higher for option B at 10% interest, so B is preferred under these assumptions.")
+    w(f"    NPV is higher for option B at 10% yearly interest, so B is preferred under these assumptions.")
 
-w("\n  b.) 10 year lifetime, no salvage value, and 5 % interest rate. What will be the yearly payment?")
+w("\n  b.) 10 year lifetime, no salvage value, and 5 % yearly interest rate. What will be the yearly payment?")
+w()
 w(f"        P =  C0 * ((1 + r)**n*r)/((1+r)**n-1)")
-w(f"        P(A) = ${annual_payment(P0_A, i_loan, n, 1):,.2f}   P(B) = ${annual_payment(P0_B, i_loan, n, 1):,.2f}")
+w(f"        P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
+w(f"        P(A) = ${P_A:,.2f}/year   P(B) = ${P_B:,.2f}/year")
 from pathlib import Path
 import shutil
 import subprocess

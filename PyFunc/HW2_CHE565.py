@@ -46,12 +46,13 @@ w("-" * 80)
 w()
 w("  SETUP")
 w("  -----")
-w("  Option A: $3.8e6 ")
-w("             F=$1.1e6/yr")
-w("  Option B: $5.0e6")
-w("             F=1.41e6/yr")
-w("   a.) 10 year lifetime, no salvage value, and 10\\% interest rate.")
-w("   NPV = F*[((1+r)^n - 1)/(r*(1+r)^n)]")
+w("  Option A: C0_A=$3.8e6 ")
+w("             FV_A=$1.1e6/yr")
+w("  Option B: C0_B=$5.0e6")
+w("             FV_B=$1.41e6/yr")
+w("   a.) 10 year lifetime, no salvage value, and 10 % interest rate. What is the NPV of each option?")
+w("       NPV = PV + C0, where PV is the present value of the future cash flows and C0 is the initial cost.")
+w("       PV = FV*[((1+r)^n - 1)/(r*(1+r)^n)]")
 
 def NPV(PV, C0=0):
     """
@@ -87,16 +88,9 @@ if NPV_A > NPV_B:
 else:
     w(f"\nNPV is higher for option B at 10% interest, so B is preferred under these assumptions.")
 
-for i in range(1, n + 1):
-    pay_A = annual_payment(P0_A, i_loan, i, 1)
-    pay_B = annual_payment(P0_B, i_loan, i, 1)
-    PV_A = present_value(F_A, i_npv, i)
-    PV_B = present_value(F_B, i_npv, i)
-    w(f"  n = {i:.0f} year(s): Pay(A) = ${pay_A:,.2f}   Pay(B) = ${pay_B:,.2f}")
-    #total_A = pay_A + PV_A
-    #total_B = pay_B + PV_B
-    #w(f"  n = {i:.0f} year(s): T(A) = ${total_A:,.2f}   T(B) = ${total_B:,.2f}")
-
+w("\n  b.) 10 year lifetime, no salvage value, and 5 % interest rate. What will be the yearly payment?")
+w(f"        P =  C0 * ((1 + r)**n*r)/((1+r)**n-1)")
+w(f"        P(A) = ${annual_payment(P0_A, i_loan, n, 1):,.2f}   P(B) = ${annual_payment(P0_B, i_loan, n, 1):,.2f}")
 from pathlib import Path
 import shutil
 import subprocess

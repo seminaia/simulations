@@ -100,7 +100,7 @@ NPV_A = NPV(PV_A, C0_A)
 NPV_B = NPV(PV_B, C0_B)
 P_A = annual_payment(C0_A, i_loan, n, 1)
 P_B = annual_payment(C0_B, i_loan, n, 1)
-w(f"       NPV(A) = ${NPV_A:,.2f}   NPV(B) = ${NPV_B:,.2f}")
+wm(rf"       $NPV(A) = {NPV_A:,.2f},\quad NPV(B) = {NPV_B:,.2f}$")
 
 if NPV_A > NPV_B:
     w(f"    NPV is higher for option A at 10% yearly interest, so A is preferred under these assumptions.")
@@ -109,9 +109,9 @@ else:
 
 w("\n  b.) 10 year lifetime, no salvage value, and 5 % yearly interest rate. What will be the yearly payment?")
 w()
-w(f"        P =  C0 * ((1 + r)**n*r)/((1+r)**n-1)")
+wm(rf"        $P =  C0 * \frac{{(1 + r)^n r}}{{(1+r)^n-1}}$")
 w(f"        P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
-w(f"        P(A) = ${P_A:,.2f}/year   P(B) = ${P_B:,.2f}/year")
+wm(rf"        $P(A) = {P_A:,.2f}/\text{{year}},\quad P(B) = {P_B:,.2f}/\text{{year}}$")
 from pathlib import Path
 import shutil
 import subprocess
@@ -155,3 +155,42 @@ def build_latex_pdf():
     print("PDF generated")
 
 build_latex_pdf()
+
+! Undefined control sequence.
+l.43         $P(A) = -492,117.38/\text
+                                      {year},\quad P(B) = -647,522.87/\text{...
+
+! Undefined control sequence.
+l.43 ...\text{year},\quad P(B) = -647,522.87/\text
+                                                  {year}$\\
+
+Underfull \hbox (badness 10000) in paragraph at lines 39--44
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 39--44
+
+[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/en
+c/dvips/cm-super/cm-super-t1.enc}] (./CHE565_HW2.aux) )
+(see the transcript file for additional information)</usr/share/texlive/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmmi12.pfb></usr/share/texlive/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmmi6.pfb></usr/share/texlive/texmf-dist/fonts/type1/pub
+lic/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/c
+m/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></
+usr/share/texmf/fonts/type1/public/cm-super/sfrm1200.pfb></usr/share/texmf/font
+s/type1/public/cm-super/sfrm2074.pfb>
+Output written on CHE565_HW2.pdf (1 page, 104804 bytes).
+Transcript written on CHE565_HW2.log.
+Traceback (most recent call last):
+  File "/home/soki/simulations/PyFunc/HW2_CHE565.py", line 157, in <module>
+    build_latex_pdf()
+    ~~~~~~~~~~~~~~~^^
+  File "/home/soki/simulations/PyFunc/HW2_CHE565.py", line 153, in build_latex_pdf
+    subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/usr/bin/pdflatex', '-interaction=nonstopmode', 'CHE565_HW2.tex']' returned non-zero exit status 1.

@@ -6,10 +6,25 @@ from typing import Any, Iterable, Literal
 import shutil
 import subprocess
 
+from pylatex import (
+    Document,
+    Section,
+    Subsection,
+    Subsubsection,
+    Figure,
+    Tabular,
+    LongTable,
+    Itemize,
+    Enumerate,
+    NoEscape,
+    Command,
+)
+from pylatex.utils import escape_latex
 
-# ============================================================================
+
+# =============================================================================
 # Helpers
-# ============================================================================
+# =============================================================================
 
 def _txt_safe(text: str) -> str:
     replacements = {
@@ -61,36 +76,15 @@ def _txt_safe(text: str) -> str:
     return out
 
 
-def _tex_escape(text: str) -> str:
-    return (
-        str(text)
-        .replace("\\", r"\textbackslash{}")
-        .replace("&", r"\&")
-        .replace("%", r"\%")
-        .replace("$", r"\$")
-        .replace("#", r"\#")
-        .replace("_", r"\_")
-        .replace("{", r"\{")
-        .replace("}", r"\}")
-        .replace("~", r"\textasciitilde{}")
-        .replace("^", r"\textasciicircum{}")
-    )
-
-
 def _fmt_cell(val: Any, float_fmt: str = ".4f") -> str:
     if isinstance(val, float):
         return format(val, float_fmt)
     return str(val)
 
 
-def _is_separator_line(text: str) -> bool:
-    s = text.strip()
-    return bool(s) and len(set(s)) == 1 and s[0] in "-=*_~|"
-
-
-# ============================================================================
+# =============================================================================
 # Block model
-# ============================================================================
+# =============================================================================
 
 @dataclass
 class Block:
@@ -113,6 +107,20 @@ class LineBlock(Block):
     def __init__(self, text: str):
         super().__init__("line")
         self.text = text
+
+
+@dataclass
+class InlineMathToken:
+    latex: str
+
+
+@dataclass
+class MixedParagraphBlock(Block):
+    parts: list[Any]
+
+    def __init__(self, parts: list[Any]):
+        super().__init__("mixed_paragraph")
+        self.parts = parts
 
 
 @dataclass
@@ -243,24 +251,11 @@ class SectionNode:
     children: list["SectionNode"] = field(default_factory=list)
 
 
-# ============================================================================
-# Main API
-# ============================================================================
+# =============================================================================
+# WorkLog
+# =============================================================================
 
 class WorkLog:
-    """
-    Structured document logger with:
-      - txt output
-      - tex output
-      - pdf output
-
-    Design rules:
-      - prose goes in p()/line()
-      - LaTeX math goes in eq()/align()
-      - structured data goes in table()/figure()
-      - document hierarchy goes in section()/subsection()/subsubsection()
-    """
-
     def __init__(
         self,
         base_name: str,
@@ -275,15 +270,15 @@ class WorkLog:
         self.subtitle = subtitle
         self.date_tex = date_tex
 
-        self.root = SectionNode(title="__root__", level=1)
-        self._section_stack: list[SectionNode] = [self.root]
+        self.root = SectionNode("__root__", level=1)
+        self._stack: list[SectionNode] = [self.root]
 
         self._make_title = True
         self._toc = False
 
-    # ---------------------------------------------------------------------
-    # document-level controls
-    # ---------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # Document controls
+    # -------------------------------------------------------------------------
 
     def maketitle(self, enabled: bool = True) -> None:
         self._make_title = enabled
@@ -291,47 +286,50 @@ class WorkLog:
     def toc(self, enabled: bool = True) -> None:
         self._toc = enabled
 
-    def inline_math(self, latex: str) -> str:
-        return f"${latex}$"
-
-    # ---------------------------------------------------------------------
-    # structure
-    # ---------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # Structure
+    # -------------------------------------------------------------------------
 
     def section(self, title: str) -> None:
-        node = SectionNode(title=title, level=1)
+        node = SectionNode(title, level=1)
         self.root.children.append(node)
-        self._section_stack = [self.root, node]
+        self._stack = [self.root, node]
 
     def subsection(self, title: str) -> None:
-        if len(self._section_stack) < 2:
+        if len(self._stack) < 2:
             self.section("Untitled Section")
-        parent = self._section_stack[1]
-        node = SectionNode(title=title, level=2)
+        parent = self._stack[1]
+        node = SectionNode(title, level=2)
         parent.children.append(node)
-        self._section_stack = [self.root, parent, node]
+        self._stack = [self.root, parent, node]
 
     def subsubsection(self, title: str) -> None:
-        if len(self._section_stack) < 3:
+        if len(self._stack) < 3:
             self.subsection("Untitled Subsection")
-        parent = self._section_stack[2]
-        node = SectionNode(title=title, level=3)
+        parent = self._stack[2]
+        node = SectionNode(title, level=3)
         parent.children.append(node)
-        self._section_stack = [self.root, self._section_stack[1], parent, node]
+        self._stack = [self.root, self._stack[1], parent, node]
 
     @property
     def current(self) -> SectionNode:
-        return self._section_stack[-1]
+        return self._stack[-1]
 
-    # ---------------------------------------------------------------------
-    # prose / layout
-    # ---------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # Prose
+    # -------------------------------------------------------------------------
 
     def p(self, text: str = "") -> None:
         self.current.blocks.append(ParagraphBlock(str(text)))
 
     def line(self, text: str = "") -> None:
         self.current.blocks.append(LineBlock(str(text)))
+
+    def im(self, latex: str) -> InlineMathToken:
+        return InlineMathToken(latex)
+
+    def px(self, *parts: Any) -> None:
+        self.current.blocks.append(MixedParagraphBlock(list(parts)))
 
     def bullets(self, items: Iterable[str]) -> None:
         self.current.blocks.append(BulletListBlock([str(x) for x in items]))
@@ -348,9 +346,9 @@ class WorkLog:
     def vspace(self, amount: str = "1em") -> None:
         self.current.blocks.append(VSpaceBlock(amount))
 
-    # ---------------------------------------------------------------------
-    # math
-    # ---------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # Math
+    # -------------------------------------------------------------------------
 
     def eq(self, latex: str) -> None:
         self.current.blocks.append(EquationBlock(latex.strip()))
@@ -359,9 +357,9 @@ class WorkLog:
         cleaned = [str(line).strip() for line in lines if str(line).strip()]
         self.current.blocks.append(AlignBlock(cleaned))
 
-    # ---------------------------------------------------------------------
-    # tables / figures / raw tex
-    # ---------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # Tables / figures / raw tex
+    # -------------------------------------------------------------------------
 
     def table(
         self,
@@ -385,6 +383,25 @@ class WorkLog:
             )
         )
 
+    def long_table(
+        self,
+        headers: list[str],
+        rows: Iterable[Iterable[Any]],
+        caption: str | None = None,
+        label: str | None = None,
+        float_fmt: str = ".4f",
+        alignment: str | None = None,
+    ) -> None:
+        self.table(
+            headers=headers,
+            rows=rows,
+            caption=caption,
+            label=label,
+            float_fmt=float_fmt,
+            longtable=True,
+            alignment=alignment,
+        )
+
     def figure(
         self,
         path: str,
@@ -400,17 +417,25 @@ class WorkLog:
     def raw_tex(self, tex: str) -> None:
         self.current.blocks.append(RawTexBlock(tex))
 
-    # =========================================================================
+    # =============================================================================
     # TXT rendering
-    # =========================================================================
+    # =============================================================================
 
     def _render_txt_block(self, block: Block, out: list[str]) -> None:
         if block.kind == "paragraph":
-            text = _txt_safe(block.text)
-            out.append(text)
+            out.append(_txt_safe(block.text))
             out.append("")
         elif block.kind == "line":
             out.append(_txt_safe(block.text))
+        elif block.kind == "mixed_paragraph":
+            parts = []
+            for part in block.parts:
+                if isinstance(part, InlineMathToken):
+                    parts.append(part.latex)
+                else:
+                    parts.append(_txt_safe(str(part)))
+            out.append("".join(parts))
+            out.append("")
         elif block.kind == "equation":
             out.append(f"[MATH] {block.latex}")
         elif block.kind == "align":
@@ -495,195 +520,157 @@ class WorkLog:
             out.append(_txt_safe(self.author))
         out.append("=" * 80)
         self._render_txt_node(self.root, out)
+
         path = f"{self.base_name}.txt"
         Path(path).write_text("\n".join(out).rstrip() + "\n", encoding="utf-8")
         return path
 
-    # =========================================================================
-    # TEX rendering
-    # =========================================================================
+    # =============================================================================
+    # PyLaTeX rendering
+    # =============================================================================
 
-    def _tex_preamble(self) -> list[str]:
-        lines = [
-            r"\documentclass[12pt]{article}",
-            r"\usepackage[T1]{fontenc}",
-            r"\usepackage[utf8]{inputenc}",
-            r"\usepackage[margin=1in]{geometry}",
-            r"\usepackage{amsmath}",
-            r"\usepackage{amssymb}",
-            r"\usepackage{booktabs}",
-            r"\usepackage{longtable}",
-            r"\usepackage{graphicx}",
-            r"\usepackage{float}",
-            r"\usepackage{caption}",
-            r"\usepackage{hyperref}",
-            r"\setlength{\parindent}{0pt}",
-            r"\setlength{\parskip}{0.6em}",
-            "",
-            rf"\title{{{_tex_escape(self.title)}}}",
-            rf"\date{{{self.date_tex}}}",
-        ]
+    def _new_document(self) -> Document:
+        doc = Document(self.base_name, geometry_options={"margin": "1in"})
+        doc.preamble.append(Command("usepackage", "amsmath"))
+        doc.preamble.append(Command("usepackage", "amssymb"))
+        doc.preamble.append(Command("usepackage", "booktabs"))
+        doc.preamble.append(Command("usepackage", "longtable"))
+        doc.preamble.append(Command("usepackage", "float"))
+        doc.preamble.append(Command("usepackage", "caption"))
+        doc.preamble.append(Command("usepackage", "hyperref"))
+        doc.preamble.append(Command("title", self.title))
         if self.author:
-            lines.append(rf"\author{{{_tex_escape(self.author)}}}")
-        lines.extend(["", r"\begin{document}", ""])
+            doc.preamble.append(Command("author", self.author))
+        doc.preamble.append(Command("date", NoEscape(self.date_tex)))
+        doc.append(NoEscape(r"\setlength{\parindent}{0pt}"))
+        doc.append(NoEscape(r"\setlength{\parskip}{0.6em}"))
         if self._make_title:
-            lines.append(r"\maketitle")
-            lines.append("")
+            doc.append(NoEscape(r"\maketitle"))
         if self.subtitle:
-            lines.append(rf"\begin{{center}}\large {_tex_escape(self.subtitle)}\end{{center}}")
-            lines.append("")
+            doc.append(NoEscape(rf"\begin{{center}}\large {escape_latex(self.subtitle)}\end{{center}}"))
         if self._toc:
-            lines.append(r"\tableofcontents")
-            lines.append(r"\newpage")
-            lines.append("")
-        return lines
+            doc.append(NoEscape(r"\tableofcontents"))
+            doc.append(NoEscape(r"\newpage"))
+        return doc
 
-    def _render_tex_block(self, block: Block, out: list[str]) -> None:
+    def _append_tex_block(self, container: Any, block: Block) -> None:
         if block.kind == "paragraph":
-            text = str(block.text)
-            if not text.strip():
-                out.append(r"\par")
-            else:
-                out.append(_tex_escape(text))
-                out.append(r"\par")
-            out.append("")
+            if block.text.strip():
+                container.append(escape_latex(block.text))
+            container.append(NoEscape(r"\par"))
         elif block.kind == "line":
-            text = str(block.text)
-            if not text.strip():
-                out.append(r"\par")
-            elif _is_separator_line(text):
-                out.append(r"\hrule")
+            if block.text.strip():
+                container.append(escape_latex(block.text))
+                container.append(NoEscape(r"\\"))
             else:
-                out.append(_tex_escape(text) + r"\\")
-            out.append("")
+                container.append(NoEscape(r"\par"))
+        elif block.kind == "mixed_paragraph":
+            for part in block.parts:
+                if isinstance(part, InlineMathToken):
+                    container.append(NoEscape(f"${part.latex}$"))
+                else:
+                    container.append(escape_latex(str(part)))
+            container.append(NoEscape(r"\par"))
         elif block.kind == "equation":
-            out.append(r"\[")
-            out.append(block.latex)
-            out.append(r"\]")
-            out.append("")
+            container.append(NoEscape(r"\["))
+            container.append(NoEscape(block.latex))
+            container.append(NoEscape(r"\]"))
         elif block.kind == "align":
-            out.append(r"\begin{align*}")
+            container.append(NoEscape(r"\begin{align*}"))
             for i, line in enumerate(block.lines):
                 suffix = r" \\" if i < len(block.lines) - 1 else ""
-                out.append(line + suffix)
-            out.append(r"\end{align*}")
-            out.append("")
+                container.append(NoEscape(line + suffix))
+            container.append(NoEscape(r"\end{align*}"))
         elif block.kind == "bullet_list":
-            out.append(r"\begin{itemize}")
-            for item in block.items:
-                out.append(rf"\item {_tex_escape(item)}")
-            out.append(r"\end{itemize}")
-            out.append("")
+            with container.create(Itemize()) as itemize:
+                for item in block.items:
+                    itemize.add_item(item)
         elif block.kind == "numbered_list":
-            out.append(r"\begin{enumerate}")
-            for item in block.items:
-                out.append(rf"\item {_tex_escape(item)}")
-            out.append(r"\end{enumerate}")
-            out.append("")
+            with container.create(Enumerate()) as enum:
+                for item in block.items:
+                    enum.add_item(item)
         elif block.kind == "table":
             colspec = block.alignment or ("c" * len(block.headers))
             if block.longtable:
-                out.append(rf"\begin{{longtable}}{{{colspec}}}")
-                if block.caption:
-                    if block.label:
-                        out.append(rf"\caption{{{_tex_escape(block.caption)}}}\label{{{block.label}}}\\")
-                    else:
-                        out.append(rf"\caption{{{_tex_escape(block.caption)}}}\\")
-                out.append(r"\toprule")
-                out.append(" & ".join(_tex_escape(h) for h in block.headers) + r" \\")
-                out.append(r"\midrule")
-                out.append(r"\endfirsthead")
-                out.append(r"\toprule")
-                out.append(" & ".join(_tex_escape(h) for h in block.headers) + r" \\")
-                out.append(r"\midrule")
-                out.append(r"\endhead")
-                out.append(r"\bottomrule")
-                out.append(r"\endfoot")
+                lt = LongTable(colspec)
+                lt.add_hline()
+                lt.add_row(block.headers)
+                lt.add_hline()
+                lt.end_table_header()
                 for row in block.rows:
-                    cells = []
-                    for val in row:
-                        if isinstance(val, float):
-                            cells.append(_fmt_cell(val, block.float_fmt))
-                        else:
-                            cells.append(_tex_escape(str(val)))
-                    out.append(" & ".join(cells) + r" \\")
-                out.append(r"\end{longtable}")
-                out.append("")
-            else:
-                out.append(r"\begin{table}[H]")
-                out.append(r"\centering")
-                out.append(rf"\begin{{tabular}}{{{colspec}}}")
-                out.append(r"\toprule")
-                out.append(" & ".join(_tex_escape(h) for h in block.headers) + r" \\")
-                out.append(r"\midrule")
-                for row in block.rows:
-                    cells = []
-                    for val in row:
-                        if isinstance(val, float):
-                            cells.append(_fmt_cell(val, block.float_fmt))
-                        else:
-                            cells.append(_tex_escape(str(val)))
-                    out.append(" & ".join(cells) + r" \\")
-                out.append(r"\bottomrule")
-                out.append(r"\end{tabular}")
+                    lt.add_row([
+                        _fmt_cell(v, block.float_fmt) if isinstance(v, float) else str(v)
+                        for v in row
+                    ])
+                lt.add_hline()
+                container.append(lt)
                 if block.caption:
-                    out.append(rf"\caption{{{_tex_escape(block.caption)}}}")
+                    container.append(NoEscape(rf"\captionof{{table}}{{{escape_latex(block.caption)}}}"))
                 if block.label:
-                    out.append(rf"\label{{{block.label}}}")
-                out.append(r"\end{table}")
-                out.append("")
+                    container.append(NoEscape(rf"\label{{{block.label}}}"))
+            else:
+                container.append(NoEscape(r"\begin{table}[H]"))
+                container.append(NoEscape(r"\centering"))
+                tab = Tabular(colspec)
+                tab.add_hline()
+                tab.add_row(block.headers)
+                tab.add_hline()
+                for row in block.rows:
+                    tab.add_row([
+                        _fmt_cell(v, block.float_fmt) if isinstance(v, float) else str(v)
+                        for v in row
+                    ])
+                tab.add_hline()
+                container.append(tab)
+                if block.caption:
+                    container.append(NoEscape(rf"\caption{{{escape_latex(block.caption)}}}"))
+                if block.label:
+                    container.append(NoEscape(rf"\label{{{block.label}}}"))
+                container.append(NoEscape(r"\end{table}"))
         elif block.kind == "figure":
-            out.append(rf"\begin{{figure}}[{block.position}]")
-            out.append(r"\centering")
-            out.append(rf"\includegraphics[width={block.width}]{{{block.path}}}")
-            if block.caption:
-                out.append(rf"\caption{{{_tex_escape(block.caption)}}}")
-            if block.label:
-                out.append(rf"\label{{{block.label}}}")
-            out.append(r"\end{figure}")
-            out.append("")
+            with container.create(Figure(position=block.position)) as fig:
+                fig.add_image(block.path, width=NoEscape(block.width))
+                if block.caption:
+                    fig.add_caption(block.caption)
+                if block.label:
+                    fig.append(NoEscape(rf"\label{{{block.label}}}"))
         elif block.kind == "raw_tex":
-            out.append(block.tex)
-            out.append("")
+            container.append(NoEscape(block.tex))
         elif block.kind == "horizontal_rule":
-            out.append(r"\hrule")
-            out.append("")
+            container.append(NoEscape(r"\hrule"))
         elif block.kind == "page_break":
-            out.append(r"\newpage")
-            out.append("")
+            container.append(NoEscape(r"\newpage"))
         elif block.kind == "vspace":
-            out.append(rf"\vspace{{{block.amount}}}")
-            out.append("")
+            container.append(NoEscape(rf"\vspace{{{block.amount}}}"))
 
-    def _render_tex_node(self, node: SectionNode, out: list[str]) -> None:
-        if node.title != "__root__":
-            if node.level == 1:
-                out.append(rf"\section*{{{_tex_escape(node.title)}}}")
-                out.append("")
-            elif node.level == 2:
-                out.append(rf"\subsection*{{{_tex_escape(node.title)}}}")
-                out.append("")
-            elif node.level == 3:
-                out.append(rf"\subsubsection*{{{_tex_escape(node.title)}}}")
-                out.append("")
+    def _append_node(self, parent: Any, node: SectionNode) -> None:
+        if node.title == "__root__":
+            for child in node.children:
+                self._append_node(parent, child)
+            return
 
-        for block in node.blocks:
-            self._render_tex_block(block, out)
+        if node.level == 1:
+            env = Section(node.title, numbering=False)
+        elif node.level == 2:
+            env = Subsection(node.title, numbering=False)
+        else:
+            env = Subsubsection(node.title, numbering=False)
 
-        for child in node.children:
-            self._render_tex_node(child, out)
+        with parent.create(env) as section_container:
+            for block in node.blocks:
+                self._append_tex_block(section_container, block)
+            for child in node.children:
+                self._append_node(section_container, child)
 
     def save_tex(self) -> str:
-        out = self._tex_preamble()
-        self._render_tex_node(self.root, out)
-        out.extend([r"\end{document}", ""])
-        path = f"{self.base_name}.tex"
-        Path(path).write_text("\n".join(out), encoding="utf-8")
-        return path
+        doc = self._new_document()
+        self._append_node(doc, self.root)
+        doc.generate_tex(self.base_name)
+        return f"{self.base_name}.tex"
 
-    # =========================================================================
-    # PDF build
-    # =========================================================================
+    # =============================================================================
+    # PDF
+    # =============================================================================
 
     def save_pdf(self, runs: int = 1) -> str | None:
         tex_path = self.save_tex()

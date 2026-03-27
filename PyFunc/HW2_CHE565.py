@@ -46,10 +46,10 @@ w("-" * 80)
 w()
 w("  SETUP")
 w("  -----")
-w("  Option A:  C0_A = $3.8e6 ")
-w("             FV_A = $1.1e6/yr")
-w("  Option B:  C0_B = $5.0e6")
-w("             FV_B = $1.41e6/yr")
+w("  Option A:  C0_A = $3,800,000")
+w("             FV_A = $1,100,000/yr")
+w("  Option B:  C0_B = $5,000,000")
+w("             FV_B = $1,410,000/yr")
 w("   a.) 10 year lifetime, no salvage value, and 10 % yearly interest rate. What is the NPV of each option?,")
 w("       and which is preferred under these assumptions?")
 w()
@@ -112,8 +112,12 @@ def build_latex_pdf():
 
     latex = rf"""
 \documentclass[12pt]{{article}}
-\usepackage{{amsmath}}
+\usepackage[T1]{{fontenc}}
+\usepackage[utf8]{{inputenc}}
 \usepackage[margin=1in]{{geometry}}
+\usepackage{{fancyvrb}}
+\usepackage{{graphicx}}
+\usepackage{{float}}
 
 \title{{CHE 565 -- Homework 2}}
 \date{{}}
@@ -121,9 +125,6 @@ def build_latex_pdf():
 \begin{{document}}
 
 \maketitle
-
-\section*{{Problem 1}}
-
 {"\n".join(report_lines)}
 
 \end{{document}}
@@ -141,3 +142,62 @@ def build_latex_pdf():
     print("PDF generated")
 
 build_latex_pdf()
+[]\T1/cmr/m/n/12 CHE 565 - Home-work 2 ========================================
+======================================== 
+! Missing $ inserted.
+<inserted text> 
+                $
+l.25   Option A:  C0_
+                     A = $3,800,000
+! Missing $ inserted.
+<inserted text> 
+                $
+l.26              FV_
+                     A = $1,100,000/yr
+! Missing $ inserted.
+<inserted text> 
+                $
+l.27   Option B:  C0_
+                     B = $5,000,000
+! Missing $ inserted.
+<inserted text> 
+                $
+l.28              FV_
+                     B = $1,410,000/yr
+! Missing $ inserted.
+<inserted text> 
+                $
+l.33        PV = FV*[((1+r)^
+                            n - 1)/(r*(1+r)^n)]
+! Missing $ inserted.
+<inserted text> 
+                $
+l.38 
+     
+
+Overfull \hbox (8.53867pt too wide) in paragraph at lines 32--38
+\OML/cmm/m/it/12 futurevalue\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 annualcashflow\OT
+1/cmr/m/n/12 )\OML/cmm/m/it/12 ; r \OT1/cmr/m/n/12 = \OML/cmm/m/it/12 yearlyint
+erestrate; n \OT1/cmr/m/n/12 = \OML/cmm/m/it/12 numberofyearsn \OT1/cmr/m/n/12 
+= 10\OML/cmm/m/it/12 years; r \OT1/cmr/m/n/12 =
+[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/en
+c/dvips/cm-super/cm-super-t1.enc}] (./CHE565_HW2.aux) )
+(see the transcript file for additional information)</usr/share/texlive/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/typ
+e1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmsy10.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm120
+0.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm2074.pfb>
+Output written on CHE565_HW2.pdf (1 page, 75790 bytes).
+Transcript written on CHE565_HW2.log.
+Traceback (most recent call last):
+  File "/home/soki/simulations/PyFunc/HW2_CHE565.py", line 144, in <module>
+    build_latex_pdf()
+    ~~~~~~~~~~~~~~~^^
+  File "/home/soki/simulations/PyFunc/HW2_CHE565.py", line 140, in build_latex_pdf
+    subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/usr/bin/pdflatex', '-interaction=nonstopmode', 'CHE565_HW2.tex']' returned non-zero exit status 1.

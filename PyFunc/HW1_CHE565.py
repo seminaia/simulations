@@ -26,7 +26,8 @@ from worklog import WorkLog
 # ══════════════════════════════════════════════════════════════════════════════
 
 OUTPUT_FILE = "HW1_CHE565_results.txt"
-log = WorkLog("HW1_CHE565","CHE 565 Homework 1")
+
+log = WorkLog("HW1_CHE565", "CHE 565 -- Homework 1")
 log.title("CHE 565 - Homework 1")
 log.section("Problem 1")
 log.text("")
@@ -38,8 +39,18 @@ ra = RegressionAnalysis(output_file=OUTPUT_FILE, verbose=False)
 
 def w(text=""):
     log.text(text)
+
 def wm(tex=""):
     log.math(tex)
+
+def wa(*lines):
+    log.align(*lines)
+
+def wt(headers, rows, caption=None, label=None, float_fmt=".4f"):
+    log.table(headers, rows, caption=caption, label=label, float_fmt=float_fmt)
+
+def fig(path, caption=None, label=None):
+    log.figure(path, caption=caption, label=label)
 w()
 w("  CHE 565 — Homework 1")
 w("=" * 80)

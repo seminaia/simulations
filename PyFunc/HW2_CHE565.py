@@ -96,7 +96,7 @@ if NPV_A > NPV_B:
 else:
     w(f"NPV is higher for option B at 10% yearly interest, so B is preferred under these assumptions.")
 
-w("\n  b.) 10 year lifetime, no salvage value, and 5 % yearly interest rate. What will be the yearly payment?")
+w("b.) 10 year lifetime, no salvage value, and 5 % yearly interest rate. What will be the yearly payment?")
 w()
 m(r"P =  C0 * \frac{{(1 + r)^n r}}{{(1+r)^n-1}}")
 w(f"P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
@@ -109,19 +109,3 @@ print(f"Wrote text log: {txt_file}")
 print(f"Wrote LaTeX source: {tex_file}")
 print(f"Wrote PDF: {pdf_file}")
 
-
-! LaTeX Error: There's no line here to end.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.52 \newline
-             %
-[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/en
-c/dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/s
-hare/texmf/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm
--mathex.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}]
-
-enddocument/afterlastpage: lastpage setting LastPage.
-(./HW2_CHE565.aux) )

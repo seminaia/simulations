@@ -111,7 +111,6 @@ w(f"Iterations: {iters}")
 # ============================================================================
 
 doc.section("Problem 2")
-doc.subsection("Setup")
 
 w("Minimize material usage for a square-base, open-top box with volume 1000 cm^3.")
 w("Let x be the side length of the square base and h be the box height.")

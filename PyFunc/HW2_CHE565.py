@@ -14,60 +14,51 @@ from scipy.optimize import minimize_scalar, minimize
 from scipy.stats import t as t_dist
 from NRroots import newton_raphson
 from regression_analysis import RegressionAnalysis
-from matplotlib.backends.backend_pdf import PdfPages
+from doc_builder import DocumentBuilder
 # ══════════════════════════════════════════════════════════════════════════════
 #  Output file setup
 #  All problems write through the same RegressionAnalysis writer so the
 #  complete solution ends up in one tidy file.
 # ══════════════════════════════════════════════════════════════════════════════
 
-OUTPUT_FILE = "HW2_CHE565_results.txt"
+OUTPUT_FILE = "HW2_CHE565"
 PLOT_FILE = "HW2_CHE565_plot.png"
 report_lines = []
 
-def tex_escape(s):
-    return (str(s)
-            .replace("\\", r"\textbackslash{}")
-            .replace("&", r"\&")
-            .replace("%", r"\%")
-            .replace("$", r"\$")
-            .replace("#", r"\#")
-            .replace("_", r"\_")
-            .replace("{", r"\{")
-            .replace("}", r"\}")
-            .replace("~", r"\textasciitilde{}")
-            .replace("^", r"\textasciicircum{}"))
+doc = DocumentBuilder(
+    OUTPUT_FILE,
+    title="CHE 565 -- Homework 2",
+    author="Soki Sem",
+)
+# convenience aliases
+w = doc.p
+line = doc.line
+m = doc.eq
+a = doc.align
+t = doc.table
+figlog = doc.figure
+px = doc.px
+im = doc.im
+doc.maketitle(True)
+doc.toc(False)
 
-def w(text=""):
-    s = str(text)
-    report_lines.append(tex_escape(s) + r"\\")
-    print(s)
+doc.section("Problem 1")
+doc.subsection("Setup")
 
-def wm(tex=""):
-    report_lines.append(tex + r"\\")
-    print(tex)
-    
-w("  CHE 565 - Homework 2")
-w("=" * 80)
 # ══════════════════════════════════════════════════════════════════════════════
 #  PROBLEM 1
 # ══════════════════════════════════════════════════════════════════════════════
+a(  
+    f"Option A:  C0_A &= $3,800,000",
+    f"           FV_A &= $1,100,000/yr",
+    f"Option B:  C0_B &= $5,000,000",
+    f"           FV_B &= $1,410,000/yr",
+    f"   a.) 10 year lifetime, no salvage value, and 10 % yearly interest rate. What is the NPV of each option?,",
+    f"       and which is preferred under these assumptions?"
+)
 w()
-w("-" * 80)
-w("  PROBLEM 1")
-w("-" * 80)
-w()
-w("  SETUP")
-w("  -----")
-w("  Option A:  C0_A = $3,800,000")
-w("             FV_A = $1,100,000/yr")
-w("  Option B:  C0_B = $5,000,000")
-w("             FV_B = $1,410,000/yr")
-w("   a.) 10 year lifetime, no salvage value, and 10 % yearly interest rate. What is the NPV of each option?,")
-w("       and which is preferred under these assumptions?")
-w()
-wm(r"$NPV = PV + C_0$")
-wm(r"$PV = F\left[\frac{(1+r)^n - 1}{r(1+r)^n}\right]$")
+m(r"$NPV = PV + C_0$")
+m(r"$PV = F\left[\frac{(1+r)^n - 1}{r(1+r)^n}\right]$")
 w("       PV = present value, FV = future value (annual cash flow), r = yearly interest rate, n = number of years")
 w("       n= 10 years, r = 0.10")
 
@@ -100,7 +91,7 @@ NPV_A = NPV(PV_A, C0_A)
 NPV_B = NPV(PV_B, C0_B)
 P_A = annual_payment(C0_A, i_loan, n, 1)
 P_B = annual_payment(C0_B, i_loan, n, 1)
-wm(rf"       $NPV(A) = {NPV_A:,.2f},\quad NPV(B) = {NPV_B:,.2f}$")
+m(rf"$$NPV(A) = {NPV_A:,.2f},\quad NPV(B) = {NPV_B:,.2f}$$")
 
 if NPV_A > NPV_B:
     w(f"    NPV is higher for option A at 10% yearly interest, so A is preferred under these assumptions.")
@@ -109,53 +100,14 @@ else:
 
 w("\n  b.) 10 year lifetime, no salvage value, and 5 % yearly interest rate. What will be the yearly payment?")
 w()
-wm(rf"        $P =  C0 * \frac{{(1 + r)^n r}}{{(1+r)^n-1}}$")
-w(f"        P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
-wm(rf"        $P(A) = {P_A:,.2f}/\text{{year}},\quad P(B) = {P_B:,.2f}/\text{{year}}$")
-from pathlib import Path
-import shutil
-import subprocess
+m(rf"        $P =  C0 * \frac{{(1 + r)^n r}}{{(1+r)^n-1}}$")
+w(f"         P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
+m(rf"        $P(A) = {P_A:,.2f}/\text{{year}},\quad P(B) = {P_B:,.2f}/\text{{year}}$")
 
+# save outputs
+txt_file, tex_file, pdf_file = doc.save_all()
 
-Path(OUTPUT_FILE).write_text("\n".join(report_lines) + "\n", encoding="utf-8")
-
-
-def build_latex_pdf():
-    tex_file = "CHE565_HW2.tex"
-
-    latex = rf"""
-\documentclass[12pt]{{article}}
-\usepackage[T1]{{fontenc}}
-\usepackage[utf8]{{inputenc}}
-\usepackage[margin=1in]{{geometry}}
-\usepackage{{amsmath}}
-\usepackage{{amsfonts}}
-\usepackage{{amssymb}}
-\usepackage{{fancyvrb}}
-\usepackage{{graphicx}}
-\usepackage{{float}}
-
-\title{{CHE 565 -- Homework 2}}
-\date{{}}
-
-\begin{{document}}
-
-\maketitle
-{"\n".join(report_lines)}
-
-\end{{document}}
-"""
-
-    Path(tex_file).write_text(latex, encoding="utf-8")
-
-    engine = shutil.which("pdflatex")
-    if engine is None:
-        print("pdflatex not found; wrote the .tex file only")
-        return
-
-    subprocess.run([engine, "-interaction=nonstopmode", tex_file], check=True)
-
-    print("PDF generated")
-
-build_latex_pdf()
+print(f"Wrote text log: {txt_file}")
+print(f"Wrote LaTeX source: {tex_file}")
+print(f"Wrote PDF: {pdf_file}")
 

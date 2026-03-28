@@ -176,8 +176,9 @@ class MixedParagraphBlock(Block):
 
 @dataclass
 class EquationBlock(Block):
-    """EquationBlock represents a block of display math. The latex string should contain the LaTeX code for the math, without the surrounding \[ \] or $$ delimiters. When rendered, it will be wrapped in display math delimiters.
-    
+    f"""EquationBlock represents a block of display math.
+    The latex string should contain the LaTeX code for the math, without the surrounding {']'} {']'} or $$ delimiters. 
+    When rendered, it will be wrapped in display math delimiters.
     Args:
         Block (_type_): The base Block class that this inherits from.
     """

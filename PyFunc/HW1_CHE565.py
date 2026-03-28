@@ -4,7 +4,6 @@ HW1_CHE565.py
 CHE 565 – Homework 1
 All five problems solved with full work shown.
 Results are written to HW1_CHE565.txt, HW1_CHE565.tex, and HW1_CHE565.pdf
-using the WorkLog document API.
 """
 
 import numpy as np

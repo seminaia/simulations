@@ -16,6 +16,7 @@ from pylatex import (
     LongTable,
     Itemize,
     Enumerate,
+    Alignat,
     NoEscape,
     Command,
 )
@@ -110,7 +111,7 @@ def _fmt_cell(val: Any, float_fmt: str = ".4f") -> str:
 
 @dataclass
 class Block:
-    """_summary_
+    """Base class for all content blocks in the worklog.
     Block is the base class for all content blocks in the report. 
     Each block has a kind that determines how it should be rendered.
     
@@ -121,8 +122,7 @@ class Block:
 
 @dataclass
 class ParagraphBlock(Block):
-    """_summary_
-    ParagraphBlock represents a block of text that should be rendered as a paragraph. 
+    """ParagraphBlock represents a block of text that should be rendered as a paragraph. 
     It can contain multiple lines of text, and will be separated from other blocks by vertical space when rendered.
     
     Args:
@@ -136,8 +136,7 @@ class ParagraphBlock(Block):
 
 @dataclass
 class LineBlock(Block):
-    """_summary_
-        LineBlock represents a single line of text that should be rendered with a line break after it. 
+    """LineBlock represents a single line of text that should be rendered with a line break after it. 
         It is similar to ParagraphBlock but is intended for cases where you want to control line breaks more explicitly.
         
     Args:
@@ -151,8 +150,7 @@ class LineBlock(Block):
 
 @dataclass
 class InlineMathToken:
-    """_summary_
-    InlineMathToken represents a piece of inline math that can be included within a MixedParagraphBlock. 
+    """InlineMathToken represents a piece of inline math that can be included within a MixedParagraphBlock. 
     It is not a Block itself, but rather a token that can be included in the parts list of a MixedParagraphBlock to indicate that this part should be rendered as inline math.
     """
     latex: str
@@ -160,8 +158,7 @@ class InlineMathToken:
 
 @dataclass
 class MixedParagraphBlock(Block):
-    """_summary_
-    MixedParagraphBlock represents a block of text that can contain a mix of regular text and inline math. 
+    """MixedParagraphBlock represents a block of text that can contain a mix of regular text and inline math. 
     The parts list can contain strings (for regular text) and InlineMathToken instances (for inline math). When rendered, the strings will be escaped for LaTeX and the InlineMathTokens will be rendered as inline math.
 
     Args:
@@ -175,8 +172,7 @@ class MixedParagraphBlock(Block):
 
 @dataclass
 class EquationBlock(Block):
-    """_summary_
-    EquationBlock represents a block of display math. The latex string should contain the LaTeX code for the math, without the surrounding \[ \] or $$ delimiters. When rendered, it will be wrapped in display math delimiters.
+    """EquationBlock represents a block of display math. The latex string should contain the LaTeX code for the math, without the surrounding \[ \] or $$ delimiters. When rendered, it will be wrapped in display math delimiters.
     
     Args:
         Block (_type_): The base Block class that this inherits from.
@@ -189,8 +185,7 @@ class EquationBlock(Block):
 
 @dataclass
 class AlignBlock(Block):
-    """_summary_
-    AlignBlock represents a block of aligned equations. Each line in the lines list should contain a single equation, and the equations will be aligned at the equal signs when rendered.
+    """AlignBlock represents a block of aligned equations. Each line in the lines list should contain a single equation, and the equations will be aligned at the equal signs when rendered.
     Args:
         Block (_type_): The base Block class that this inherits from.
     """
@@ -202,8 +197,7 @@ class AlignBlock(Block):
 
 @dataclass
 class BulletListBlock(Block):
-    """_summary_
-        BulletListBlock represents a block of bulleted list items. Each item in the items list will be rendered as a bullet point in the output.
+    """BulletListBlock represents a block of bulleted list items. Each item in the items list will be rendered as a bullet point in the output.
     Args:
         Block (_type_): The base Block class that this inherits from.
     """
@@ -215,8 +209,7 @@ class BulletListBlock(Block):
 
 @dataclass
 class NumberedListBlock(Block):
-    """_summary_
-        NumberedListBlock represents a block of numbered list items. Each item in the items list will be rendered as a numbered point in the output.
+    """NumberedListBlock represents a block of numbered list items. Each item in the items list will be rendered as a numbered point in the output.
     Args:
         Block (_type_): The base Block class that this inherits from.
     """
@@ -229,8 +222,7 @@ class NumberedListBlock(Block):
 
 @dataclass
 class TableBlock(Block):
-    """_summary_
-        TableBlock represents a block of tabular data. It contains the headers and rows of the table, as well as optional caption and label for referencing. The float_fmt is used to format any float values in the table when rendering to text or LaTeX. The longtable flag indicates whether to use the longtable environment in LaTeX, which allows tables to span multiple pages. The alignment string can specify the column alignment for LaTeX rendering (e.g., "lcr" for left, center, right).
+    """TableBlock represents a block of tabular data. It contains the headers and rows of the table, as well as optional caption and label for referencing. The float_fmt is used to format any float values in the table when rendering to text or LaTeX. The longtable flag indicates whether to use the longtable environment in LaTeX, which allows tables to span multiple pages. The alignment string can specify the column alignment for LaTeX rendering (e.g., "lcr" for left, center, right).
     Args:
         Block (_type_): The base Block class that this inherits from.
     """
@@ -264,8 +256,7 @@ class TableBlock(Block):
 
 @dataclass
 class FigureBlock(Block):
-    """_summary_
-    FigureBlock represents a block containing a figure. It includes the path to the image file, as well as optional caption and label for referencing. The width and position parameters control how the figure is displayed in the LaTeX output.
+    """FigureBlock represents a block containing a figure. It includes the path to the image file, as well as optional caption and label for referencing. The width and position parameters control how the figure is displayed in the LaTeX output.
     
     Args:
         Block (_type_): The base Block class that this inherits from.
@@ -294,8 +285,7 @@ class FigureBlock(Block):
 
 @dataclass
 class RawTexBlock(Block):
-    """_summary_
-        RawTexBlock represents a block of raw LaTeX code that will be included in the output without any modification. This can be used for cases where you want to include custom LaTeX that doesn't fit into the other block types, or for including LaTeX commands that affect formatting rather than content.
+    """RawTexBlock represents a block of raw LaTeX code that will be included in the output without any modification. This can be used for cases where you want to include custom LaTeX that doesn't fit into the other block types, or for including LaTeX commands that affect formatting rather than content.
     Args:
         Block (_type_): The base Block class that this inherits from.
     """
@@ -307,8 +297,7 @@ class RawTexBlock(Block):
 
 @dataclass
 class HorizontalRuleBlock(Block):
-    """_summary_
-        HorizontalRuleBlock represents a horizontal rule (line) that can be used to visually separate sections of the report. When rendered, it will produce a horizontal line across the page.
+    """HorizontalRuleBlock represents a horizontal rule (line) that can be used to visually separate sections of the report. When rendered, it will produce a horizontal line across the page.
     Args:
         Block (_type_): The base Block class that this inherits from.
     """
@@ -318,8 +307,7 @@ class HorizontalRuleBlock(Block):
 
 @dataclass
 class PageBreakBlock(Block):
-    """_summary_
-        PageBreakBlock represents a page break in the document. When rendered, it will start a new page.
+    """PageBreakBlock represents a page break in the document. When rendered, it will start a new page.
     Args:
         Block (_type_): The base Block class that this inherits from.
     """
@@ -329,8 +317,7 @@ class PageBreakBlock(Block):
 
 @dataclass
 class VSpaceBlock(Block):
-    """_summary_
-        VSpaceBlock represents a vertical space in the document. The amount parameter specifies how much vertical space to include, and can be specified in any units that LaTeX accepts (e.g., "1em", "0.5in", "10pt").
+    """VSpaceBlock represents a vertical space in the document. The amount parameter specifies how much vertical space to include, and can be specified in any units that LaTeX accepts (e.g., "1em", "0.5in", "10pt").
     Args:
         Block (_type_): The base Block class that this inherits from.
     """
@@ -342,8 +329,7 @@ class VSpaceBlock(Block):
 
 @dataclass
 class SectionNode:
-    """_summary_
-    SectionNode represents a section of the report. It has a title, a level (1 for section, 2 for subsection, 3 for subsubsection), a list of blocks that belong to this section, and a list of child sections. The blocks are the content of the section, while the children are subsections that belong to this section.
+    """SectionNode represents a section of the report. It has a title, a level (1 for section, 2 for subsection, 3 for subsubsection), a list of blocks that belong to this section, and a list of child sections. The blocks are the content of the section, while the children are subsections that belong to this section.
     Args:
         title (str): The title of the section.
         level (Literal[1, 2, 3]): The level of the section (1 for section, 2 for subsection, 3 for subsubsection).
@@ -361,9 +347,7 @@ class SectionNode:
 # =============================================================================
 
 class WorkLog:
-    
-    """_summary_
-    WorkLog is a simple document generation class that allows you to build up a report
+    """WorkLog is a simple document generation class that allows you to build up a report
     using a simple API. It supports sections, subsections, paragraphs, equations, tables, figures, and more.
     It can render to plain text, LaTeX source, and PDF (via pdflatex). It uses the PyLaTeX library for LaTeX generation.
     The idea is to have a single source of truth for the report content, and be able to easily generate different output formats from it.

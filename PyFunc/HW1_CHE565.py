@@ -13,14 +13,14 @@ import matplotlib.pyplot as plt
 
 from NRroots import newton_raphson
 from regression_analysis import RegressionAnalysis
-from worklog import WorkLog
+from doc_builder import DocumentBuilder
 
 
 # ============================================================================
 # Output setup
 # ============================================================================
 
-doc = WorkLog(
+doc = DocumentBuilder(
     "HW1_CHE565",
     title="CHE 565 -- Homework 1",
     author="Soki Sem",

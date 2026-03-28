@@ -21,7 +21,11 @@ from pylatex import (
     Command,
 )
 from pylatex.utils import escape_latex
-
+    
+"""DocumentBuilder is a Module that provides a class for building documents
+programmatically using PyLaTeX. It allows the user to construct a report
+with sections, subsections, equations, tables, figures, and other content
+blocks, and then render the report to plain text, LaTeX source, or PDF."""
 
 # =============================================================================
 # Helpers
@@ -343,13 +347,14 @@ class SectionNode:
 
 
 # =============================================================================
-# WorkLog
+# DocumentBuilder
 # =============================================================================
 
-class WorkLog:
-    """WorkLog is a simple document generation class that allows you to build up a report
+class DocumentBuilder:
+    """
+    DocumentBuilder is a simple document building class that allows you to build up a report
     using a simple API. It supports sections, subsections, paragraphs, equations, tables, figures, and more.
-    It can render to plain text, LaTeX source, and PDF (via pdflatex). It uses the PyLaTeX library for LaTeX generation.
+    It can render to plain text, LaTeX source, and PDF (via pdflatex). It uses the PyLaTeX library for LaTeX document building.
     The idea is to have a single source of truth for the report content, and be able to easily generate different output formats from it.
     The API is designed to be simple and flexible, allowing you to build up the report in a natural way as you compute results and generate content.
     The internal structure is a tree of sections, each containing a list of blocks (paragraphs, equations, tables, etc.) and child sections. 

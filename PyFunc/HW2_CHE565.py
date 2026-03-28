@@ -100,7 +100,7 @@ w("b.) 10 year lifetime, no salvage value, and 5 % yearly interest rate. What wi
 w()
 m(r"P =  C0 * \frac{{(1 + r)^n r}}{{(1+r)^n-1}}")
 w(f"P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
-m(r"P(A) = {P_A:,.2f}/\text{{year}},\quad P(B) = {P_B:,.2f}/\text{{year}}")
+m(rf"P(A) = \${P_A:,.2f}/\text{{year}},\quad P(B) = \${P_B:,.2f}/\text{{year}}")
 
 # save outputs
 txt_file, tex_file, pdf_file = doc.save_all()

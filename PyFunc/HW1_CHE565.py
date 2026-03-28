@@ -24,7 +24,7 @@ from worklog import WorkLog
 doc = WorkLog(
     "HW1_CHE565",
     title="CHE 565 -- Homework 1",
-    author="Soki",
+    author="Soki Sem",
 )
 
 # convenience aliases
@@ -34,10 +34,10 @@ m = doc.eq
 a = doc.align
 t = doc.table
 figlog = doc.figure
-
+px = doc.px
+im = doc.im
 doc.maketitle(True)
 doc.toc(False)
-
 
 # ============================================================================
 # PROBLEM 1
@@ -47,7 +47,7 @@ doc.toc(False)
 doc.section("Problem 1")
 doc.subsection("Setup")
 
-w("Find the point on y = 2x^2 + 3x + 1 nearest to the origin.")
+w("Find the point nearest to the origin.")
 w("The squared distance to the origin is minimized instead of the distance itself.")
 
 m(r"y(x) = 2x^2 + 3x + 1")
@@ -63,7 +63,8 @@ a(
     r"2x + 2(2x^2 + 3x + 1)(4x + 3) &= 0",
     r"2x + (4x^2 + 6x + 2)(4x + 3) &= 0",
     r"2x + 16x^3 + 36x^2 + 26x + 6 &= 0",
-    r"8x^3 + 18x^2 + 13x + 3 &= 0"
+    r"16x^3 + 36x^2 + 28x + 6 &= 0",
+    r"8x^3 + 18x^2 + 14x + 3 &= 0"
 )
 
 w("The derivative equation was solved numerically using the Newton-Raphson method.")
@@ -116,7 +117,7 @@ doc.subsection("Setup")
 w("Minimize material usage for a square-base, open-top box with volume 1000 cm^3.")
 w("Let x be the side length of the square base and h be the box height.")
 
-m(r"x^2 h = 1000")
+m(r"V = x^2 h = 1000")
 m(r"h = \frac{1000}{x^2}")
 m(r"S(x) = x^2 + 4xh")
 m(r"S(x) = x^2 + 4x\left(\frac{1000}{x^2}\right) = x^2 + \frac{4000}{x}")
@@ -164,13 +165,13 @@ w(f"Minimum surface area: {S2:.4f} cm^2")
 
 doc.section("Problem 3")
 doc.subsection("Problem Statement")
-
-m(r"f(x_1,x_2) = 4x_1 - x_1^2 - 12")
-m(r"g_1: 25 - x_1^2 - x_2^2 = 0")
-m(r"g_2: 10x_1 - x_1^2 + 10x_2 - x_2^2 - 34 \ge 0")
-m(r"g_3: (x_1 - 3)^2 + (x_2 - 1)^2 \ge 0")
-m(r"x_1, x_2 \ge 0")
-
+a(
+    r"\min_{x_1, x_2} \quad & f(x_1,x_2) = 4x_1 - x_1^2 - 12",
+    r"\text{subject to} \quad & g_1: 25 - x_1^2 - x_2^2 = 0",
+    r"& g_2: 10x_1 - x_1^2 + 10x_2 - x_2^2 - 34 \ge 0",
+    r"& g_3: (x_1 - 3)^2 + (x_2 - 1)^2 \ge 0",
+    r"& x_1, x_2 \ge 0"
+)
 doc.subsection("Degree-of-Freedom Analysis")
 
 w("There are 2 variables: x1 and x2.")
@@ -273,7 +274,7 @@ a(
 doc.subsection("Answers")
 
 w(f"(A) Production minimizing cost/barrel: P = {P4a:.0f} barrels/day, C = ${C4a:.2f}/barrel")
-w(f"(B) Production maximizing daily profit: P = {P4b:.0f} barrels/day, Π = ${Pi4:,.2f}/day")
+px(f"(B) Production maximizing daily profit: P = {P4b:.0f} barrels/day ", im(r'\Pi'),f" = ${Pi4:,.2f}/day")
 
 
 # ============================================================================
@@ -298,9 +299,9 @@ t(
 doc.subsection("Models")
 
 w("Three candidate models are fit to the data.")
-m(r"\text{Model 1: } y = \exp(a + bx)")
-m(r"\text{Model 2: } y = \exp(a + bx + cx^2)")
-m(r"\text{Model 3: } y = ax^b")
+a(  r"\text{Model 1: } & y = \exp(a + bx)",
+    r"\text{Model 2: } & y = \exp(a + bx + cx^2)",
+    r"\text{Model 3: } & y = ax^b")
 
 w("Models 1 and 2 are linearized using ln(y).")
 w("Model 3 is linearized as ln(y) = ln(a) + b ln(x).")

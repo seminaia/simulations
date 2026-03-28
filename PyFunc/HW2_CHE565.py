@@ -55,10 +55,10 @@ a(
     r"\quad\quad\quad\;\;\; FV_B &= 1{,}410{,}000/\text{yr}",
 )
 w()
-m(r"$NPV = PV + C_0$")
-m(r"$PV = F\left[\frac{(1+r)^n - 1}{r(1+r)^n}\right]$")
-w("       PV = present value, FV = future value (annual cash flow), r = yearly interest rate, n = number of years")
-w("       n= 10 years, r = 0.10")
+m(r"NPV = PV + C_0")
+m(r"PV = F\left[\frac{(1+r)^n - 1}{r(1+r)^n}\right]")
+w("PV = present value, FV = future value (annual cash flow), r = yearly interest rate, n = number of years")
+w("n= 10 years, r = 0.10")
 
 def NPV(PV, C0=0):
     """
@@ -89,18 +89,18 @@ NPV_A = NPV(PV_A, C0_A)
 NPV_B = NPV(PV_B, C0_B)
 P_A = annual_payment(C0_A, i_loan, n, 1)
 P_B = annual_payment(C0_B, i_loan, n, 1)
-m(rf"$$NPV(A) = {NPV_A:,.2f},\quad NPV(B) = {NPV_B:,.2f}$$")
+m(rf"\text{{NPV(A)}} = \${NPV_A:,.2f},\quad \text{{NPV(B)}} = \${NPV_B:,.2f}")
 
 if NPV_A > NPV_B:
-    w(f"    NPV is higher for option A at 10% yearly interest, so A is preferred under these assumptions.")
+    w(f"NPV is higher for option A at 10% yearly interest, so A is preferred under these assumptions.")
 else:
-    w(f"    NPV is higher for option B at 10% yearly interest, so B is preferred under these assumptions.")
+    w(f"NPV is higher for option B at 10% yearly interest, so B is preferred under these assumptions.")
 
 w("\n  b.) 10 year lifetime, no salvage value, and 5 % yearly interest rate. What will be the yearly payment?")
 w()
-m(rf"        $P =  C0 * \frac{{(1 + r)^n r}}{{(1+r)^n-1}}$")
-w(f"         P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
-m(rf"        $P(A) = {P_A:,.2f}/\text{{year}},\quad P(B) = {P_B:,.2f}/\text{{year}}$")
+m(r"P =  C0 * \frac{{(1 + r)^n r}}{{(1+r)^n-1}}")
+w(f"P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
+m(r"P(A) = {P_A:,.2f}/\text{{year}},\quad P(B) = {P_B:,.2f}/\text{{year}}")
 
 # save outputs
 txt_file, tex_file, pdf_file = doc.save_all()

@@ -109,3 +109,19 @@ print(f"Wrote text log: {txt_file}")
 print(f"Wrote LaTeX source: {tex_file}")
 print(f"Wrote PDF: {pdf_file}")
 
+
+! LaTeX Error: There's no line here to end.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.52 \newline
+             %
+[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/en
+c/dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/s
+hare/texmf/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm
+-mathex.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}]
+
+enddocument/afterlastpage: lastpage setting LastPage.
+(./HW2_CHE565.aux) )

@@ -48,13 +48,11 @@ doc.subsection("Setup")
 # ══════════════════════════════════════════════════════════════════════════════
 #  PROBLEM 1
 # ══════════════════════════════════════════════════════════════════════════════
-a(  
-    f"Option A:  C0_A &= $3,800,000",
-    f"           FV_A &= $1,100,000/yr",
-    f"Option B:  C0_B &= $5,000,000",
-    f"           FV_B &= $1,410,000/yr",
-    f"   a.) 10 year lifetime, no salvage value, and 10 % yearly interest rate. What is the NPV of each option?,",
-    f"       and which is preferred under these assumptions?"
+a(
+    r"\text{Option A:}\quad C_{0,A} &= 3{,}800{,}000",
+    r"\quad\quad\quad\;\;\; FV_A &= 1{,}100{,}000/\text{yr}",
+    r"\text{Option B:}\quad C_{0,B} &= 5{,}000{,}000",
+    r"\quad\quad\quad\;\;\; FV_B &= 1{,}410{,}000/\text{yr}",
 )
 w()
 m(r"$NPV = PV + C_0$")

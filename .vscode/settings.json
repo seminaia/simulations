@@ -665,9 +665,9 @@
     "python.analysis.diagnosticMode": "workspace",
     "python.analysis.displayEnglishDiagnostics": true,
     "python.analysis.inlayHints.callArgumentNames": "all",
-    "python.analysis.inlayHints.functionReturnTypes": true,
-    "python.analysis.inlayHints.pytestParameters": true,
-    "python.analysis.inlayHints.variableTypes": true,
+    "python.analysis.inlayHints.functionReturnTypes": false,
+    "python.analysis.inlayHints.pytestParameters": false,
+    "python.analysis.inlayHints.variableTypes": false,
     "python.analysis.typeCheckingMode": "standard",
     "python.analysis.typeEvaluation.deprecateTypingAliases": true,
     "python.analysis.typeEvaluation.strictDictionaryInference": false,
@@ -718,5 +718,7 @@
     "powershell.startAsLoginShell.osx": false,
     "powershell.startAsLoginShell.linux": true,
     "python.testing.pytestEnabled": true,
-    "rainbow_csv.virtual_alignment_char": "space"
+    "rainbow_csv.virtual_alignment_char": "space",
+    "python.analysis.disableTaggedHints": false,
+    "python.analysis.indexing": false
 }

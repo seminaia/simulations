@@ -12,6 +12,7 @@ matplotlib.use("Agg")          # non-interactive backend (no display needed)
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize_scalar, minimize
 from scipy.stats import t as t_dist
+
 from NRroots import newton_raphson
 from regression_analysis import RegressionAnalysis
 from doc_builder import DocumentBuilder
@@ -101,6 +102,82 @@ w()
 m(r"P =  C0 * \frac{{(1 + r)^n r}}{{(1+r)^n-1}}")
 w(f"P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
 m(rf"P(A) = \${P_A:,.2f}/\text{{year}},\quad P(B) = \${P_B:,.2f}/\text{{year}}")
+doc.section("Problem 2")
+doc.subsection("Setup")
+w(f"$0.94/lbs is the price of powdered detergent.")
+w(f"0.1 % of 4e6 lbs of detergent per year is carried through the exhaust")
+w(f"Adding a second cyclone separator costs $10,000, with $300/year in maintenance costs will reduce carryover to 0.0%, with a 8% yearly interest rate.")
+interest_rate = 0.08
+detergent_price = 0.94 # $/lb
+total_detergent = 4e6 # lbs/year
+carryover_fraction = 0.001 # 0.1% carryover
+carryover_amount = total_detergent * carryover_fraction # lbs/year
+carryover_cost = carryover_amount * detergent_price # $/year
+separator_cost = 10000 # $ initial cost
+separator_maintenance = 300 # $/year
+w(f"Cost of carryover detergent: ${carryover_cost:,.2f}/year\nCost of second separator: ${separator_cost:,.2f} initial + ${2*separator_maintenance:,.2f}/year maintenance = ${separator_cost + 2*separator_maintenance:,.2f} total")
+doc.section("Problem 2")
+doc.subsection("Setup")
+
+w(f"$0.94/lb is the price of powdered detergent.")
+w(f"0.1% of 4e6 lb/year is carried through the exhaust.")
+w(f"Adding a second cyclone separator costs $10,000 with $300/year maintenance and reduces carryover to 0.0%.")
+
+interest_rate = 0.08
+detergent_price = 0.94  # $/lb
+total_detergent = 4e6   # lb/year
+carryover_fraction = 0.001
+
+carryover_amount = total_detergent * carryover_fraction
+carryover_cost = carryover_amount * detergent_price  # lost value
+
+separator_cost = 10000
+separator_maintenance = 300
+
+w(f"Lost detergent value: ${carryover_cost:,.2f}/year")
+
+# Part (a)
+w("a.) Find the additional yearly income")
+
+gross_additional_income = carryover_cost
+net_additional_income = carryover_cost - separator_maintenance
+
+w(f"Gross additional income (recovered detergent): ${gross_additional_income:,.2f}/year")
+w(f"Net additional income after maintenance: ${net_additional_income:,.2f}/year")
+
+# Part (b)
+w("b.) Find the payback period")
+
+payback_years = separator_cost / net_additional_income
+payback_months = payback_years * 12
+
+w(f"Payback period: {payback_years:.2f} years ({payback_months:.1f} months)")
+
+doc.section("Problem 3")
+doc.subsection("Setup")
+w("Determine if each function is convex")
+
+m(r"\text{A}: f(x) = (x_1-x_2)^2 + x_2^2")
+m(r"\text{B}: f(x) = x_1^2 + x_2^2+x_3^2")
+m(r"\text{C}: f(x) = \exp(x_1)+\exp(x_2)")
+def f_A(x):
+    return (x[0] - x[1])**2 + x[1]**2
+def f_B(x):
+    return x[0]**2 + x[1]**2 + x[2]**2
+def f_C(x):
+    return np.exp(x[0]) + np.exp(x[1])
+
+
+gamma_A = gradient_A = lambda x: np.array([2*(x[0]-x[1]), 2*(x[1]-x[0]) + 2*x[1]])  
+gamma_B = gradient_B = lambda x: np.array([2*x[0], 2*x[1], 2*x[2]])
+gamma_C = gradient_C = lambda x: np.array([np.exp(x[0]), np.exp(x[1])])
+hessian_A = lambda x: np.array([[2, -2], [-2, 4]])
+hessian_B = lambda x: np.array([[2, 0, 0], [0, 2, 0], [0, 0, 2]])
+hessian_C = lambda x: np.array([[np.exp(x[0]), 0], [0, np.exp(x[1])]])
+x1 = np.array([1, 1])
+rhs = f_A(x1)*gamma_A(x1)+(1-gamma_A(x1))
+lhs = f_A(gamma_A(x1)*x1+(1-gamma_A(x1))*x1)
+px(f"A: {lhs} <=", im{rf"\text{f(x1)=},{rhs}"},)
 
 # save outputs
 txt_file, tex_file, pdf_file = doc.save_all()

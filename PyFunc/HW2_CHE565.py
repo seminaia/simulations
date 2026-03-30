@@ -11,11 +11,10 @@ from math import e
 import numpy as np
 import matplotlib
 from sympy.functions.combinatorial.factorials import rf
-matplotlib.use("Agg")          # non-interactive backend (no display needed)
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize_scalar, minimize
 from scipy.stats import t as t_dist
-
+import pandas as pd
 from NRroots import newton_raphson
 from regression_analysis import RegressionAnalysis
 from doc_builder import DocumentBuilder
@@ -250,6 +249,21 @@ f_sol = [func(s) for s in sol]
 w(f"The solutions to df/dx = 0 are x* = {sol[0]}, {sol[1]}")
 w(f"The corresponding function values are f(x*) = {f_sol[0]:.2f}, {f_sol[1]:.2f}")
 doc.subsection("b.) Excel Solution")
+df = pd.read_csv("HW2_CHE565.csv")
+
+df.drop('Unnamed: 6',axis=1,inplace=True)
+
+df_A = df.iloc[:,:6].copy()
+df_B = df.iloc[:,6:].copy()
+print(df.columns.tolist())
+headers_A = df_A.columns.tolist()
+row_A = df_A.values.tolist()
+headers_B = df_B.columns.tolist()
+row_B = df_B.values.tolist()
+w("The Excel data used for the numerical solution is shown below:")
+t(headers_A,row_A,alignment='c'*len(headers_A),caption="Optimization Results from Excel starting at x0=5")
+t(headers_B,row_B,alignment='c'*len(headers_B),caption="Optimization Results from Excel starting at x0=-5")
+
 x_guess = [-5,5]
 roots = fsolve(func=dfunc,x0=x_guess)
 x1_min = roots[0]

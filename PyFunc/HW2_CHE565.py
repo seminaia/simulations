@@ -255,7 +255,6 @@ df.drop('Unnamed: 6',axis=1,inplace=True)
 
 df_A = df.iloc[:,:6].copy()
 df_B = df.iloc[:,6:].copy()
-print(df.columns.tolist())
 headers_A = df_A.columns.tolist()
 row_A = df_A.values.tolist()
 headers_B = df_B.columns.tolist()

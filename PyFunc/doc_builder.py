@@ -854,6 +854,7 @@ class DocumentBuilder:
                 for item in block.items:
                     enum.add_item(item)
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 elif block.kind == "table":
     colspec = block.alignment or ("c" * len(block.headers))
     if block.longtable:
@@ -899,6 +900,18 @@ elif block.kind == "table":
                     lt.add_row([
                         self._render_table_cell(v, block.float_fmt) for v in row
                     ])
+=======
+        elif block.kind == "table":
+            colspec = block.alignment or ("c" * len(block.headers))
+            if block.longtable:
+                lt = LongTable(colspec, escape=False)
+                lt.add_hline()
+                lt.add_row([_render_table_cell(h, block.float_fmt) for h in block.headers])
+                lt.add_hline()
+                lt.end_table_header()
+                for row in block.rows:
+                    lt.add_row([_render_table_cell(v, block.float_fmt) for v in row])
+>>>>>>> Stashed changes
                 lt.add_hline()
                 container.append(lt)
                 if block.caption:
@@ -908,6 +921,7 @@ elif block.kind == "table":
             else:
                 container.append(NoEscape(r"\begin{table}[H]"))
                 container.append(NoEscape(r"\centering"))
+<<<<<<< Updated upstream
                 tab = Tabular(colspec)
                 tab.add_hline()
                 tab.add_row(block.headers)
@@ -916,6 +930,14 @@ elif block.kind == "table":
                     tab.add_row([
                         self._render_table_cell(v, block.float_fmt) for v in row
                     ])
+=======
+                tab = Tabular(colspec, escape=False)
+                tab.add_hline()
+                tab.add_row([_render_table_cell(h, block.float_fmt) for h in block.headers])
+                tab.add_hline()
+                for row in block.rows:
+                    tab.add_row([_render_table_cell(v, block.float_fmt) for v in row])
+>>>>>>> Stashed changes
                 tab.add_hline()
                 container.append(tab)
                 if block.caption:
@@ -923,6 +945,9 @@ elif block.kind == "table":
                 if block.label:
                     container.append(NoEscape(rf"\label{{{block.label}}}"))
                 container.append(NoEscape(r"\end{table}"))
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
         elif block.kind == "figure":
             with container.create(Figure(position=block.position)) as fig:

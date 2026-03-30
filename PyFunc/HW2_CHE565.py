@@ -204,6 +204,55 @@ t(['Function','Hessian','Eigenvalues','Convex?','Reason'],
 )
 
 doc.section("Problem 4")
+
+w("Is the region defined by the constraints convex?")
+constraints = [
+    (x2 >= 1-x1)&
+    (x2 <= 1+1/2*x1)&
+    (x1 <= 2)&
+    (x2 >= 0)
+]
+
+feasible_region =sp.And(*constraints)
+feasible_region_latex = sp.latex(feasible_region)
+px(rf"The feasible region is defined by the following constraints: " , im(feasible_region_latex))
+PLOT_FILE="HW2_CHE565_plot.png"
+sp.plot_implicit(feasible_region,(x1,0,3),(x2,0,3),show=False, title="CHE 565: Problem 4 Feasible Region").save(PLOT_FILE)
+figlog(PLOT_FILE,"Feasible Region")
+w("The feasible region is convex because it is defined by a set of linear inequalities, which form a convex set.")
+doc.section(("Problem 5"))
+doc.subsection("Setup")
+w("Minimize the objective function:")
+m(r"f(x)= 1 +8x + 2x^2-\frac{10}{3}x^3 - \frac{1}{4}x^4 + \frac{4}{5}x^5 - \frac{1}{6}x^6")
+w("Given that:")
+m(r"\frac{df}{dx}= (1+x)^2(2-x)^3")
+a(
+    r"\frac{df}{dx} &= ((1+x)^2(2-x)^3)",
+    r"0&= (1+x)^2(2-x)^3",
+    r"x* &= -1, 2"
+)
+a(
+    r"x^* &= -1, 2",
+    r"f(x^*) &= f(-1), f(2)",
+    r"&")
+def func(x):
+    return 1 + 8*x + 2*x**2 - 10/3*x**3 - 1/4*x**4 + 4/5*x**5 - 1/6*x**6
+
+def dfunc(x):
+    return (1 + x)**2 * (2 - x)**3
+
+x_guess = [-5,5]
+roots = fsolve(func=dfunc,x0=x_guess)
+w(f"The roots of df/dx = 0 are at x = {roots[0]:.2f} and x = {roots[1]:.2f}")
+x1_min = roots[0]
+x2_min = roots[1]
+
+w(f"The stationary point is at x = {x1_min:.2f}")
+w(f"The minimum value of the function is f(x) = {func(x1_min):.2f}")
+w(f"The stationary point is at x = {x2_min:.2f}")
+w(f"The minimum value of the function is f(x) = {func(x2_min):.2f}")
+
+
 txt_file, tex_file, pdf_file = doc.save_all()
 
 print(f"Wrote text log: {txt_file}")

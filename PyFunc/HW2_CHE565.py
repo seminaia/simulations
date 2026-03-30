@@ -202,9 +202,9 @@ t(
 )
 t(['Hessian','Eigenvalues'],
  [
-      [r''+ HA_latex, r''+ eig_A_latex],
-      [r''+ HB_latex, r''+ eig_B_latex],
-      [r''+ HC_latex, r''+ eig_C_latex]
+      [HA_latex, eig_A_latex],
+      [HB_latex, eig_B_latex],
+      [HC_latex, eig_C_latex]
   ],
 )
 a(

@@ -544,7 +544,7 @@ class DocumentBuilder:
         Args:
             lines (str): The lines of the aligned equation.
         """
-        cleaned = [str(line).strip() for line in lines if str(line).strip()]
+        cleaned = [str(object=line).strip() for line in lines if str(line).strip()]
         self.current.blocks.append(AlignBlock(cleaned))
 
     # -------------------------------------------------------------------------

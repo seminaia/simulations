@@ -227,7 +227,7 @@ class NumberedListBlock(Block):
 
 @dataclass
 class TableBlock(Block):
-    """TableBlock represents a bolck of tabular data. It contains the headers and rows of the table, as well as optional caption and label for referencing. The float_fmt is used to format any float values in the table when rendering to text or LaTeX. The longtable flag indicates whether to use the longtable environment in LaTeX, which allows tables to span multiple pages. The alignment string can specify the column alignment for LaTeX rendering (e.g., "lcr" for left, center, right).
+    """TableBlock represents a block of tabular data. It contains the headers and rows of the table, as well as optional caption and label for referencing. The float_fmt is used to format any float values in the table when rendering to text or LaTeX. The longtable flag indicates whether to use the longtable environment in LaTeX, which allows tables to span multiple pages. The alignment string can specify the column alignment for LaTeX rendering (e.g., "lcr" for left, center, right).
     Args:
         Block (_type_): The base Block class that this inherits from.
     """
@@ -770,13 +770,7 @@ class DocumentBuilder:
     # =============================================================================
     # PyLaTeX rendering
     # =============================================================================
-    def _render_table_cell(self, val:Any, float_fmt: str=".4f") -> Any:
-        if isinstance(val, float):
-            return format(val, float_fmt)
-        if isinstance(val, InlineMathToken):
-            return NoEscape(f"${val.latex}$")
-        return str(val)
-    
+
     def _new_document(self) -> Document:
         """Create a new PyLaTeX Document object with the preamble configured for this worklog.
         This includes loading common packages, setting the title, author, date, and page geometry,
@@ -853,54 +847,6 @@ class DocumentBuilder:
             with container.create(Enumerate()) as enum:
                 for item in block.items:
                     enum.add_item(item)
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-elif block.kind == "table":
-    colspec = block.alignment or ("c" * len(block.headers))
-    if block.longtable:
-        lt = LongTable(colspec, escape=False)
-        lt.add_hline()
-        lt.add_row([_render_table_cell(h, block.float_fmt) for h in block.headers])
-        lt.add_hline()
-        lt.end_table_header()
-        for row in block.rows:
-            lt.add_row([_render_table_cell(v, block.float_fmt) for v in row])
-        lt.add_hline()
-        container.append(lt)
-        if block.caption:
-            container.append(NoEscape(rf"\captionof{{table}}{{{escape_latex(block.caption)}}}"))
-        if block.label:
-            container.append(NoEscape(rf"\label{{{block.label}}}"))
-    else:
-        container.append(NoEscape(r"\begin{table}[H]"))
-        container.append(NoEscape(r"\centering"))
-        tab = Tabular(colspec, escape=False)
-        tab.add_hline()
-        tab.add_row([_render_table_cell(h, block.float_fmt) for h in block.headers])
-        tab.add_hline()
-        for row in block.rows:
-            tab.add_row([_render_table_cell(v, block.float_fmt) for v in row])
-        tab.add_hline()
-        container.append(tab)
-        if block.caption:
-            container.append(NoEscape(rf"\caption{{{escape_latex(block.caption)}}}"))
-        if block.label:
-            container.append(NoEscape(rf"\label{{{block.label}}}"))
-        container.append(NoEscape(r"\end{table}"))
-=======
-        elif block.kind == "table":
-            colspec = block.alignment or ("c" * len(block.headers))
-            if block.longtable:
-                lt = LongTable(colspec)
-                lt.add_hline()
-                lt.add_row(block.headers)
-                lt.add_hline()
-                lt.end_table_header()
-                for row in block.rows:
-                    lt.add_row([
-                        self._render_table_cell(v, block.float_fmt) for v in row
-                    ])
-=======
         elif block.kind == "table":
             colspec = block.alignment or ("c" * len(block.headers))
             if block.longtable:
@@ -911,7 +857,6 @@ elif block.kind == "table":
                 lt.end_table_header()
                 for row in block.rows:
                     lt.add_row([_render_table_cell(v, block.float_fmt) for v in row])
->>>>>>> Stashed changes
                 lt.add_hline()
                 container.append(lt)
                 if block.caption:
@@ -921,23 +866,12 @@ elif block.kind == "table":
             else:
                 container.append(NoEscape(r"\begin{table}[H]"))
                 container.append(NoEscape(r"\centering"))
-<<<<<<< Updated upstream
-                tab = Tabular(colspec)
-                tab.add_hline()
-                tab.add_row(block.headers)
-                tab.add_hline()
-                for row in block.rows:
-                    tab.add_row([
-                        self._render_table_cell(v, block.float_fmt) for v in row
-                    ])
-=======
                 tab = Tabular(colspec, escape=False)
                 tab.add_hline()
                 tab.add_row([_render_table_cell(h, block.float_fmt) for h in block.headers])
                 tab.add_hline()
                 for row in block.rows:
                     tab.add_row([_render_table_cell(v, block.float_fmt) for v in row])
->>>>>>> Stashed changes
                 tab.add_hline()
                 container.append(tab)
                 if block.caption:
@@ -945,10 +879,6 @@ elif block.kind == "table":
                 if block.label:
                     container.append(NoEscape(rf"\label{{{block.label}}}"))
                 container.append(NoEscape(r"\end{table}"))
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
         elif block.kind == "figure":
             with container.create(Figure(position=block.position)) as fig:
                 fig.add_image(block.path, width=NoEscape(block.width))

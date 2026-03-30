@@ -8,7 +8,7 @@
     },
     "files.autoSave": "onFocusChange",
     "workbench.colorTheme": "Dark Modern",
-    "editor.defaultFormatter": "vscodevim.vim",
+    "editor.defaultFormatter": "mathematic.vscode-latex",
     "editor.wordWrap": "on",
     "editor.formatOnPaste": true,
     "editor.autoIndentOnPaste": true,
@@ -62,7 +62,7 @@
     "chat.includeReferencedInstructions": true,
     "chat.useNestedAgentsMdFiles": true,
     "inlineChat.notebookAgent": true,
-    "chat.disableAIFeatures": true,
+    "chat.disableAIFeatures": false,
     "remote.defaultExtensionsIfInstalledLocally": [
         "GitHub.vscode-pull-request-github"
     ],

@@ -116,12 +116,6 @@ carryover_cost = carryover_amount * detergent_price # $/year
 separator_cost = 10000 # $ initial cost
 separator_maintenance = 300 # $/year
 w(f"Cost of carryover detergent: ${carryover_cost:,.2f}/year\nCost of second separator: ${separator_cost:,.2f} initial + ${2*separator_maintenance:,.2f}/year maintenance = ${separator_cost + 2*separator_maintenance:,.2f} total")
-doc.section("Problem 2")
-doc.subsection("Setup")
-
-w(f"$0.94/lb is the price of powdered detergent.")
-w(f"0.1% of 4e6 lb/year is carried through the exhaust.")
-w(f"Adding a second cyclone separator costs $10,000 with $300/year maintenance and reduces carryover to 0.0%.")
 
 interest_rate = 0.08
 detergent_price = 0.94  # $/lb
@@ -148,38 +142,70 @@ w(f"Net additional income after maintenance: ${net_additional_income:,.2f}/year"
 # Part (b)
 w("b.) Find the payback period")
 
-payback_years = separator_cost / net_additional_income
-payback_months = payback_years * 12
+from scipy.optimize import fsolve
+import sympy as sp
+# Define NPV equation
+def NPV_eq(n):
+    return net_additional_income * ((1 + interest_rate)**n - 1) / (interest_rate * (1 + interest_rate)**n) - separator_cost
 
-w(f"Payback period: {payback_years:.2f} years ({payback_months:.1f} months)")
+# Solve for n
+n_guess = 3
+n_solution = fsolve(NPV_eq, n_guess)[0]
 
+w(f"Discounted payback period (NPV = 0): {n_solution:.2f} years")
 doc.section("Problem 3")
 doc.subsection("Setup")
 w("Determine if each function is convex")
 
 m(r"\text{A}: f(x) = (x_1-x_2)^2 + x_2^2")
 m(r"\text{B}: f(x) = x_1^2 + x_2^2+x_3^2")
-m(r"\text{C}: f(x) = \exp(x_1)+\exp(x_2)")
-def f_A(x):
-    return (x[0] - x[1])**2 + x[1]**2
-def f_B(x):
-    return x[0]**2 + x[1]**2 + x[2]**2
-def f_C(x):
-    return np.exp(x[0]) + np.exp(x[1])
+m(r"\text{C}: f(x) = e^{x_1}+e^{x_2}")
+x1, x2, x3 = sp.symbols('x1 x2 x3')
+f_A = (x1-x2)**2 + x2**2
+f_B = x1**2 + x2**2 + x3**2
+f_C = sp.exp(x1) + sp.exp(x2)
+doc.subsection("A")
 
+fA = (x1 - x2)**2 + x2**2
+H_A = sp.hessian(fA, (x1, x2))
 
-gamma_A = gradient_A = lambda x: np.array([2*(x[0]-x[1]), 2*(x[1]-x[0]) + 2*x[1]])  
-gamma_B = gradient_B = lambda x: np.array([2*x[0], 2*x[1], 2*x[2]])
-gamma_C = gradient_C = lambda x: np.array([np.exp(x[0]), np.exp(x[1])])
-hessian_A = lambda x: np.array([[2, -2], [-2, 4]])
-hessian_B = lambda x: np.array([[2, 0, 0], [0, 2, 0], [0, 0, 2]])
-hessian_C = lambda x: np.array([[np.exp(x[0]), 0], [0, np.exp(x[1])]])
-x1 = np.array([1, 1])
-rhs = f_A(x1)*gamma_A(x1)+(1-gamma_A(x1))
-lhs = f_A(gamma_A(x1)*x1+(1-gamma_A(x1))*x1)
-px(f"A: {lhs} <=", im{rf"\text{f(x1)=},{rhs}"},)
+# A
+H_A_latex = sp.latex(H_A)
+eig_A = list(H_A.eigenvals().keys())
+eig_A_latex = ", ".join([sp.latex(ev) for ev in eig_A])
 
-# save outputs
+# B
+H_B = sp.hessian(f_B, (x1, x2, x3))
+H_B_latex = sp.latex(H_B)
+eig_B = list(H_B.eigenvals().keys())
+eig_B_latex = ", ".join([sp.latex(ev) for ev in eig_B])
+
+# C
+H_C = sp.hessian(f_C, (x1, x2))
+H_C_latex = sp.latex(H_C)
+eig_C_latex = r"e^{x_1}, e^{x_2}"
+doc.subsection("Results")
+
+# --- Table ---
+t(
+    ['Function', 'Convex?', 'Reason'],
+    [
+        ['A', 'Yes', 'Eigenvalues are non-negative'],
+        ['B', 'Yes', 'Eigenvalues are positive'],
+        ['C', 'Yes', 'Eigenvalues are positive'],
+    ]
+)
+
+m(r"H_A = " + sp.latex(H_A))
+m(r"\lambda_A = " + sp.latex(sp.Matrix(eig_A)))
+
+m(r"H_B = " + sp.latex(H_B))
+m(r"\lambda_B = \begin{bmatrix} 2 \\ 2 \\ 2 \end{bmatrix}")
+
+m(r"H_C = " + sp.latex(H_C))
+m(r"\lambda_C = \begin{bmatrix} e^{x_1} \\ e^{x_2} \end{bmatrix}")
+
+doc.section("Problem 4")
 txt_file, tex_file, pdf_file = doc.save_all()
 
 print(f"Wrote text log: {txt_file}")

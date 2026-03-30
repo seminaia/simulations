@@ -8,7 +8,7 @@
     },
     "files.autoSave": "onFocusChange",
     "workbench.colorTheme": "Dark Modern",
-    "editor.defaultFormatter": "mathematic.vscode-latex",
+    "editor.defaultFormatter": "vscodevim.vim",
     "editor.wordWrap": "on",
     "editor.formatOnPaste": true,
     "editor.autoIndentOnPaste": true,
@@ -62,7 +62,7 @@
     "chat.includeReferencedInstructions": true,
     "chat.useNestedAgentsMdFiles": true,
     "inlineChat.notebookAgent": true,
-    "chat.disableAIFeatures": false,
+    "chat.disableAIFeatures": true,
     "remote.defaultExtensionsIfInstalledLocally": [
         "GitHub.vscode-pull-request-github"
     ],
@@ -720,5 +720,14 @@
     "python.testing.pytestEnabled": true,
     "rainbow_csv.virtual_alignment_char": "space",
     "python.analysis.disableTaggedHints": false,
-    "python.analysis.indexing": false
+    "python.analysis.indexing": false,
+    "pdf-preview.default.sidebar": true,
+    "files.autoSaveWorkspaceFilesOnly": true,
+    "files.exclude": {
+        "**.aux": true,
+        "**.gpw": true,
+        "**.traj": true,
+        "**.xyz": true
+    },
+    "editor.codeActionWidget.showHeaders": true
 }

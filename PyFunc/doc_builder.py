@@ -847,7 +847,6 @@ class DocumentBuilder:
             with container.create(Enumerate()) as enum:
                 for item in block.items:
                     enum.add_item(item)
-<<<<<<< Updated upstream
 elif block.kind == "table":
     colspec = block.alignment or ("c" * len(block.headers))
     if block.longtable:
@@ -880,44 +879,6 @@ elif block.kind == "table":
         if block.label:
             container.append(NoEscape(rf"\label{{{block.label}}}"))
         container.append(NoEscape(r"\end{table}"))
-=======
-        elif block.kind == "table":
-            colspec = block.alignment or ("c" * len(block.headers))
-            if block.longtable:
-                lt = LongTable(colspec)
-                lt.add_hline()
-                lt.add_row(block.headers)
-                lt.add_hline()
-                lt.end_table_header()
-                for row in block.rows:
-                    lt.add_row([
-                        self._render_table_cell(v, block.float_fmt) for v in row
-                    ])
-                lt.add_hline()
-                container.append(lt)
-                if block.caption:
-                    container.append(NoEscape(rf"\captionof{{table}}{{{escape_latex(block.caption)}}}"))
-                if block.label:
-                    container.append(NoEscape(rf"\label{{{block.label}}}"))
-            else:
-                container.append(NoEscape(r"\begin{table}[H]"))
-                container.append(NoEscape(r"\centering"))
-                tab = Tabular(colspec)
-                tab.add_hline()
-                tab.add_row(block.headers)
-                tab.add_hline()
-                for row in block.rows:
-                    tab.add_row([
-                        self._render_table_cell(v, block.float_fmt) for v in row
-                    ])
-                tab.add_hline()
-                container.append(tab)
-                if block.caption:
-                    container.append(NoEscape(rf"\caption{{{escape_latex(block.caption)}}}"))
-                if block.label:
-                    container.append(NoEscape(rf"\label{{{block.label}}}"))
-                container.append(NoEscape(r"\end{table}"))
->>>>>>> Stashed changes
         elif block.kind == "figure":
             with container.create(Figure(position=block.position)) as fig:
                 fig.add_image(block.path, width=NoEscape(block.width))

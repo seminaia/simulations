@@ -160,57 +160,47 @@ doc.subsection("Setup")
 w("Determine if each function is convex")
 
 a(
-    r"\text{A}: f(x) = (x_1-x_2)^2 + x_2^2",
-    r"\text{B}: f(x) = x_1^2 + x_2^2+x_3^2",
-    r"\text{C}: f(x) = e^{x_1}+e^{x_2}"
+    r"\text{A}: f(x) &= (x_1-x_2)^2 + x_2^2",
+    r"\text{B}: f(x) &= x_1^2 + x_2^2+x_3^2",
+    r"\text{C}: f(x) &= e^{x_1}+e^{x_2}"
 )
 
 x1, x2, x3 = sp.symbols('x1 x2 x3')
 
-doc.subsection("A")
-fA = (x1 - x2)**2 + x2**2
-HA = sp.hessian(fA, (x1, x2))
 # A
+fa = (x1 - x2)**2 + x2**2
+fa_latex = sp.latex(fa)
+HA = sp.hessian(fa, (x1, x2))
 HA_latex = sp.latex(HA)
 eig_A = list(HA.eigenvals().keys())
 eig_A_latex = sp.latex(sp.Matrix(eig_A))
 
 # B
-fB = x1**2 + x2**2 + x3**2
-HB = sp.hessian(fB, (x1, x2, x3))
+fb = x1**2 + x2**2 + x3**2
+fb_latex = sp.latex(fb)
+HB = sp.hessian(fb, (x1, x2, x3))
 HB_latex = sp.latex(HB)
 eig_B = list(HB.eigenvals().keys())
 eig_B_latex = sp.latex(sp.Matrix(eig_B))
 
 # C
 fc = sp.exp(x1) + sp.exp(x2)
+fc_latex = sp.latex(fc)
 HC = sp.hessian(fc, (x1, x2))
 HC_latex = sp.latex(HC)
-eig_C = [sp.exp(x1), sp.exp(x2)]
+eig_C = list(HC.eigenvals().keys())
 eig_C_latex = sp.latex(sp.Matrix(eig_C))
 
 doc.subsection("Results")
 
-# --- Table ---
-t(
-    ['Function', 'Convex?', 'Reason'],
-    [
-        ['A', 'Yes', 'Eigenvalues are non-negative'],
-        ['B', 'Yes', 'Eigenvalues are positive'],
-        ['C', 'Yes', 'Eigenvalues are positive'],
-    ]
-)
-t(['Hessian','Eigenvalues'],
+
+t(['Function','Hessian','Eigenvalues','Convex?','Reason'],
  [
-      [HA_latex, eig_A_latex],
-      [HB_latex, eig_B_latex],
-      [HC_latex, eig_C_latex]
+      [im(fa_latex),im(latex=HA_latex), im(eig_A_latex), "Yes", "Eigenvalues are non-negative"],
+      [im(fb_latex),im(HB_latex), im(eig_B_latex), "Yes", "Eigenvalues are positive"],
+      [im(fc_latex),im(HC_latex), im(eig_C_latex), "Yes", "Eigenvalues are positive"]
   ],
-)
-a(
-    r"H_A &= " + HA_latex, r"\lambda_A &= " + eig_A_latex,
-    r"H_B &= " + HB_latex, r"\lambda_B &= " + eig_B_latex,
-    r"H_C &= " + HC_latex, r"\lambda_C &= " + eig_C_latex,
+ alignment='c|c|c|c|c'
 )
 
 doc.section("Problem 4")

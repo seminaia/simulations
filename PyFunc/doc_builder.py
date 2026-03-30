@@ -774,7 +774,7 @@ class DocumentBuilder:
         if isinstance(val, float):
             return format(val, float_fmt)
         if isinstance(val, InlineMathToken):
-            return NoEscape(f"${val.latex}$")
+            return NoEscape(rf"${val.latex}$")
         return str(val)
     
     def _new_document(self) -> Document:
@@ -787,7 +787,7 @@ class DocumentBuilder:
         """
         doc = Document(self.base_name, geometry_options={"margin": "1in"})
         doc.preamble.append(Command("usepackage", "amsmath"))
-        doc.preamble.append(Command("usepackage", "amssymb"))
+        doc.preamble.append(Command("usepackage", arguments="amssymb"))
         doc.preamble.append(Command("usepackage", "booktabs"))
         doc.preamble.append(Command("usepackage", "longtable"))
         doc.preamble.append(Command("usepackage", "float"))
@@ -864,8 +864,8 @@ class DocumentBuilder:
                 for row in block.rows:
                     lt.add_row([
                         self._render_table_cell(v, block.float_fmt) for v in row
-                    ])
-                lt.add_hline()
+                    ]) 
+                    lt.add_hline()
                 container.append(lt)
                 if block.caption:
                     container.append(NoEscape(rf"\captionof{{table}}{{{escape_latex(block.caption)}}}"))
@@ -882,7 +882,7 @@ class DocumentBuilder:
                     tab.add_row([
                         self._render_table_cell(v, block.float_fmt) for v in row
                     ])
-                tab.add_hline()
+                    tab.add_hline()
                 container.append(tab)
                 if block.caption:
                     container.append(NoEscape(rf"\caption{{{escape_latex(block.caption)}}}"))

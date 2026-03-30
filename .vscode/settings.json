@@ -692,7 +692,7 @@
     "vim.autoSwitchInputMethod.enable": true,
     "vim.camelCaseMotion.enable": true,
     "vim.changeWordIncludesWhitespace": true,
-    "vim.disableExtension": false,
+    "vim.disableExtension": true,
     "vim.easymotion": true,
     "vim.enableNeovim": true,
     "vim.foldfix": true,

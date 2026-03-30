@@ -10,6 +10,7 @@ from math import e
 
 import numpy as np
 import matplotlib
+from sympy.functions.combinatorial.factorials import rf
 matplotlib.use("Agg")          # non-interactive backend (no display needed)
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize_scalar, minimize
@@ -208,7 +209,7 @@ doc.section("Problem 4")
 w("Is the region defined by the constraints convex?")
 constraints = [
     (x2 >= 1-x1)&
-    (x2 <= 1+1/2*x1)&
+    (x2 <= 1+sp.Rational(1,2)*x1)&
     (x1 <= 2)&
     (x2 >= 0)
 ]
@@ -223,34 +224,43 @@ w("The feasible region is convex because it is defined by a set of linear inequa
 doc.section(("Problem 5"))
 doc.subsection("Setup")
 w("Minimize the objective function:")
-m(r"f(x)= 1 +8x + 2x^2-\frac{10}{3}x^3 - \frac{1}{4}x^4 + \frac{4}{5}x^5 - \frac{1}{6}x^6")
-w("Given that:")
-m(r"\frac{df}{dx}= (1+x)^2(2-x)^3")
-a(
-    r"\frac{df}{dx} &= ((1+x)^2(2-x)^3)",
-    r"0&= (1+x)^2(2-x)^3",
-    r"x* &= -1, 2"
-)
-a(
-    r"x^* &= -1, 2",
-    r"f(x^*) &= f(-1), f(2)",
-    r"&")
+
 def func(x):
     return 1 + 8*x + 2*x**2 - 10/3*x**3 - 1/4*x**4 + 4/5*x**5 - 1/6*x**6
 
 def dfunc(x):
     return (1 + x)**2 * (2 - x)**3
 
+x = sp.symbols('x')
+f = 1 + 8*x + 2*x**2 - sp.Rational(10,3)*x**3 - sp.Rational(1,4)*x**4 + sp.Rational(4,5)*x**5 - sp.Rational(1,6)*x**6
+dfun = (1 + x)**2 * (2 - x)**3
+d2fun = sp.diff(dfun,x)
+df = sp.diff(f,x)
+d2f = sp.diff(df,x)
+m(rf"f(x) = {sp.latex(f)}")
+w(text="Given that:")
+m(rf"\frac{{df}}{{dx}}= {sp.latex(dfun)}")
+m(rf"\frac{{d^2f}}{{dx^2}}= {sp.latex(d2fun)}")
+doc.subsection("a.) Analytical Solution")
+w("Expanded form:")
+m(rf"\frac{{df}}{{dx}} = {sp.latex(df)}")
+m(rf"\frac{{d^2f}}{{dx^2}} = {sp.latex(d2f)}")
+sol = sp.solve(dfun,x)
+f_sol = [func(s) for s in sol]
+w(f"The solutions to df/dx = 0 are x* = {sol[0]}, {sol[1]}")
+w(f"The corresponding function values are f(x*) = {f_sol[0]:.2f}, {f_sol[1]:.2f}")
+doc.subsection("b.) Excel Solution")
 x_guess = [-5,5]
 roots = fsolve(func=dfunc,x0=x_guess)
-w(f"The roots of df/dx = 0 are at x = {roots[0]:.2f} and x = {roots[1]:.2f}")
 x1_min = roots[0]
 x2_min = roots[1]
+a(
+    r"x^* &= -1, 2",
+    rf"f(x^*) &= {func(x1_min):.2f},\ {func(x2_min):.2f}"
+)
 
-w(f"The stationary point is at x = {x1_min:.2f}")
-w(f"The minimum value of the function is f(x) = {func(x1_min):.2f}")
-w(f"The stationary point is at x = {x2_min:.2f}")
-w(f"The minimum value of the function is f(x) = {func(x2_min):.2f}")
+w(f"The roots of df/dx are at x* = {x1_min:.2f} with multiplicity 2, {x2_min:.2f} with multiplicity 3")
+w(f"The minimum value of the function is f(x*) = {func(x1_min):.2f}, {func(x2_min):.2f}")
 
 
 txt_file, tex_file, pdf_file = doc.save_all()

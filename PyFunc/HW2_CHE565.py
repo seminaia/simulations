@@ -6,6 +6,8 @@ All five problems solved with full work shown.
 Results are written to HW2_CHE565_results.txt and mirrored to the console.
 """
 
+from math import e
+
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")          # non-interactive backend (no display needed)
@@ -157,33 +159,36 @@ doc.section("Problem 3")
 doc.subsection("Setup")
 w("Determine if each function is convex")
 
-m(r"\text{A}: f(x) = (x_1-x_2)^2 + x_2^2")
-m(r"\text{B}: f(x) = x_1^2 + x_2^2+x_3^2")
-m(r"\text{C}: f(x) = e^{x_1}+e^{x_2}")
+a(
+    r"\text{A}: f(x) = (x_1-x_2)^2 + x_2^2",
+    r"\text{B}: f(x) = x_1^2 + x_2^2+x_3^2",
+    r"\text{C}: f(x) = e^{x_1}+e^{x_2}"
+)
+
 x1, x2, x3 = sp.symbols('x1 x2 x3')
-f_A = (x1-x2)**2 + x2**2
-f_B = x1**2 + x2**2 + x3**2
-f_C = sp.exp(x1) + sp.exp(x2)
+
 doc.subsection("A")
-
 fA = (x1 - x2)**2 + x2**2
-H_A = sp.hessian(fA, (x1, x2))
-
+HA = sp.hessian(fA, (x1, x2))
 # A
-H_A_latex = sp.latex(H_A)
-eig_A = list(H_A.eigenvals().keys())
-eig_A_latex = ", ".join([sp.latex(ev) for ev in eig_A])
+HA_latex = sp.latex(HA)
+eig_A = list(HA.eigenvals().keys())
+eig_A_latex = sp.latex(sp.Matrix(eig_A))
 
 # B
-H_B = sp.hessian(f_B, (x1, x2, x3))
-H_B_latex = sp.latex(H_B)
-eig_B = list(H_B.eigenvals().keys())
-eig_B_latex = ", ".join([sp.latex(ev) for ev in eig_B])
+fB = x1**2 + x2**2 + x3**2
+HB = sp.hessian(fB, (x1, x2, x3))
+HB_latex = sp.latex(HB)
+eig_B = list(HB.eigenvals().keys())
+eig_B_latex = sp.latex(sp.Matrix(eig_B))
 
 # C
-H_C = sp.hessian(f_C, (x1, x2))
-H_C_latex = sp.latex(H_C)
-eig_C_latex = r"e^{x_1}, e^{x_2}"
+fc = sp.exp(x1) + sp.exp(x2)
+HC = sp.hessian(fc, (x1, x2))
+HC_latex = sp.latex(HC)
+eig_C = [sp.exp(x1), sp.exp(x2)]
+eig_C_latex = sp.latex(sp.Matrix(eig_C))
+
 doc.subsection("Results")
 
 # --- Table ---
@@ -195,15 +200,18 @@ t(
         ['C', 'Yes', 'Eigenvalues are positive'],
     ]
 )
-
-m(r"H_A = " + sp.latex(H_A))
-m(r"\lambda_A = " + sp.latex(sp.Matrix(eig_A)))
-
-m(r"H_B = " + sp.latex(H_B))
-m(r"\lambda_B = \begin{bmatrix} 2 \\ 2 \\ 2 \end{bmatrix}")
-
-m(r"H_C = " + sp.latex(H_C))
-m(r"\lambda_C = \begin{bmatrix} e^{x_1} \\ e^{x_2} \end{bmatrix}")
+t(['Hessian','Eigenvalues'],
+ [
+      [r''+ HA_latex, r''+ eig_A_latex],
+      [r''+ HB_latex, r''+ eig_B_latex],
+      [r''+ HC_latex, r''+ eig_C_latex]
+  ],
+)
+a(
+    r"H_A &= " + HA_latex, r"\lambda_A &= " + eig_A_latex,
+    r"H_B &= " + HB_latex, r"\lambda_B &= " + eig_B_latex,
+    r"H_C &= " + HC_latex, r"\lambda_C &= " + eig_C_latex,
+)
 
 doc.section("Problem 4")
 txt_file, tex_file, pdf_file = doc.save_all()

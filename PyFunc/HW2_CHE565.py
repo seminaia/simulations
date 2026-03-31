@@ -298,11 +298,12 @@ a(
 )
 xopt1, fopt1, iter1, funcalls1, warnflags1 = fmin(func=func,x0=5,maxfun=1000,maxiter=1000,full_output=True)
 w(f"Using the fmin method with initial guesses x0 = {x_guess}: ")
-w(f"The minimum is found to be at x* = {xopt1[0]:.6f}, :.6f}")
-w(f"The corresponding function value is f(x*) = {func(xopt1[0]):.6f}:.6f}")
+w(f"The minimum is found to be at x* = {xopt1[0]:.6f}")
+w(f"The corresponding function value is f(x*) = {func(xopt1[0]):.6f}")
+
 a(
-    rf"x^* &= {xopt1[0]:.6f},\:.6f}",
-    rf"f(x^*) &= {func(xopt1[0]):.6f},\ {func(xopt2[0]):.6f}"
+    rf"x^* &= {xopt1[0]:.6f}",
+    rf"f(x^*) &= {func(xopt1[0]):.6f}"
 )
 
 txt_file, tex_file, pdf_file = doc.save_all()

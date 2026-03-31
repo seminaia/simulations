@@ -7,12 +7,12 @@ Results are written to HW2_CHE565_results.txt and mirrored to the console.
 """
 
 from math import e
-
 import numpy as np
+import sympy as syp
 import matplotlib
 from sympy.functions.combinatorial.factorials import rf
 import matplotlib.pyplot as plt
-from scipy.optimize import minimize_scalar, minimize
+from scipy.optimize import minimize_scalar, minimize, fsolve, fmin, newton, BFGS
 from scipy.stats import t as t_dist
 import pandas as pd
 from NRroots import newton_raphson
@@ -225,7 +225,7 @@ doc.subsection("Setup")
 w("Minimize the objective function:")
 
 def func(x):
-    return 1 + 8*x + 2*x**2 - 10/3*x**3 - 1/4*x**4 + 4/5*x**5 - 1/6*x**6
+    return (1 + 8*x + 2*x**2 - 10/3*x**3 - 1/4*x**4 + 4/5*x**5 - 1/6*x**6)
 
 def dfunc(x):
     return (1 + x)**2 * (2 - x)**3
@@ -250,31 +250,60 @@ w(f"The solutions to df/dx = 0 are x* = {sol[0]}, {sol[1]}")
 w(f"The corresponding function values are f(x*) = {f_sol[0]:.2f}, {f_sol[1]:.2f}")
 doc.subsection("b.) Excel Solution")
 df = pd.read_csv("HW2_CHE565.csv")
-
 df.drop('Unnamed: 6',axis=1,inplace=True)
 
 df_A = df.iloc[:,:6].copy()
 df_B = df.iloc[:,6:].copy()
+df_A.columns = ["Iteration","x_n","f(x_n)","f'(x_n)","f''(x_n)","x_n+1"]
+df_B.columns = ["Iteration","x_n","f(x_n)","f'(x_n)","f''(x_n)","x_n+1"]
+df_A_latex = sp.latex(df_A)
+df_B_latex = sp.latex(df_B)
 headers_A = df_A.columns.tolist()
 row_A = df_A.values.tolist()
 headers_B = df_B.columns.tolist()
 row_B = df_B.values.tolist()
-w("The Excel data used for the numerical solution is shown below:")
+summary = pd.DataFrame([
+                    [5,df_A.iloc[-1]["x_n+1"], df_A.iloc[-1]["f(x_n)"]],
+                    [-5, df_B.iloc[-1]["x_n+1"], df_B.iloc[-1]["f(x_n)"]]],
+                    columns=["x0","x*","f(x*)"])
+summary_headers = summary.columns.tolist()
+summary_rows = summary.values.tolist()
+
+w("The Excel data was used to perform root-finding using the Newton-Raphson method:")
+m(rf"x_{{n+1}} = x_n - \frac{{f'(x_n)}}{{f''(x_n)}}")
 t(headers_A,row_A,alignment='c'*len(headers_A),caption="Optimization Results from Excel starting at x0=5")
 t(headers_B,row_B,alignment='c'*len(headers_B),caption="Optimization Results from Excel starting at x0=-5")
+t(summary_headers,summary_rows,alignment='c'*len(summary_headers),caption="Summary of Optimization Results from Excel")
 
+doc.subsection("c.) Numerical Solution Using fsolve")
 x_guess = [-5,5]
 roots = fsolve(func=dfunc,x0=x_guess)
 x1_min = roots[0]
 x2_min = roots[1]
+w(f"Using fsolve with initial guesses x0 = {x_guess}: ")
+w(f"The roots of df/dx are found to be x* = {x1_min:.6f}, {x2_min:.6f}")
+w(f"The corresponding optimum function values are f(x*) = {func(x1_min):.6f}, {func(x2_min):.6f}")
 a(
-    r"x^* &= -1, 2",
-    rf"f(x^*) &= {func(x1_min):.2f},\ {func(x2_min):.2f}"
+    rf"x^* &= {x1_min:.6f},\ {x2_min:.6f}",
+    rf"f(x^*) &= {func(x1_min):.6f},\ {func(x2_min):.6f}"
 )
 
-w(f"The roots of df/dx are at x* = {x1_min:.2f} with multiplicity 2, {x2_min:.2f} with multiplicity 3")
-w(f"The minimum value of the function is f(x*) = {func(x1_min):.2f}, {func(x2_min):.2f}")
-
+roots_newt = newton(dfunc,x_guess,maxiter=1000)
+w(f"Using the Newton-Raphson method with initial guesses x0 = {x_guess}: ")
+w(f"The roots of df/dx are found to be x* = {roots_newt[0]:.6f}, {roots_newt[1]:.6f}")
+w(f"The corresponding optimum function values are f(x*) = {func(roots_newt[0]):.6f}, {func(roots_newt[1]):.6f}")
+a(
+    rf"x^* &= {roots_newt[0]:.6f},\ {roots_newt[1]:.6f}",
+    rf"f(x^*) &= {func(roots_newt[0]):.6f},\ {func(roots_newt[1]):.6f}"
+)
+xopt1, fopt1, iter1, funcalls1, warnflags1 = fmin(func=func,x0=5,maxfun=1000,maxiter=1000,full_output=True)
+w(f"Using the fmin method with initial guesses x0 = {x_guess}: ")
+w(f"The minimum is found to be at x* = {xopt1[0]:.6f}, :.6f}")
+w(f"The corresponding function value is f(x*) = {func(xopt1[0]):.6f}:.6f}")
+a(
+    rf"x^* &= {xopt1[0]:.6f},\:.6f}",
+    rf"f(x^*) &= {func(xopt1[0]):.6f},\ {func(xopt2[0]):.6f}"
+)
 
 txt_file, tex_file, pdf_file = doc.save_all()
 

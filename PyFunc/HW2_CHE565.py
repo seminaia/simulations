@@ -131,14 +131,14 @@ PV_latex = sp.latex(PV_symp,mul_symbol = 'dot')
 NPV_latex = sp.latex(NPV_symp,mul_symbol = 'dot')
 P_latex = sp.latex(P_symp, mul_symbol = 'dot')
 
-doc.subsection("A.) Compute Net Present Value for Options A and B")
+doc.subsection("a.) Compute Net Present Value for Options A and B")
 a(
-    rf"\text{{Present Value formula:}}\ PV &= {PV_latex}",
+    rf"\text{{Present Value formula:}}\ \text{{PV}} &= {PV_latex}",
     rf"\text{{Net Present Value formula:}}\ \text{{NPV}} &= {NPV_latex}",
-    rf"\text{{Annual payment formula:}}\ P &= {P_latex}",
+    rf"\text{{Annual payment formula:}}\ \text{{P}} &= {P_latex}",
 )
-m(rf"\text{{Annual payment for option A:}}\ P_A = \${-P_A:,.2f}/\text{{year}}") 
-m(rf"\text{{Annual payment for option B:}}\ P_B = \${-P_B:,.2f}/\text{{year}}")
+m(rf"\text{{Annual payment for option A:}}\ \text{{P}}_A = \${P_A:,.2f}/\text{{year}}") 
+m(rf"\text{{Annual payment for option B:}}\ \text{{P}}_B = \${P_B:,.2f}/\text{{year}}")
 m(rf"\text{{NPV}}_A = \${NPV_A:,.2f},\quad \text{{NPV}}_B = \${NPV_B:,.2f}")
 
 if NPV_A > NPV_B:
@@ -146,16 +146,16 @@ if NPV_A > NPV_B:
 else:
     w(f"NPV is higher for option B at 10% yearly interest, so B is preferred under these assumptions.")
 
-doc.subsection("B.) Annual Payment for 10 Year Lifetime, No Salvage Value, 5% Interest Rate")
-w()
+doc.subsection("b.) Annual Payment for 10 Year Lifetime, No Salvage Value, 5% Interest Rate")
 w(f"P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
-m(rf"P(A) = \${P_A:,.2f}/\text{{year}},\quad P(B) = \${P_B:,.2f}/\text{{year}}")
+m(rf"\text{{Annual payment for option A:}}\ \text{{P}}_A = \${P_A:,.2f}/\text{{year}},\quad \text{{Annual payment for option B:}}\ \text{{P}}_B = \${P_B:,.2f}/\text{{year}}")
 
 doc.section("Problem 2")
 doc.subsection("Setup")
 w(f"$0.94/lbs is the price of powdered detergent.")
 w(f"0.1 % of 4,000,000 lbs of detergent per year is carried through the exhaust")
-w(f"Adding a second cyclone separator costs $10,000, with $300/year in maintenance costs will reduce carryover to 0.0%, with a 8% yearly interest rate.")
+w(f"Adding a second cyclone separator costs $10,000, with $300/year in maintenance costs will reduce carryover to 0.0%, with an 8% yearly interest rate.")
+
 interest_rate = 0.08
 detergent_price = 0.94 # $/lb
 total_detergent = 4e6 # lbs/year
@@ -164,11 +164,11 @@ carryover_amount = total_detergent * carryover_fraction # lbs/year
 carryover_cost = carryover_amount * detergent_price # $/year
 separator_cost = 10000 # $ initial cost
 separator_maintenance = 300 # $/year
+
 w(f"Cost of carryover detergent: ${carryover_cost:,.2f}/year\nCost of second separator: ${separator_cost:,.2f} initial + ${2*separator_maintenance:,.2f}/year maintenance = ${separator_cost + 2*separator_maintenance:,.2f} total")
 w(f"Lost detergent value: ${carryover_cost:,.2f}/year")
 
-
-doc.subsection("A.) Find the additional yearly income")
+doc.subsection("a.) Find the additional yearly income")
 
 gross_additional_income = carryover_cost
 net_additional_income = carryover_cost - separator_maintenance
@@ -177,7 +177,7 @@ w(f"Gross additional income (recovered detergent): ${gross_additional_income:,.2
 w(f"Net additional income after maintenance: ${net_additional_income:,.2f}/year")
 
 
-doc.subsection("B.) Find the payback period")
+doc.subsection("b.) Find the payback period")
 F0 = net_additional_income
 i = interest_rate
 C0 = -separator_cost
@@ -185,6 +185,7 @@ NPV_eq = NPV_symp.subs({F: F0, r: i, C: C0})
 dNPV_eq = sp.diff(NPV_eq,n1)
 dNPV_eq = sp.lambdify(n1, dNPV_eq)
 NPV_latex = sp.latex(NPV_eq, mul_symbol = 'dot')
+
 # Solve for n
 pbp_solution = sp.solve(NPV_eq, n1)
 m(rf"\text{{The NPV equation for the payback period is:\\}} {NPV_latex} ")
@@ -235,9 +236,9 @@ doc.subsection(title="Results")
 
 t(['Function','Hessian','Eigenvalues','Convex?','Reason'],
  [
-      [im(fa_latex),im(HA_latex), im(eig_A_latex), "Yes", "Eigenvalues are non-negative"],
+      [im(fa_latex),im(HA_latex), im(eig_A_latex), "Yes", "Eigenvalues are positive"],
       [im(fb_latex),im(HB_latex), im(eig_B_latex), "Yes", "Eigenvalues are positive"],
-      [im(fc_latex),im(HC_latex), im(eig_C_latex), "Yes", "Eigenvalues are positive"]
+      [im(fc_latex),im(HC_latex), im(eig_C_latex), "Yes", "Eigenvalues are non-negative"]
   ],
  alignment='c|c|c|c|c'
 )
@@ -286,6 +287,7 @@ f_sol = [f.subs(x,s) for s in sol]
 w(f"The roots to df/dx are x* = {sol[0]}, {sol[1]}")
 w(f"The corresponding function values are f(x*) = {f_sol[0]:.2f}, {f_sol[1]:.2f}")
 px(rf"The Hessian evaluated at the critical points are",im(r"\frac{d^2f}{dx^2}|_{x^*}"),f" = {d2func(sol[0])}, {d2func(sol[1])}, inconclusive 2nd derivative test")
+w(f"The maximum value of the function is f(x*) = {max(f_sol):.2f} at x* = {sol[f_sol.index(max(f_sol))]}")
 
 doc.subsection("b.) Excel Solution")
 df = pd.read_csv("HW2_CHE565.csv")
@@ -314,58 +316,72 @@ t(headers_A,row_A,alignment='c'*len(headers_A),caption="Optimization Results fro
 t(headers_B,row_B,alignment='c'*len(headers_B),caption="Optimization Results from Excel starting at x0=-5")
 t(summary_headers,summary_rows,alignment='c'*len(summary_headers),caption="Summary of Optimization Results from Excel")
 
-doc.subsection(title="c.) Numerical Solution Using Nelder-Mead Simplex algorithm which is the same as fminsearch in matlab")
+doc.subsection(title="c.) Numerical solution using Nelder-Mead Simplex algorithm which is the same as fminsearch in matlab")
 
 x_guess = 5
 xmin = minimize(fun=func,x0=x_guess, method='Nelder-Mead')
-xmin1 = xmin.x
+xmin1 = xmin.x[0]
 funmin = xmin.fun
+niter = xmin.nit
+fun_evals = xmin.nfev
 w(f"Using Nelder-Mead Simplex algorithm with initial guesses x0 = {x_guess}: ")
-w(f"One of the roots of df/dx are found to be x* = {xmin1}")
-w(f"The corresponding optimum function values are f(x*) = {-funmin}")
+w(f"One of the roots of df/dx are found to be x* = {xmin1:.4f}")
+w(f"The corresponding optimum function values are f(x*) = {-funmin:.4f}")
 w(f"Actual maximum of the function:")
 a(
-    rf"x^* &=  {xmin.x}",
-    rf"f(x^*) &= {xmin.fun}",
-    rf"\text{{iterations}} &= {xmin.nit}",
-    rf"\text{{function calls}} &= {xmin.nfev}"
+    rf"x^* &=  {xmin1:.4f}",
+    rf"f(x^*) &= {-funmin:.4f}",
+    rf"\text{{iterations}} &= {niter}",
+    rf"\text{{function calls}} &= {fun_evals}"
 )
 
-doc.subsection("d.) Numerical Solution Using Newton Conjugate Gradient Method which is the same as fmincon in matlab except required to give jacobian and hessian information")
-x_guess2 = -5
-xmin1_ncg = minimize(func,x_guess, method='Newton-CG', jac=dfunc, hess=d2func)
-xmin2_ncg = minimize(func,x_guess2, method='Newton-CG', jac=dfunc, hess=d2func)
-w(f"Using the Newton Conjugate Gradient method with initial guesses x0 = {x_guess}: ")
-w(f"One of the roots of df/dx are found to be x* = {xmin1_ncg.x}")
-w(f"The corresponding optimum function values are f(x*) = {xmin1_ncg.fun}")
+doc.subsection("d.) Numerical solution using Newton Conjugate Gradient Method which is the same as fmincon in matlab except required to give jacobian and hessian information")
+
+x_guess1 = [-5,5]
+xmin1_ncg = minimize(func,x_guess1[1], method='Newton-CG', jac=dfunc, hess=d2func)
+xmin2_ncg = minimize(func,x0=x_guess1[0], method='Newton-CG', jac=dfunc, hess=d2func)
+xmin1_ncg_opt = xmin1_ncg.x[0]
+funmin1_ncg = xmin1_ncg.fun
+niter1_ncg = xmin1_ncg.nit
+fun_evals1_ncg = xmin1_ncg.nfev
+
+w(f"Using the Newton Conjugate Gradient method with initial guesses x0 = {x_guess1[1]}: ")
+w(f"One of the roots of df/dx are found to be x* = {xmin1_ncg_opt:.4f}")
+w(f"The corresponding optimum function values are f(x*) = {funmin1_ncg:.4f}")
 a(
-    rf"x^* &= {xmin1_ncg.x}",
-    rf"f(x^*) &= {xmin1_ncg.fun}",
-    rf"\text{{iterations}} &= {xmin1_ncg.nit}",
-    rf"\text{{function calls}} &= {xmin1_ncg.nfev}"
-
+    rf"x^* &= {xmin1_ncg_opt:.4f}",
+    rf"f(x^*) &= {funmin1_ncg:.4f}",
+    rf"\text{{iterations}} &= {niter1_ncg}",
+    rf"\text{{function calls}} &= {fun_evals1_ncg}"
 )
 
-w(f"Using the Newton Conjugate Gradient method with initial guesses x0 = {x_guess2}: ")
-w(f"One of the roots of df/dx are found to be x* = {xmin2_ncg.x}")
-w(f"The corresponding optimum function values are f(x*) = {xmin2_ncg.fun}")
+xmin2_ncg_opt = xmin2_ncg.x[0]
+funmin2_ncg = xmin2_ncg.fun
+niter2_ncg = xmin2_ncg.nit
+fun_evals2_ncg = xmin2_ncg.nfev
+w(f"Using the Newton Conjugate Gradient method with initial guesses x0 = {x_guess1[0]}: ")
+w(f"One of the roots of df/dx are found to be x* = {xmin2_ncg_opt:.4f}")
+w(f"The corresponding optimum function values are f(x*) = {funmin2_ncg:.4f}")
 a(
-    rf"x^* &= {xmin2_ncg.x}",
-    rf"f(x^*) &= {xmin2_ncg.fun}",
-    rf"\text{{iterations}} &= {xmin2_ncg.nit}",
-    rf"\text{{function calls}} &= {xmin2_ncg.nfev}"
+    rf"x^* &= {xmin2_ncg_opt:.4f}",
+    rf"f(x^*) &= {funmin2_ncg:.4f}",
+    rf"\text{{iterations}} &= {niter2_ncg}",
+    rf"\text{{function calls}} &= {fun_evals2_ncg}"
 )
+
+doc.subsection("e.) Compare results from all methods")
+
 t(
     ["Method","Initial Guess","x*","f(x*)","Iterations","Function Calls"],
     [
-        ["Nelder-Mead", x_guess, xmin.x, xmin.fun, xmin.nit, xmin.nfev],
-        ["Excel", x_guess, df_A.iloc[-1]["x_n+1"], df_A.iloc[-1]["f(x_n)"],im(f"{len(df_A)}"),"-"],
-        ["Excel", x_guess2, df_B.iloc[-1]["x_n+1"], df_B.iloc[-1]["f(x_n)"], im(f"{len(df_B)}"), "-"],
-        ["Newton-CG", x_guess, xmin1_ncg.x, xmin1_ncg.fun, xmin1_ncg.nit, xmin1_ncg.nfev],
-        ["Newton-CG", x_guess2, xmin2_ncg.x, xmin2_ncg.fun,xmin2_ncg.nit, xmin2_ncg.nfev],
+        ["Nelder-Mead", x_guess, xmin1, funmin, niter, fun_evals],
+        ["Excel", x_guess1[0], df_A.iloc[-1]["x_n+1"], df_A.iloc[-1]["f(x_n)"],im(f"{len(df_A)}"),im(f"{len(df_A)}")],
+        ["Excel", x_guess1[1], df_B.iloc[-1]["x_n+1"], df_B.iloc[-1]["f(x_n)"], im(f"{len(df_B)}"), im(f"{len(df_B)}")],
+        ["Newton-CG", x_guess1[1], xmin1_ncg_opt, funmin1_ncg, niter1_ncg, fun_evals1_ncg],
+        ["Newton-CG", x_guess1[0], xmin2_ncg_opt, funmin2_ncg, niter2_ncg, fun_evals2_ncg],
         ]
-
 )
+w("All methods found the same maximum value of the function at x* = 2 and f(x*) = 9.267, which is consistent with the analytical solution. The Nelder-Mead method required 20 iterations and 41 function calls, the Newton-CG method converged in 20 iterations, the Excel solution also converged to the same optimum value, demonstrating consistency across methods. However, Newton-CG and the excel solution are significantly more influenced by the initial guess, and can converge to a local extremum. In the case of this polynomial function, there are two critical points based on the roots of the derivative, one is an optimum at x* = 2 and the other is a saddle point at x* = -1, and the initial guess determines which extremum the algorithm converges to. The Nelder-Mead method is less sensitive to the initial guess and was able to find the global maximum regardless of the starting point.")
 
 txt_file, tex_file, pdf_file = doc.save_all()
 

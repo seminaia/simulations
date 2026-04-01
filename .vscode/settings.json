@@ -8,7 +8,7 @@
     },
     "files.autoSave": "onFocusChange",
     "workbench.colorTheme": "Dark Modern",
-    "editor.defaultFormatter": "James-Yu.latex-workshop",
+    "editor.defaultFormatter": "mathematic.vscode-latex",
     "editor.wordWrap": "on",
     "editor.formatOnPaste": true,
     "editor.autoIndentOnPaste": true,
@@ -26,10 +26,10 @@
     "workbench.commandPalette.preserveInput": false,
     "workbench.externalBrowser": "firefox",
     "workbench.preferredDarkColorTheme": "Dark Modern",
-    "workbench.iconTheme": "vs-minimal",
+    "workbench.iconTheme": "vs-seti",
     "workbench.settings.alwaysShowAdvancedSettings": true,
-    "workbench.settings.openDefaultKeybindings": false,
-    "workbench.settings.useSplitJSON": false,
+    "workbench.settings.openDefaultKeybindings": true,
+    "workbench.settings.useSplitJSON": true,
     "screencastMode.keyboardOptions": {
         "showCommandGroups": true
     },
@@ -43,7 +43,7 @@
 
     },
     "chat.unifiedAgentsBar.enabled": false,
-    "chat.tools.terminal.sandbox.enabled": false,
+    "chat.tools.terminal.sandbox.enabled": true,
     "chat.tools.terminal.outputLocation": "terminal",
     "chat.mcp.discovery.enabled": {
         "claude-desktop": true,
@@ -754,5 +754,12 @@
     "github.copilot.chat.review.intent": true,
     "github.copilot.chat.searchSubagent.enabled": true,
     "latex-utilities.countWord.path": "usr/bin/texcount",
-    "latex-workshop.docker.image.latex": "latexmk"
+    "latex-workshop.docker.image.latex": "latexmk",
+    "files.autoSaveWhenNoErrors": true,
+    "workbench.editor.alwaysShowEditorActions": true,
+    "workbench.editor.closeOnFileDelete": true,
+    "workbench.editor.wrapTabs": true,
+    "workbench.settings.editor": "json",
+    "workbench.settings.openDefaultSettings": true,
+    "workbench.browser.openLocalhostLinks": false
 }

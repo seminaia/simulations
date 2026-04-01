@@ -17,26 +17,24 @@ PV = present value, FV = future value (annual cash flow), r = yearly interest ra
 
 n= 10 years, r = 0.10
 
-A.) Compute Net Present Value for Options A and B
+a.) Compute Net Present Value for Options A and B
 -------------------------------------------------
 
 [ALIGN]
-\text{Present Value formula:}\ PV &= \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r}
+\text{Present Value formula:}\ \text{PV} &= \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r}
 \text{Net Present Value formula:}\ \text{NPV} &= C_{0} + \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r}
-\text{Annual payment formula:}\ P &= \frac{C_{0} \cdot r \cdot \left(r + 1\right)^{n}}{\left(r + 1\right)^{n} - 1}
-[MATH] \text{Annual payment for option A:}\ P_A = \$-492,117.38/\text{year}
-[MATH] \text{Annual payment for option B:}\ P_B = \$-647,522.87/\text{year}
+\text{Annual payment formula:}\ \text{P} &= \frac{C_{0} \cdot r \cdot \left(r + 1\right)^{n}}{\left(r + 1\right)^{n} - 1}
+[MATH] \text{Annual payment for option A:}\ \text{P}_A = \$492,117.38/\text{year}
+[MATH] \text{Annual payment for option B:}\ \text{P}_B = \$647,522.87/\text{year}
 [MATH] \text{NPV}_A = \$2,959,023.82,\quad \text{NPV}_B = \$3,663,839.62
 NPV is higher for option B at 10% yearly interest, so B is preferred under these assumptions.
 
-B.) Annual Payment for 10 Year Lifetime, No Salvage Value, 5% Interest Rate
+b.) Annual Payment for 10 Year Lifetime, No Salvage Value, 5% Interest Rate
 ---------------------------------------------------------------------------
-
-
 
 P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years
 
-[MATH] P(A) = \$492,117.38/\text{year},\quad P(B) = \$647,522.87/\text{year}
+[MATH] \text{Annual payment for option A:}\ \text{P}_A = \$492,117.38/\text{year},\quad \text{Annual payment for option B:}\ \text{P}_B = \$647,522.87/\text{year}
 
 Problem 2
 ====================
@@ -48,21 +46,21 @@ $0.94/lbs is the price of powdered detergent.
 
 0.1 % of 4,000,000 lbs of detergent per year is carried through the exhaust
 
-Adding a second cyclone separator costs $10,000, with $300/year in maintenance costs will reduce carryover to 0.0%, with a 8% yearly interest rate.
+Adding a second cyclone separator costs $10,000, with $300/year in maintenance costs will reduce carryover to 0.0%, with an 8% yearly interest rate.
 
 Cost of carryover detergent: $3,760.00/year
 Cost of second separator: $10,000.00 initial + $600.00/year maintenance = $10,600.00 total
 
 Lost detergent value: $3,760.00/year
 
-A.) Find the additional yearly income
+a.) Find the additional yearly income
 -------------------------------------
 
 Gross additional income (recovered detergent): $3,760.00/year
 
 Net additional income after maintenance: $3,460.00/year
 
-B.) Find the payback period
+b.) Find the payback period
 ---------------------------
 
 [MATH] \text{The NPV equation for the payback period is:\\} -10000 + 43250.0 \cdot {1.08}^{- n} \cdot \left({1.08}^{n} - 1\right)
@@ -86,9 +84,9 @@ Results
 
 Function                                                              | Hessian                                                                                                 | Eigenvalues                                                                                        | Convex? | Reason                      
 ----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------+---------+-----------------------------
-InlineMathToken(latex='x_{2}^{2} + \\left(x_{1} - x_{2}\\right)^{2}') | InlineMathToken(latex='\\left[\\begin{matrix}2 & -2\\\\-2 & 4\\end{matrix}\\right]')                    | InlineMathToken(latex='\\left[\\begin{matrix}3 - \\sqrt{5}\\\\\\sqrt{5} + 3\\end{matrix}\\right]') | Yes     | Eigenvalues are non-negative
+InlineMathToken(latex='x_{2}^{2} + \\left(x_{1} - x_{2}\\right)^{2}') | InlineMathToken(latex='\\left[\\begin{matrix}2 & -2\\\\-2 & 4\\end{matrix}\\right]')                    | InlineMathToken(latex='\\left[\\begin{matrix}3 - \\sqrt{5}\\\\\\sqrt{5} + 3\\end{matrix}\\right]') | Yes     | Eigenvalues are positive    
 InlineMathToken(latex='x_{1}^{2} + x_{2}^{2} + x_{3}^{2}')            | InlineMathToken(latex='\\left[\\begin{matrix}2 & 0 & 0\\\\0 & 2 & 0\\\\0 & 0 & 2\\end{matrix}\\right]') | InlineMathToken(latex='\\left[\\begin{matrix}2\\end{matrix}\\right]')                              | Yes     | Eigenvalues are positive    
-InlineMathToken(latex='e^{x_{1}} + e^{x_{2}}')                        | InlineMathToken(latex='\\left[\\begin{matrix}e^{x_{1}} & 0\\\\0 & e^{x_{2}}\\end{matrix}\\right]')      | InlineMathToken(latex='\\left[\\begin{matrix}e^{x_{1}}\\\\e^{x_{2}}\\end{matrix}\\right]')         | Yes     | Eigenvalues are positive    
+InlineMathToken(latex='e^{x_{1}} + e^{x_{2}}')                        | InlineMathToken(latex='\\left[\\begin{matrix}e^{x_{1}} & 0\\\\0 & e^{x_{2}}\\end{matrix}\\right]')      | InlineMathToken(latex='\\left[\\begin{matrix}e^{x_{1}}\\\\e^{x_{2}}\\end{matrix}\\right]')         | Yes     | Eigenvalues are non-negative
 
 
 Problem 4
@@ -129,6 +127,8 @@ The roots to df/dx are x* = -1, 2
 The corresponding function values are f(x*) = -2.88, 9.27
 
 The Hessian evaluated at the critical points are\frac{d^2f}{dx^2}|_{x^*} = 0, 0, inconclusive 2nd derivative test
+
+The maximum value of the function is f(x*) = 9.27 at x* = 2
 
 b.) Excel Solution
 ------------------
@@ -192,51 +192,56 @@ x0      | x*      | f(x*)
 -5.0000 | -1.0000 | -2.8833
 Caption: Summary of Optimization Results from Excel
 
-c.) Numerical Solution Using Nelder-Mead Simplex algorithm which is the same as fminsearch in matlab
+c.) Numerical solution using Nelder-Mead Simplex algorithm which is the same as fminsearch in matlab
 ----------------------------------------------------------------------------------------------------
 
 Using Nelder-Mead Simplex algorithm with initial guesses x0 = 5: 
 
-One of the roots of df/dx are found to be x* = [1.99987793]
+One of the roots of df/dx are found to be x* = 1.9999
 
-The corresponding optimum function values are f(x*) = 9.26666666666667
+The corresponding optimum function values are f(x*) = 9.2667
 
 Actual maximum of the function:
 
 [ALIGN]
-x^* &=  [1.99987793]
-f(x^*) &= -9.26666666666667
+x^* &=  1.9999
+f(x^*) &= 9.2667
 \text{iterations} &= 20
 \text{function calls} &= 41
-d.) Numerical Solution Using Newton Conjugate Gradient Method which is the same as fmincon in matlab except required to give jacobian and hessian information
+d.) Numerical solution using Newton Conjugate Gradient Method which is the same as fmincon in matlab except required to give jacobian and hessian information
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Using the Newton Conjugate Gradient method with initial guesses x0 = 5: 
 
-One of the roots of df/dx are found to be x* = [2.00384098]
+One of the roots of df/dx are found to be x* = 2.0038
 
-The corresponding optimum function values are f(x*) = -9.266666666175944
+The corresponding optimum function values are f(x*) = -9.2667
 
 [ALIGN]
-x^* &= [2.00384098]
-f(x^*) &= -9.266666666175944
+x^* &= 2.0038
+f(x^*) &= -9.2667
 \text{iterations} &= 19
 \text{function calls} &= 19
 Using the Newton Conjugate Gradient method with initial guesses x0 = -5: 
 
-One of the roots of df/dx are found to be x* = [-1.00006112]
+One of the roots of df/dx are found to be x* = -1.0001
 
-The corresponding optimum function values are f(x*) = 2.883333333335388
+The corresponding optimum function values are f(x*) = 2.8833
 
 [ALIGN]
-x^* &= [-1.00006112]
-f(x^*) &= 2.883333333335388
+x^* &= -1.0001
+f(x^*) &= 2.8833
 \text{iterations} &= 20
 \text{function calls} &= 20
-Method      | Initial Guess | x*            | f(x*)   | Iterations                  | Function Calls
-------------+---------------+---------------+---------+-----------------------------+---------------
-Nelder-Mead | 5             | [1.99987793]  | -9.2667 | 20                          | 41            
-Excel       | 5             | 2.0011        | 9.2667  | InlineMathToken(latex='21') | -             
-Excel       | -5            | -1.0000       | -2.8833 | InlineMathToken(latex='21') | -             
-Newton-CG   | 5             | [2.00384098]  | -9.2667 | 19                          | 19            
-Newton-CG   | -5            | [-1.00006112] | 2.8833  | 20                          | 20
+e.) Compare results from all methods
+------------------------------------
+
+Method      | Initial Guess | x*      | f(x*)   | Iterations                  | Function Calls             
+------------+---------------+---------+---------+-----------------------------+----------------------------
+Nelder-Mead | 5             | 1.9999  | -9.2667 | 20                          | 41                         
+Excel       | -5            | 2.0011  | 9.2667  | InlineMathToken(latex='21') | InlineMathToken(latex='21')
+Excel       | 5             | -1.0000 | -2.8833 | InlineMathToken(latex='21') | InlineMathToken(latex='21')
+Newton-CG   | 5             | 2.0038  | -9.2667 | 19                          | 19                         
+Newton-CG   | -5            | -1.0001 | 2.8833  | 20                          | 20                         
+
+All methods found the same maximum value of the function at x* = 2 and f(x*) = 9.267, which is consistent with the analytical solution. The Nelder-Mead method required 20 iterations and 41 function calls, the Newton-CG method converged in 20 iterations, the Excel solution also converged to the same optimum value, demonstrating consistency across methods. However, Newton-CG and the excel solution are significantly more influenced by the initial guess, and can converge to a local extremum. In the case of this polynomial function, there are two critical points based on the roots of the derivative, one is an optimum at x* = 2 and the other is a saddle point at x* = -1, and the initial guess determines which extremum the algorithm converges to. The Nelder-Mead method is less sensitive to the initial guess and was able to find the global maximum regardless of the starting point.

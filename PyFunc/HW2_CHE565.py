@@ -73,8 +73,7 @@ def present_value(F, r, n):
     Returns:
         present value of the cash flows ($)
     """
-    pv_factor = 1/(1+r)**n
-    return F * pv_factor
+    return F * (((1+r)**n-1)/(r*(1 + r)**n) )
 
 def NPV(F,r,n, C0):
     """
@@ -160,7 +159,7 @@ m(rf"P(A) = \${P_A:,.2f}/\text{{year}},\quad P(B) = \${P_B:,.2f}/\text{{year}}")
 doc.section("Problem 2")
 doc.subsection("Setup")
 w(f"$0.94/lbs is the price of powdered detergent.")
-w(f"0.1 % of 4e6 lbs of detergent per year is carried through the exhaust")
+w(f"0.1 % of 4,000,000 lbs of detergent per year is carried through the exhaust")
 w(f"Adding a second cyclone separator costs $10,000, with $300/year in maintenance costs will reduce carryover to 0.0%, with a 8% yearly interest rate.")
 interest_rate = 0.08
 detergent_price = 0.94 # $/lb
@@ -185,8 +184,7 @@ separator_maintenance = 300
 
 w(f"Lost detergent value: ${carryover_cost:,.2f}/year")
 
-# Part (a)
-w("a.) Find the additional yearly income")
+doc.subsection("A.) Find the additional yearly income")
 
 gross_additional_income = carryover_cost
 net_additional_income = carryover_cost - separator_maintenance
@@ -194,20 +192,19 @@ net_additional_income = carryover_cost - separator_maintenance
 w(f"Gross additional income (recovered detergent): ${gross_additional_income:,.2f}/year")
 w(f"Net additional income after maintenance: ${net_additional_income:,.2f}/year")
 
-# Part (b)
-w("b.) Find the payback period")
+
+doc.subsection("B.) Find the payback period")
 NPV_eq = NPV(F=net_additional_income, r=interest_rate, n=n1, C0=-separator_cost)
 dNPV_eq = sp.diff(NPV_eq,n1)
 dNPV_eq = sp.lambdify(n1, dNPV_eq)
-NPV_latex = sp.latex(NPV_eq)
+NPV_latex = sp.latex(NPV_eq, mul_symbol = 'dot')
 print(NPV_eq)
 print(NPV_latex)
 
 # Solve for n
-n_guess = 3
-n_solution = sp.solve(NPV_eq, n)
-m(rf"\text{{The NPV equation for the payback period is:}} {NPV_latex}")
-w(f"Discounted payback period (NPV = 0): {n_solution} years")
+pbp_solution = sp.solve(f=NPV_eq, n1)
+m(rf"\text{{The NPV equation for the payback period is:}} {NPV_latex} ")
+w(f"Discounted payback period (NPV = 0): {pbp_solution[0]:.2f} years")
 doc.section("Problem 3")
 doc.subsection("Setup")
 w("Determine if each function is convex")

@@ -115,15 +115,15 @@ C0_A = -3.8e6
 C0_B = -5.0e6
 P0_A = -C0_A
 P0_B = -C0_B
-F, C0, n1, r= sp.symbols(names='F C_0 n r')
+F, C, n1, r= sp.symbols(names='F C_0 n r')
 
 NPV_A = NPV(F_A, i_npv, n, C0_A)
 NPV_B = NPV(F_B, i_npv, n, C0_B)
 P_A = annual_payment(P0_A, i_loan, n)
 P_B = annual_payment(P0_B, i_loan, n)
 PV_symp = sp.sympify(present_value(F, r, n=n1))
-NPV_symp = sp.sympify(NPV(F, r, n=n1, C0=C0),)
-P_symp = sp.sympify(annual_payment(C0, r, n=n1))
+NPV_symp = sp.sympify(NPV(F, r, n=n1, C0=C),)
+P_symp = sp.sympify(annual_payment(C, r, n=n1))
 print(PV_symp)
 print(NPV_symp)
 print(P_symp)
@@ -170,19 +170,8 @@ carryover_cost = carryover_amount * detergent_price # $/year
 separator_cost = 10000 # $ initial cost
 separator_maintenance = 300 # $/year
 w(f"Cost of carryover detergent: ${carryover_cost:,.2f}/year\nCost of second separator: ${separator_cost:,.2f} initial + ${2*separator_maintenance:,.2f}/year maintenance = ${separator_cost + 2*separator_maintenance:,.2f} total")
-
-interest_rate = 0.08
-detergent_price = 0.94  # $/lb
-total_detergent = 4e6   # lb/year
-carryover_fraction = 0.001
-
-carryover_amount = total_detergent * carryover_fraction
-carryover_cost = carryover_amount * detergent_price  # lost value
-
-separator_cost = 10000
-separator_maintenance = 300
-
 w(f"Lost detergent value: ${carryover_cost:,.2f}/year")
+
 
 doc.subsection("A.) Find the additional yearly income")
 
@@ -194,7 +183,11 @@ w(f"Net additional income after maintenance: ${net_additional_income:,.2f}/year"
 
 
 doc.subsection("B.) Find the payback period")
-NPV_eq = NPV(F=net_additional_income, r=interest_rate, n=n1, C0=-separator_cost)
+F0 = net_additional_income
+i = interest_rate
+C0 = -separator_cost
+
+NPV_eq = NPV(F=F0, r=i, n=n1, C0=C0)
 dNPV_eq = sp.diff(NPV_eq,n1)
 dNPV_eq = sp.lambdify(n1, dNPV_eq)
 NPV_latex = sp.latex(NPV_eq, mul_symbol = 'dot')
@@ -202,13 +195,13 @@ print(NPV_eq)
 print(NPV_latex)
 
 # Solve for n
-pbp_solution = sp.solve(f=NPV_eq, n1)
+pbp_solution = sp.solve(NPV_eq, n1)
 m(rf"\text{{The NPV equation for the payback period is:}} {NPV_latex} ")
 w(f"Discounted payback period (NPV = 0): {pbp_solution[0]:.2f} years")
+
 doc.section("Problem 3")
 doc.subsection("Setup")
 w("Determine if each function is convex")
-
 a(
     r"\text{A}: f(x) &= (x_1-x_2)^2 + x_2^2",
     r"\text{B}: f(x) &= x_1^2 + x_2^2+x_3^2",
@@ -272,7 +265,7 @@ figlog(PLOT_FILE,"Feasible Region")
 w("The feasible region is convex because it is defined by a set of linear inequalities, which form a convex set.")
 doc.section(("Problem 5"))
 doc.subsection("Setup")
-w("Minimize the objective function:")
+w("Maximize the objective function:")
     
 x = sp.symbols('x')
 f = 1 + 8*x + 2*x**2 - sp.Rational(10,3)*x**3 - sp.Rational(1,4)*x**4 + sp.Rational(4,5)*x**5 - sp.Rational(1,6)*x**6
@@ -283,7 +276,6 @@ d2f = sp.diff(df,x)
 d2func = sp.lambdify(x,-d2f)
 dfun = (1 + x)**2 * (2 - x)**3
 d2fun = sp.diff(dfun,x)
-
 m(rf"f(x) = {sp.latex(f)}")
 w(text="Given that:")
 m(rf"\frac{{df}}{{dx}}= {sp.latex(dfun)}")

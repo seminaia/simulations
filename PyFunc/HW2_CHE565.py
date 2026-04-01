@@ -8,7 +8,8 @@ Results are written to HW2_CHE565_results.txt and mirrored to the console.
 
 from math import e
 import numpy as np
-import sympy as sp 
+import sympy as sp
+from sympy import Add, Mul 
 import matplotlib
 from sympy.functions.combinatorial.factorials import rf
 import matplotlib.pyplot as plt
@@ -115,19 +116,32 @@ C0_A = -3.8e6
 C0_B = -5.0e6
 P0_A = -C0_A
 P0_B = -C0_B
+  File "/home/soki/simulations/PyFunc/HW2_CHE565.py", line 127, in <module>
+    PV_sym =  F*sp.Rational(((1+r)**n1-1),(r*(1 + r)**n1))
+                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/site-packages/sympy/core/cache.py", line 72, in wrapper
+    retval = cfunc(*args, **kwargs)
+  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/site-packages/sympy/core/numbers.py", line 1348, in __new__
+    p = Rational(p)
+  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/site-packages/sympy/core/cache.py", line 72, in wrapper
+    retval = cfunc(*args, **kwargs)
+  File "/home/soki/miniconda3/envs/myGPAWenv/lib/python3.14/site-packages/sympy/core/numbers.py", line 1341, in __new__
+    raise TypeError('invalid input: %s' % p)
+TypeError: invalid input: (r + 1)**n - 1
 F, C, n1, r= sp.symbols(names='F C_0 n r')
 
 NPV_A = NPV(F_A, i_npv, n, C0_A)
 NPV_B = NPV(F_B, i_npv, n, C0_B)
 P_A = annual_payment(P0_A, i_loan, n)
 P_B = annual_payment(P0_B, i_loan, n)
-PV_symp = sp.sympify(present_value(F, r, n=n1))
-NPV_symp = sp.sympify(NPV(F, r, n=n1, C0=C),)
-P_symp = sp.sympify(annual_payment(C, r, n=n1))
 
-PV_latex = sp.latex(PV_symp,mul_symbol = 'dot')
-NPV_latex = sp.latex(NPV_symp,mul_symbol = 'dot')
-P_latex = sp.latex(P_symp, mul_symbol = 'dot')
+PV_sym =  F*sp.Rational(((1+r)**n1-1),(r*(1 + r)**n1))
+NPV_sym = C + PV_sym
+P_sym = C*sp.Rational((r*(1 + r)**n1), ((1+r)**n1-1))
+
+PV_latex = sp.latex(PV_sym,mul_symbol = 'dot')
+NPV_latex = sp.latex(NPV_sym,mul_symbol = 'dot')
+P_latex = sp.latex(P_sym, mul_symbol = 'dot')
 
 doc.subsection("A.) Compute Net Present Value for Options A and B")
 a(
@@ -180,17 +194,17 @@ F0 = net_additional_income
 i = interest_rate
 C0 = -separator_cost
 print(f"Net additional income: ${F0:,.2f}/year\nInterest rate: {i*100:.2f}%\nInitial cost: ${-C0:,.2f}")
-NPV_lam = sp.lambdify(n1, NPV_symp)
-dNPV_eq = sp.diff(NPV_symp,n1)
+NPV_eq = sp.lambdify(NPV_sym,[n1, F, r, C])
+dNPV_eq = sp.diff(NPV_eq,n1)
 dNPV_eq = sp.lambdify(n1, dNPV_eq)
-NPV_latex = sp.latex(NPV_symp, mul_symbol = 'dot')
-print(NPV_lam)
-print(NPV_symp)
+NPV_latex = sp.latex(NPV_eq, mul_symbol = 'dot')
+
+print(NPV_eq)
 print(NPV_latex)
 
 # Solve for n
-pbp_solution = sp.solve(NPV_symp, n1)
-m(rf"\text{{The NPV equation for the payback period is:}} {NPV_symp} ")
+pbp_solution = sp.solve(NPV_eq, n1)
+m(rf"\text{{The NPV equation for the payback period is:\\}} {NPV_latex} ")
 w(f"Discounted payback period (NPV = 0): {pbp_solution} years")
 
 doc.section("Problem 3")

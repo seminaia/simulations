@@ -180,24 +180,18 @@ F0 = net_additional_income
 i = interest_rate
 C0 = -separator_cost
 print(f"Net additional income: ${F0:,.2f}/year\nInterest rate: {i*100:.2f}%\nInitial cost: ${-C0:,.2f}")
-NPV_eq = NPV(F=F0, r=i, n=n1, C0=C0)
-dNPV_eq = sp.diff(f=NPV_eq,n1)
+NPV_lam = sp.lambdify(n1, NPV_symp)
+dNPV_eq = sp.diff(NPV_symp,n1)
 dNPV_eq = sp.lambdify(n1, dNPV_eq)
-NPV_latex = sp.latex(NPV_eq, mul_symbol = 'dot')
-print(NPV_eq)
+NPV_latex = sp.latex(NPV_symp, mul_symbol = 'dot')
+print(NPV_lam)
+print(NPV_symp)
 print(NPV_latex)
-Net additional income: $3,460.00/year
-Interest rate: 8.00%
-Initial cost: $10,000.00
--10000 + 43250.0*(1.08**n - 1)/1.08**n
--10000 + 43250.0 \cdot {1.08}^{- n} \cdot \left({1.08}^{n} - 1\right)
-Wrote text log: HW2_CHE565.txt
-Wrote LaTeX source: HW2_CHE565.tex
-Wrote PDF: HW2_CHE565.pdf
+
 # Solve for n
-pbp_solution = sp.solve(NPV_eq, n1)
-m(rf"\text{{The NPV equation for the payback period is:}} {NPV_latex} ")
-w(f"Discounted payback period (NPV = 0): {pbp_solution[0]:.2f} years")
+pbp_solution = sp.solve(NPV_symp, n1)
+m(rf"\text{{The NPV equation for the payback period is:}} {NPV_symp} ")
+w(f"Discounted payback period (NPV = 0): {pbp_solution} years")
 
 doc.section("Problem 3")
 doc.subsection("Setup")

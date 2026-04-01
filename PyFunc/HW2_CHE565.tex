@@ -1,0 +1,385 @@
+\documentclass{article}%
+\usepackage[T1]{fontenc}%
+\usepackage[utf8]{inputenc}%
+\usepackage{lmodern}%
+\usepackage{textcomp}%
+\usepackage{lastpage}%
+\usepackage{geometry}%
+\geometry{margin=1in}%
+\usepackage{graphicx}%
+%
+\usepackage{amsmath}%
+\usepackage{amssymb}%
+\usepackage{booktabs}%
+\usepackage{longtable}%
+\usepackage{float}%
+\usepackage{caption}%
+\usepackage{hyperref}%
+\title{CHE 565 {-}{-} Homework 2}%
+\author{Soki Sem}%
+\date{\today}%
+%
+\begin{document}%
+\normalsize%
+\setlength{\parindent}{0pt}%
+\setlength{\parskip}{0.6em}%
+\maketitle%
+\section*{Problem 1}%
+\label{sec:Problem1}%
+\subsection*{Setup}%
+\label{subsec:Setup}%
+\begin{align*}%
+\text{Option A:}\quad C_{0,A} &= \$3{,}800{,}000 \\%
+\quad\quad\quad\;\;\; FV_A &= \$1{,}100{,}000/\text{yr} \\%
+\text{Option B:}\quad C_{0,B} &= \$5{,}000{,}000 \\%
+\quad\quad\quad\;\;\; FV_B &= \$1{,}410{,}000/\text{yr}%
+\end{align*}%
+PV = present value, FV = future value (annual cash flow), r = yearly interest rate, n = number of years%
+\par%
+n= 10 years, r = 0.10%
+\par
+
+%
+\subsection*{A.) Compute Net Present Value for Options A and B}%
+\label{subsec:A.)ComputeNetPresentValueforOptionsAandB}%
+\begin{align*}%
+\text{Present Value formula:}\ PV &= \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r} \\%
+\text{Net Present Value formula:}\ \text{NPV} &= C_{0} + \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r} \\%
+\text{Annual payment formula:}\ P &= \frac{C_{0} \cdot r \cdot \left(r + 1\right)^{n}}{\left(r + 1\right)^{n} - 1}%
+\end{align*}%
+\[%
+\text{Annual payment for option A:}\ P_A = \$-492,117.38/\text{year}%
+\]%
+\[%
+\text{Annual payment for option B:}\ P_B = \$-647,522.87/\text{year}%
+\]%
+\[%
+\text{NPV}_A = \$2,959,023.82,\quad \text{NPV}_B = \$3,663,839.62%
+\]%
+NPV is higher for option B at 10\% yearly interest, so B is preferred under these assumptions.%
+\par
+
+%
+\subsection*{B.) Annual Payment for 10 Year Lifetime, No Salvage Value, 5\% Interest Rate}%
+\label{subsec:B.)AnnualPaymentfor10YearLifetime,NoSalvageValue,5InterestRate}%
+\par%
+P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years%
+\par%
+\[%
+P(A) = \$492,117.38/\text{year},\quad P(B) = \$647,522.87/\text{year}%
+\]
+
+%
+\section*{Problem 2}%
+\label{sec:Problem2}%
+\subsection*{Setup}%
+\label{subsec:Setup}%
+\$0.94/lbs is the price of powdered detergent.%
+\par%
+0.1 \% of 4,000,000 lbs of detergent per year is carried through the exhaust%
+\par%
+Adding a second cyclone separator costs \$10,000, with \$300/year in maintenance costs will reduce carryover to 0.0\%, with a 8\% yearly interest rate.%
+\par%
+Cost of carryover detergent: \$3,760.00/year\newline%
+Cost of second separator: \$10,000.00 initial + \$600.00/year maintenance = \$10,600.00 total%
+\par%
+Lost detergent value: \$3,760.00/year%
+\par
+
+%
+\subsection*{A.) Find the additional yearly income}%
+\label{subsec:A.)Findtheadditionalyearlyincome}%
+Gross additional income (recovered detergent): \$3,760.00/year%
+\par%
+Net additional income after maintenance: \$3,460.00/year%
+\par
+
+%
+\subsection*{B.) Find the payback period}%
+\label{subsec:B.)Findthepaybackperiod}%
+\[%
+\text{The NPV equation for the payback period is:\\} -10000 + 43250.0 \cdot {1.08}^{- n} \cdot \left({1.08}^{n} - 1\right)%
+\]%
+Discounted payback period (NPV = 0): 3.42 years%
+\par
+
+%
+\section*{Problem 3}%
+\label{sec:Problem3}%
+\subsection*{Setup}%
+\label{subsec:Setup}%
+Determine if each function is convex%
+\par%
+\begin{align*}%
+\text{A}: f(x) &= (x_1-x_2)^2 + x_2^2 \\%
+\text{B}: f(x) &= x_1^2 + x_2^2+x_3^2 \\%
+\text{C}: f(x) &= e^{x_1}+e^{x_2}%
+\end{align*}
+
+%
+\subsection*{Results}%
+\label{subsec:Results}%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{c|c|c|c|c}%
+\hline%
+Function&Hessian&Eigenvalues&Convex?&Reason\\%
+\hline%
+$x_{2}^{2} + \left(x_{1} - x_{2}\right)^{2}$&$\left[\begin{matrix}2 & -2\\-2 & 4\end{matrix}\right]$&$\left[\begin{matrix}3 - \sqrt{5}\\\sqrt{5} + 3\end{matrix}\right]$&Yes&Eigenvalues are non{-}negative\\%
+\hline%
+$x_{1}^{2} + x_{2}^{2} + x_{3}^{2}$&$\left[\begin{matrix}2 & 0 & 0\\0 & 2 & 0\\0 & 0 & 2\end{matrix}\right]$&$\left[\begin{matrix}2\end{matrix}\right]$&Yes&Eigenvalues are positive\\%
+\hline%
+$e^{x_{1}} + e^{x_{2}}$&$\left[\begin{matrix}e^{x_{1}} & 0\\0 & e^{x_{2}}\end{matrix}\right]$&$\left[\begin{matrix}e^{x_{1}}\\e^{x_{2}}\end{matrix}\right]$&Yes&Eigenvalues are positive\\%
+\hline%
+\end{tabular}%
+\end{table}
+
+%
+\section*{Problem 4}%
+\label{sec:Problem4}%
+Is the region defined by the constraints convex?%
+\par%
+The feasible region is defined by the following constraints: %
+$x_{2} \geq 0 \wedge x_{2} \geq 1 - x_{1} \wedge x_{1} \leq 2 \wedge x_{2} \leq \frac{x_{1}}{2} + 1$%
+\par%
+
+
+\begin{figure}[H]%
+\centering%
+\includegraphics[width=0.95\textwidth]{HW2_CHE565_plot.png}%
+\caption{Feasible Region}%
+\end{figure}
+
+%
+The feasible region is convex because it is defined by a set of linear inequalities, which form a convex set.%
+\par
+
+%
+\section*{Problem 5}%
+\label{sec:Problem5}%
+\subsection*{Setup}%
+\label{subsec:Setup}%
+Maximize the objective function:%
+\par%
+\[%
+f(x) = - \frac{x^{6}}{6} + \frac{4 x^{5}}{5} - \frac{x^{4}}{4} - \frac{10 x^{3}}{3} + 2 x^{2} + 8 x + 1%
+\]%
+Given that:%
+\par%
+\[%
+\frac{df}{dx}= \left(2 - x\right)^{3} \left(x + 1\right)^{2}%
+\]%
+\[%
+\frac{d^2f}{dx^2}= \left(2 - x\right)^{3} \left(2 x + 2\right) - 3 \left(2 - x\right)^{2} \left(x + 1\right)^{2}%
+\]
+
+%
+\subsection*{a.) Analytical Solution}%
+\label{subsec:a.)AnalyticalSolution}%
+Expanded form:%
+\par%
+\[%
+\frac{df}{dx} = - x^{5} + 4 x^{4} - x^{3} - 10 x^{2} + 4 x + 8%
+\]%
+\[%
+\frac{d^2f}{dx^2} = - 5 x^{4} + 16 x^{3} - 3 x^{2} - 20 x + 4%
+\]%
+The roots to df/dx are x* = {-}1, 2%
+\par%
+The corresponding function values are f(x*) = {-}2.88, 9.27%
+\par%
+The Hessian evaluated at the critical points are%
+$\frac{d^2f}{dx^2}|_{x^*}$%
+ = 0, 0, inconclusive 2nd derivative test%
+\par
+
+%
+\subsection*{b.) Excel Solution}%
+\label{subsec:b.)ExcelSolution}%
+The Excel data was used to perform root{-}finding using the Newton{-}Raphson method:%
+\par%
+\[%
+x_{n+1} = x_n - \frac{f'(x_n)}{f''(x_n)}%
+\]%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{cccccc}%
+\hline%
+Iteration&x\_n&f(x\_n)&f'(x\_n)&f''(x\_n)&x\_n+1\\%
+\hline%
+0.0000&5.0000&{-}586.0833&{-}972.0000&{-}1296.0000&4.2500\\%
+\hline%
+1.0000&4.2500&{-}139.2208&{-}313.9541&{-}538.2070&3.6667\\%
+\hline%
+2.0000&3.6667&{-}27.0988&{-}100.8230&{-}224.6914&3.2179\\%
+\hline%
+3.0000&3.2179&0.5555&{-}32.1432&{-}94.4150&2.8775\\%
+\hline%
+4.0000&2.8775&7.2322&{-}10.1590&{-}39.9713&2.6233\\%
+\hline%
+5.0000&2.6233&8.8043&{-}3.1799&{-}17.0590&2.4369\\%
+\hline%
+6.0000&2.4369&9.1644&{-}0.9854&{-}7.3392&2.3027\\%
+\hline%
+7.0000&2.3027&9.2446&{-}0.3025&{-}3.1810&2.2076\\%
+\hline%
+8.0000&2.2076&9.2620&{-}0.0920&{-}1.3876&2.1413\\%
+\hline%
+9.0000&2.1413&9.2657&{-}0.0278&{-}0.6084&2.0955\\%
+\hline%
+10.0000&2.0955&9.2665&{-}0.0084&{-}0.2678&2.0643\\%
+\hline%
+11.0000&2.0643&9.2666&{-}0.0025&{-}0.1182&2.0432\\%
+\hline%
+12.0000&2.0432&9.2667&{-}0.0007&{-}0.0523&2.0289\\%
+\hline%
+13.0000&2.0289&9.2667&{-}0.0002&{-}0.0232&2.0193\\%
+\hline%
+14.0000&2.0193&9.2667&{-}0.0001&{-}0.0103&2.0129\\%
+\hline%
+15.0000&2.0129&9.2667&{-}0.0000&{-}0.0046&2.0086\\%
+\hline%
+16.0000&2.0086&9.2667&{-}0.0000&{-}0.0020&2.0058\\%
+\hline%
+17.0000&2.0058&9.2667&{-}0.0000&{-}0.0009&2.0038\\%
+\hline%
+18.0000&2.0038&9.2667&{-}0.0000&{-}0.0004&2.0026\\%
+\hline%
+19.0000&2.0026&9.2667&{-}0.0000&{-}0.0002&2.0017\\%
+\hline%
+20.0000&2.0017&9.2667&{-}0.0000&{-}0.0001&2.0011\\%
+\hline%
+\end{tabular}%
+\caption{Optimization Results from Excel starting at x0=5}%
+\end{table}%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{cccccc}%
+\hline%
+Iteration&x\_n&f(x\_n)&f'(x\_n)&f''(x\_n)&x\_n+1\\%
+\hline%
+0.0000&{-}5.0000&{-}4832.7500&5488.0000&{-}5096.0000&{-}3.9231\\%
+\hline%
+1.0000&{-}3.9231&{-}1208.5512&1775.5079&{-}2114.1044&{-}3.0832\\%
+\hline%
+2.0000&{-}3.0832&{-}295.6352&570.0315&{-}883.6738&{-}2.4382\\%
+\hline%
+3.0000&{-}2.4382&{-}71.0801&180.8132&{-}373.6709&{-}1.9543\\%
+\hline%
+4.0000&{-}1.9543&{-}17.8527&56.3066&{-}160.7261&{-}1.6040\\%
+\hline%
+5.0000&{-}1.6040&{-}5.9169&17.0747&{-}70.7559&{-}1.3626\\%
+\hline%
+6.0000&{-}1.3626&{-}3.4409&5.0003&{-}32.0380&{-}1.2066\\%
+\hline%
+7.0000&{-}1.2066&{-}2.9756&1.4068&{-}14.9373&{-}1.1124\\%
+\hline%
+8.0000&{-}1.1124&{-}2.8972&0.3808&{-}7.1437&{-}1.0591\\%
+\hline%
+9.0000&{-}1.0591&{-}2.8853&0.0999&{-}3.4805&{-}1.0304\\%
+\hline%
+10.0000&{-}1.0304&{-}2.8836&0.0257&{-}1.7158&{-}1.0154\\%
+\hline%
+11.0000&{-}1.0154&{-}2.8834&0.0065&{-}0.8515&{-}1.0078\\%
+\hline%
+12.0000&{-}1.0078&{-}2.8833&0.0016&{-}0.4242&{-}1.0039\\%
+\hline%
+13.0000&{-}1.0039&{-}2.8833&0.0004&{-}0.2117&{-}1.0020\\%
+\hline%
+14.0000&{-}1.0020&{-}2.8833&0.0001&{-}0.1057&{-}1.0010\\%
+\hline%
+15.0000&{-}1.0010&{-}2.8833&0.0000&{-}0.0528&{-}1.0005\\%
+\hline%
+16.0000&{-}1.0005&{-}2.8833&0.0000&{-}0.0264&{-}1.0002\\%
+\hline%
+17.0000&{-}1.0002&{-}2.8833&0.0000&{-}0.0132&{-}1.0001\\%
+\hline%
+18.0000&{-}1.0001&{-}2.8833&0.0000&{-}0.0066&{-}1.0001\\%
+\hline%
+19.0000&{-}1.0001&{-}2.8833&0.0000&{-}0.0033&{-}1.0000\\%
+\hline%
+20.0000&{-}1.0000&{-}2.8833&0.0000&{-}0.0017&{-}1.0000\\%
+\hline%
+\end{tabular}%
+\caption{Optimization Results from Excel starting at x0={-}5}%
+\end{table}%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{ccc}%
+\hline%
+x0&x*&f(x*)\\%
+\hline%
+5.0000&2.0011&9.2667\\%
+\hline%
+{-}5.0000&{-}1.0000&{-}2.8833\\%
+\hline%
+\end{tabular}%
+\caption{Summary of Optimization Results from Excel}%
+\end{table}
+
+%
+\subsection*{c.) Numerical Solution Using Nelder{-}Mead Simplex algorithm which is the same as fminsearch in matlab}%
+\label{subsec:c.)NumericalSolutionUsingNelder{-}MeadSimplexalgorithmwhichisthesameasfminsearchinmatlab}%
+Using Nelder{-}Mead Simplex algorithm with initial guesses x0 = 5: %
+\par%
+One of the roots of df/dx are found to be x* = {[}1.99987793{]}%
+\par%
+The corresponding optimum function values are f(x*) = 9.26666666666667%
+\par%
+Actual maximum of the function:%
+\par%
+\begin{align*}%
+x^* &=  [1.99987793] \\%
+f(x^*) &= -9.26666666666667 \\%
+\text{iterations} &= 20 \\%
+\text{function calls} &= 41%
+\end{align*}
+
+%
+\subsection*{d.) Numerical Solution Using Newton Conjugate Gradient Method which is the same as fmincon in matlab except required to give jacobian and hessian information}%
+\label{subsec:d.)NumericalSolutionUsingNewtonConjugateGradientMethodwhichisthesameasfminconinmatlabexceptrequiredtogivejacobianandhessianinformation}%
+Using the Newton Conjugate Gradient method with initial guesses x0 = 5: %
+\par%
+One of the roots of df/dx are found to be x* = {[}2.00384098{]}%
+\par%
+The corresponding optimum function values are f(x*) = {-}9.266666666175944%
+\par%
+\begin{align*}%
+x^* &= [2.00384098] \\%
+f(x^*) &= -9.266666666175944 \\%
+\text{iterations} &= 19 \\%
+\text{function calls} &= 19%
+\end{align*}%
+Using the Newton Conjugate Gradient method with initial guesses x0 = {-}5: %
+\par%
+One of the roots of df/dx are found to be x* = {[}{-}1.00006112{]}%
+\par%
+The corresponding optimum function values are f(x*) = 2.883333333335388%
+\par%
+\begin{align*}%
+x^* &= [-1.00006112] \\%
+f(x^*) &= 2.883333333335388 \\%
+\text{iterations} &= 20 \\%
+\text{function calls} &= 20%
+\end{align*}%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{cccccc}%
+\hline%
+Method&Initial Guess&x*&f(x*)&Iterations&Function Calls\\%
+\hline%
+Nelder{-}Mead&5&{[}1.99987793{]}&{-}9.2667&20&41\\%
+\hline%
+Excel&5&2.0011&9.2667&$21$&{-}\\%
+\hline%
+Excel&{-}5&{-}1.0000&{-}2.8833&$21$&{-}\\%
+\hline%
+Newton{-}CG&5&{[}2.00384098{]}&{-}9.2667&19&19\\%
+\hline%
+Newton{-}CG&{-}5&{[}{-}1.00006112{]}&2.8833&20&20\\%
+\hline%
+\end{tabular}%
+\end{table}
+
+%
+\end{document}

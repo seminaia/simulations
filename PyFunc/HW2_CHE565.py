@@ -73,7 +73,8 @@ def present_value(F, r, n):
     Returns:
         present value of the cash flows ($)
     """
-    return F * (((1+r)**n - 1) / (r * (1+r)**n))
+    pv_factor = 1/(1+r)**n
+    return F * pv_factor
 
 def NPV(F,r,n, C0):
     """

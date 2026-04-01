@@ -5,17 +5,13 @@
 
 # Python cache
 __pycache__/
-*.aux
 *.fdb_latexmk
 *.fls
 *.toc
 *.pyc
-*.cif
-*.error
 *.out
-*.json
 *.pkl
-*.pdf
+
 
 # Generated simulation outputs
 Outputs/

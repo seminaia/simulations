@@ -124,17 +124,10 @@ P_B = annual_payment(P0_B, i_loan, n)
 PV_symp = sp.sympify(present_value(F, r, n=n1))
 NPV_symp = sp.sympify(NPV(F, r, n=n1, C0=C),)
 P_symp = sp.sympify(annual_payment(C, r, n=n1))
-print(PV_symp)
-print(NPV_symp)
-print(P_symp)
 
 PV_latex = sp.latex(PV_symp,mul_symbol = 'dot')
 NPV_latex = sp.latex(NPV_symp,mul_symbol = 'dot')
 P_latex = sp.latex(P_symp, mul_symbol = 'dot')
-print(PV_latex)
-print(NPV_latex)
-print(P_latex)
-
 
 doc.subsection("A.) Compute Net Present Value for Options A and B")
 a(
@@ -186,14 +179,21 @@ doc.subsection("B.) Find the payback period")
 F0 = net_additional_income
 i = interest_rate
 C0 = -separator_cost
-
+print(f"Net additional income: ${F0:,.2f}/year\nInterest rate: {i*100:.2f}%\nInitial cost: ${-C0:,.2f}")
 NPV_eq = NPV(F=F0, r=i, n=n1, C0=C0)
-dNPV_eq = sp.diff(NPV_eq,n1)
+dNPV_eq = sp.diff(f=NPV_eq,n1)
 dNPV_eq = sp.lambdify(n1, dNPV_eq)
 NPV_latex = sp.latex(NPV_eq, mul_symbol = 'dot')
 print(NPV_eq)
 print(NPV_latex)
-
+Net additional income: $3,460.00/year
+Interest rate: 8.00%
+Initial cost: $10,000.00
+-10000 + 43250.0*(1.08**n - 1)/1.08**n
+-10000 + 43250.0 \cdot {1.08}^{- n} \cdot \left({1.08}^{n} - 1\right)
+Wrote text log: HW2_CHE565.txt
+Wrote LaTeX source: HW2_CHE565.tex
+Wrote PDF: HW2_CHE565.pdf
 # Solve for n
 pbp_solution = sp.solve(NPV_eq, n1)
 m(rf"\text{{The NPV equation for the payback period is:}} {NPV_latex} ")

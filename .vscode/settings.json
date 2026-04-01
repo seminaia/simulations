@@ -1,14 +1,14 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",
-    "latex-workshop.docker.enabled": true,
+    "latex-workshop.docker.enabled": false,
     "gitdoc.enabled": true,
     "[latex]": {
         "editor.defaultFormatter": "tecosaur.latex-utilities"
     },
     "files.autoSave": "onFocusChange",
     "workbench.colorTheme": "Dark Modern",
-    "editor.defaultFormatter": "mathematic.vscode-latex",
+    "editor.defaultFormatter": "James-Yu.latex-workshop",
     "editor.wordWrap": "on",
     "editor.formatOnPaste": true,
     "editor.autoIndentOnPaste": true,
@@ -752,5 +752,7 @@
     "github.copilot.chat.projectSetupInfoSkill.enabled": true,
     "github.copilot.chat.responsesApiContextManagement.enabled": true,
     "github.copilot.chat.review.intent": true,
-    "github.copilot.chat.searchSubagent.enabled": true
+    "github.copilot.chat.searchSubagent.enabled": true,
+    "latex-utilities.countWord.path": "usr/bin/texcount",
+    "latex-workshop.docker.image.latex": "latexmk"
 }

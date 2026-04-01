@@ -1,9 +1,8 @@
 """
 HW2_CHE565.py
 =============
-CHE 565 – Homework 2
-All five problems solved with full work shown.
-Results are written to HW2_CHE565_results.txt and mirrored to the console.
+CHE 565 – Homework 2 All five problems solved with full work shown. Results are
+written to HW2_CHE565_results.txt and mirrored to the console.
 """
 
 from math import e
@@ -20,10 +19,9 @@ from NRroots import newton_raphson
 from regression_analysis import RegressionAnalysis
 from doc_builder import DocumentBuilder
 # ══════════════════════════════════════════════════════════════════════════════
-#  Output file setup
-#  All problems write through the same RegressionAnalysis writer so the
-#  complete solution ends up in one tidy file.
-# ══════════════════════════════════════════════════════════════════════════════
+#  Output file setup All problems write through the same RegressionAnalysis
+#  writer so the complete solution ends up in one tidy file.
+#  ══════════════════════════════════════════════════════════════════════════════
 
 OUTPUT_FILE = "HW2_CHE565"
 PLOT_FILE = "HW2_CHE565_plot.png"
@@ -64,12 +62,12 @@ w("n= 10 years, r = 0.10")
 
 def present_value(F, r, n):
     """
-    Compute the present value of an annual cash flow F over n years at interest rate r.
+    Compute the present value of an annual cash flow F over n years at interest
+    rate r.
 
     Args:
-        F : annual cash flow ($/year)
-        r : yearly interest rate (decimal)
-        n : number of years
+        F : annual cash flow ($/year) r : yearly interest rate (decimal) n :
+        number of years
 
     Returns:
         present value of the cash flows ($)
@@ -78,14 +76,12 @@ def present_value(F, r, n):
 
 def NPV(F,r,n, C0):
     """
-    Compute the net present value of an annual cash flow F over n years at interest rate r,
-    given an initial cost C0.
+    Compute the net present value of an annual cash flow F over n years at
+    interest rate r, given an initial cost C0.
 
     Args:
-        F : annual cash flow ($/year)
-        r : yearly interest rate (decimal)
-        n : number of years
-        C0 : initial cost ($)
+        F : annual cash flow ($/year) r : yearly interest rate (decimal) n :
+        number of years C0 : initial cost ($)
 
     Returns:
         net present value ($)
@@ -94,13 +90,12 @@ def NPV(F,r,n, C0):
 
 def annual_payment(C0, r, n):
     """
-    Compute the annual payment required to amortize a loan of amount C0 over n years
-    at yearly interest rate r.
+    Compute the annual payment required to amortize a loan of amount C0 over n
+    years at yearly interest rate r.
 
     Args:
-        C0 : loan principal amount ($)
-        r : yearly interest rate (decimal)
-        n : number of years
+        C0 : loan principal amount ($) r : yearly interest rate (decimal) n :
+        number of years
 
     Returns:
         annual payment ($/year)

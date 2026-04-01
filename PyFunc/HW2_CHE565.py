@@ -219,25 +219,28 @@ eig_A_latex = sp.latex(sp.Matrix(eig_A))
 # B
 fb = x1**2 + x2**2 + x3**2
 fb_latex = sp.latex(fb)
+
 HB = sp.hessian(fb, (x1, x2, x3))
 HB_latex = sp.latex(HB)
+
 eig_B = list(HB.eigenvals().keys())
 eig_B_latex = sp.latex(sp.Matrix(eig_B))
 
 # C
 fc = sp.Add(sp.exp(x1), sp.exp(x2))
 fc_latex = sp.latex(fc)
+
 HC = sp.hessian(fc, (x1, x2))
 HC_latex = sp.latex(HC)
+
 eig_C = list(HC.eigenvals().keys())
 eig_C_latex = sp.latex(sp.Matrix(eig_C))
 
-doc.subsection("Results")
-
+doc.subsection(title="Results")
 
 t(['Function','Hessian','Eigenvalues','Convex?','Reason'],
  [
-      [im(fa_latex),im(latex=HA_latex), im(eig_A_latex), "Yes", "Eigenvalues are non-negative"],
+      [im(fa_latex),im(HA_latex), im(eig_A_latex), "Yes", "Eigenvalues are non-negative"],
       [im(fb_latex),im(HB_latex), im(eig_B_latex), "Yes", "Eigenvalues are positive"],
       [im(fc_latex),im(HC_latex), im(eig_C_latex), "Yes", "Eigenvalues are positive"]
   ],

@@ -8,11 +8,11 @@ Results are written to HW2_CHE565_results.txt and mirrored to the console.
 
 from math import e
 import numpy as np
-import sympy as syp
+import sympy as sp 
 import matplotlib
 from sympy.functions.combinatorial.factorials import rf
 import matplotlib.pyplot as plt
-from scipy.optimize import minimize_scalar, minimize, fsolve, fmin, newton, BFGS
+from scipy.optimize import minimize, fsolve
 from scipy.stats import t as t_dist
 import pandas as pd
 from NRroots import newton_raphson
@@ -52,29 +52,59 @@ doc.subsection("Setup")
 #  PROBLEM 1
 # ══════════════════════════════════════════════════════════════════════════════
 a(
-    r"\text{Option A:}\quad C_{0,A} &= 3{,}800{,}000",
-    r"\quad\quad\quad\;\;\; FV_A &= 1{,}100{,}000/\text{yr}",
-    r"\text{Option B:}\quad C_{0,B} &= 5{,}000{,}000",
-    r"\quad\quad\quad\;\;\; FV_B &= 1{,}410{,}000/\text{yr}",
+    r"\text{Option A:}\quad C_{0,A} &= \$3{,}800{,}000",
+    r"\quad\quad\quad\;\;\; FV_A &= \$1{,}100{,}000/\text{yr}",
+    r"\text{Option B:}\quad C_{0,B} &= \$5{,}000{,}000",
+    r"\quad\quad\quad\;\;\; FV_B &= \$1{,}410{,}000/\text{yr}",
 )
-w()
-m(r"NPV = PV + C_0")
-m(r"PV = F\left[\frac{(1+r)^n - 1}{r(1+r)^n}\right]")
+
 w("PV = present value, FV = future value (annual cash flow), r = yearly interest rate, n = number of years")
 w("n= 10 years, r = 0.10")
 
-def NPV(PV, C0=0):
-    """
-    PV = present value, 
-    C0 = initial cost (default 0)
-    """
-    return PV + C0
-
-def annual_payment(C0, r, n, k):
-    return C0 * ((1 + r)**n*r)/((1+r)**n-1)
-
 def present_value(F, r, n):
-    return F * ((1+r)**n - 1) / (r * (1+r)**n)
+    """
+    Compute the present value of an annual cash flow F over n years at interest rate r.
+
+    Args:
+        F : annual cash flow ($/year)
+        r : yearly interest rate (decimal)
+        n : number of years
+
+    Returns:
+        present value of the cash flows ($)
+    """
+    return F * (((1+r)**n - 1) / (r * (1+r)**n))
+
+def NPV(F,r,n, C0):
+    """
+    Compute the net present value of an annual cash flow F over n years at interest rate r,
+    given an initial cost C0.
+
+    Args:
+        F : annual cash flow ($/year)
+        r : yearly interest rate (decimal)
+        n : number of years
+        C0 : initial cost ($)
+
+    Returns:
+        net present value ($)
+    """
+    return present_value(F,r,n) + C0
+
+def annual_payment(C0, r, n):
+    """
+    Compute the annual payment required to amortize a loan of amount C0 over n years
+    at yearly interest rate r.
+
+    Args:
+        C0 : loan principal amount ($)
+        r : yearly interest rate (decimal)
+        n : number of years
+
+    Returns:
+        annual payment ($/year)
+    """
+    return C0 * ((r*(1 + r)**n) / ((1+r)**n-1))
 
 i_npv = 0.10 # 10% interest rate
 i_loan = 0.05     # 5% loan interest rate
@@ -85,25 +115,47 @@ C0_A = -3.8e6
 C0_B = -5.0e6
 P0_A = -C0_A
 P0_B = -C0_B
+F, C0, n1, r= sp.symbols(names='F C_0 n r')
 
-PV_A = present_value(F_A, i_npv, n)
-PV_B = present_value(F_B, i_npv, n)
-NPV_A = NPV(PV_A, C0_A)
-NPV_B = NPV(PV_B, C0_B)
-P_A = annual_payment(C0_A, i_loan, n, 1)
-P_B = annual_payment(C0_B, i_loan, n, 1)
-m(rf"\text{{NPV(A)}} = \${NPV_A:,.2f},\quad \text{{NPV(B)}} = \${NPV_B:,.2f}")
+NPV_A = NPV(F_A, i_npv, n, C0_A)
+NPV_B = NPV(F_B, i_npv, n, C0_B)
+P_A = annual_payment(P0_A, i_loan, n)
+P_B = annual_payment(P0_B, i_loan, n)
+PV_symp = sp.sympify(present_value(F, r, n=n1),evaluate=False)
+NPV_symp = sp.sympify(NPV(F, r, n=n1, C0=C0),)
+P_symp = sp.sympify(annual_payment(C0, r, n=n1))
+print(PV_symp)
+print(NPV_symp)
+print(P_symp)
+
+PV_latex = sp.latex(PV_symp,mul_symbol = 'dot')
+NPV_latex = sp.latex(NPV_symp,mul_symbol = 'dot')
+P_latex = sp.latex(P_symp, mul_symbol = 'dot')
+print(PV_latex)
+print(NPV_latex)
+print(P_latex)
+
+
+doc.subsection("A.) Compute Net Present Value for Options A and B")
+a(
+    rf"\text{{Present Value formula:}}\ PV &= {PV_latex}",
+    rf"\text{{Net Present Value formula:}}\ \text{{NPV}} &= {NPV_latex}",
+    rf"\text{{Annual payment formula:}}\ P &= {P_latex}",
+)
+m(rf"\text{{Annual payment for option A:}}\ P_A = \${-P_A:,.2f}/\text{{year}}") 
+m(rf"\text{{Annual payment for option B:}}\ P_B = \${-P_B:,.2f}/\text{{year}}")
+m(rf"\text{{NPV}}_A = \${NPV_A:,.2f},\quad \text{{NPV}}_B = \${NPV_B:,.2f}")
 
 if NPV_A > NPV_B:
     w(f"NPV is higher for option A at 10% yearly interest, so A is preferred under these assumptions.")
 else:
     w(f"NPV is higher for option B at 10% yearly interest, so B is preferred under these assumptions.")
 
-w("b.) 10 year lifetime, no salvage value, and 5 % yearly interest rate. What will be the yearly payment?")
+doc.subsection("B.) Annual Payment for 10 Year Lifetime, No Salvage Value, 5% Interest Rate")
 w()
-m(r"P =  C0 * \frac{{(1 + r)^n r}}{{(1+r)^n-1}}")
 w(f"P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
 m(rf"P(A) = \${P_A:,.2f}/\text{{year}},\quad P(B) = \${P_B:,.2f}/\text{{year}}")
+
 doc.section("Problem 2")
 doc.subsection("Setup")
 w(f"$0.94/lbs is the price of powdered detergent.")
@@ -143,18 +195,18 @@ w(f"Net additional income after maintenance: ${net_additional_income:,.2f}/year"
 
 # Part (b)
 w("b.) Find the payback period")
-
-from scipy.optimize import fsolve
-import sympy as sp
-# Define NPV equation
-def NPV_eq(n):
-    return net_additional_income * ((1 + interest_rate)**n - 1) / (interest_rate * (1 + interest_rate)**n) - separator_cost
+NPV_eq = NPV(F=net_additional_income, r=interest_rate, n=n1, C0=-separator_cost)
+dNPV_eq = sp.diff(NPV_eq,n1)
+dNPV_eq = sp.lambdify(n1, dNPV_eq)
+NPV_latex = sp.latex(NPV_eq)
+print(NPV_eq)
+print(NPV_latex)
 
 # Solve for n
 n_guess = 3
-n_solution = fsolve(NPV_eq, n_guess)[0]
-
-w(f"Discounted payback period (NPV = 0): {n_solution:.2f} years")
+n_solution = sp.solve(NPV_eq, n)
+m(rf"\text{{The NPV equation for the payback period is:}} {NPV_latex}")
+w(f"Discounted payback period (NPV = 0): {n_solution} years")
 doc.section("Problem 3")
 doc.subsection("Setup")
 w("Determine if each function is convex")
@@ -223,19 +275,17 @@ w("The feasible region is convex because it is defined by a set of linear inequa
 doc.section(("Problem 5"))
 doc.subsection("Setup")
 w("Minimize the objective function:")
-
-def func(x):
-    return (1 + 8*x + 2*x**2 - 10/3*x**3 - 1/4*x**4 + 4/5*x**5 - 1/6*x**6)
-
-def dfunc(x):
-    return (1 + x)**2 * (2 - x)**3
-
+    
 x = sp.symbols('x')
 f = 1 + 8*x + 2*x**2 - sp.Rational(10,3)*x**3 - sp.Rational(1,4)*x**4 + sp.Rational(4,5)*x**5 - sp.Rational(1,6)*x**6
+func = sp.lambdify(x,-f)
+df = sp.diff(f,x)
+dfunc = sp.lambdify(x,-df)
+d2f = sp.diff(df,x)
+d2func = sp.lambdify(x,-d2f)
 dfun = (1 + x)**2 * (2 - x)**3
 d2fun = sp.diff(dfun,x)
-df = sp.diff(f,x)
-d2f = sp.diff(df,x)
+
 m(rf"f(x) = {sp.latex(f)}")
 w(text="Given that:")
 m(rf"\frac{{df}}{{dx}}= {sp.latex(dfun)}")
@@ -244,10 +294,13 @@ doc.subsection("a.) Analytical Solution")
 w("Expanded form:")
 m(rf"\frac{{df}}{{dx}} = {sp.latex(df)}")
 m(rf"\frac{{d^2f}}{{dx^2}} = {sp.latex(d2f)}")
-sol = sp.solve(dfun,x)
-f_sol = [func(s) for s in sol]
-w(f"The solutions to df/dx = 0 are x* = {sol[0]}, {sol[1]}")
+
+sol = sp.solve(df,x)
+f_sol = [f.subs(x,s) for s in sol]
+w(f"The roots to df/dx are x* = {sol[0]}, {sol[1]}")
 w(f"The corresponding function values are f(x*) = {f_sol[0]:.2f}, {f_sol[1]:.2f}")
+px(rf"The Hessian evaluated at the critical points are",im(r"\frac{d^2f}{dx^2}|_{x^*}"),f" = {d2func(sol[0])}, {d2func(sol[1])}, inconclusive 2nd derivative test")
+
 doc.subsection("b.) Excel Solution")
 df = pd.read_csv("HW2_CHE565.csv")
 df.drop('Unnamed: 6',axis=1,inplace=True)
@@ -275,35 +328,57 @@ t(headers_A,row_A,alignment='c'*len(headers_A),caption="Optimization Results fro
 t(headers_B,row_B,alignment='c'*len(headers_B),caption="Optimization Results from Excel starting at x0=-5")
 t(summary_headers,summary_rows,alignment='c'*len(summary_headers),caption="Summary of Optimization Results from Excel")
 
-doc.subsection("c.) Numerical Solution Using fsolve")
-x_guess = [-5,5]
-roots = fsolve(func=dfunc,x0=x_guess)
-x1_min = roots[0]
-x2_min = roots[1]
-w(f"Using fsolve with initial guesses x0 = {x_guess}: ")
-w(f"The roots of df/dx are found to be x* = {x1_min:.6f}, {x2_min:.6f}")
-w(f"The corresponding optimum function values are f(x*) = {func(x1_min):.6f}, {func(x2_min):.6f}")
+doc.subsection(title="c.) Numerical Solution Using Nelder-Mead Simplex algorithm which is the same as fminsearch in matlab")
+
+x_guess = 5
+xmin = minimize(fun=func,x0=x_guess, method='Nelder-Mead')
+xmin1 = xmin.x
+funmin = xmin.fun
+w(f"Using Nelder-Mead Simplex algorithm with initial guesses x0 = {x_guess}: ")
+w(f"One of the roots of df/dx are found to be x* = {xmin1}")
+w(f"The corresponding optimum function values are f(x*) = {-funmin}")
+w(f"Actual maximum of the function:")
 a(
-    rf"x^* &= {x1_min:.6f},\ {x2_min:.6f}",
-    rf"f(x^*) &= {func(x1_min):.6f},\ {func(x2_min):.6f}"
+    rf"x^* &=  {xmin.x}",
+    rf"f(x^*) &= {xmin.fun}",
+    rf"\text{{iterations}} &= {xmin.nit}",
+    rf"\text{{function calls}} &= {xmin.nfev}"
 )
 
-roots_newt = newton(dfunc,x_guess,maxiter=1000)
-w(f"Using the Newton-Raphson method with initial guesses x0 = {x_guess}: ")
-w(f"The roots of df/dx are found to be x* = {roots_newt[0]:.6f}, {roots_newt[1]:.6f}")
-w(f"The corresponding optimum function values are f(x*) = {func(roots_newt[0]):.6f}, {func(roots_newt[1]):.6f}")
+doc.subsection("d.) Numerical Solution Using Newton Conjugate Gradient Method which is the same as fmincon in matlab except required to give jacobian and hessian information")
+x_guess2 = -5
+xmin1_ncg = minimize(func,x_guess, method='Newton-CG', jac=dfunc, hess=d2func)
+xmin2_ncg = minimize(func,x_guess2, method='Newton-CG', jac=dfunc, hess=d2func)
+w(f"Using the Newton Conjugate Gradient method with initial guesses x0 = {x_guess}: ")
+w(f"One of the roots of df/dx are found to be x* = {xmin1_ncg.x}")
+w(f"The corresponding optimum function values are f(x*) = {xmin1_ncg.fun}")
 a(
-    rf"x^* &= {roots_newt[0]:.6f},\ {roots_newt[1]:.6f}",
-    rf"f(x^*) &= {func(roots_newt[0]):.6f},\ {func(roots_newt[1]):.6f}"
-)
-xopt1, fopt1, iter1, funcalls1, warnflags1 = fmin(func=func,x0=5,maxfun=1000,maxiter=1000,full_output=True)
-w(f"Using the fmin method with initial guesses x0 = {x_guess}: ")
-w(f"The minimum is found to be at x* = {xopt1[0]:.6f}")
-w(f"The corresponding function value is f(x*) = {func(xopt1[0]):.6f}")
+    rf"x^* &= {xmin1_ncg.x}",
+    rf"f(x^*) &= {xmin1_ncg.fun}",
+    rf"\text{{iterations}} &= {xmin1_ncg.nit}",
+    rf"\text{{function calls}} &= {xmin1_ncg.nfev}"
 
+)
+
+w(f"Using the Newton Conjugate Gradient method with initial guesses x0 = {x_guess2}: ")
+w(f"One of the roots of df/dx are found to be x* = {xmin2_ncg.x}")
+w(f"The corresponding optimum function values are f(x*) = {xmin2_ncg.fun}")
 a(
-    rf"x^* &= {xopt1[0]:.6f}",
-    rf"f(x^*) &= {func(xopt1[0]):.6f}"
+    rf"x^* &= {xmin2_ncg.x}",
+    rf"f(x^*) &= {xmin2_ncg.fun}",
+    rf"\text{{iterations}} &= {xmin2_ncg.nit}",
+    rf"\text{{function calls}} &= {xmin2_ncg.nfev}"
+)
+t(
+    ["Method","Initial Guess","x*","f(x*)","Iterations","Function Calls"],
+    [
+        ["Nelder-Mead", x_guess, xmin.x, xmin.fun, xmin.nit, xmin.nfev],
+        ["Excel", x_guess, df_A.iloc[-1]["x_n+1"], df_A.iloc[-1]["f(x_n)"],im(f"{len(df_A)}"),"-"],
+        ["Excel", x_guess2, df_B.iloc[-1]["x_n+1"], df_B.iloc[-1]["f(x_n)"], im(f"{len(df_B)}"), "-"],
+        ["Newton-CG", x_guess, xmin1_ncg.x, xmin1_ncg.fun, xmin1_ncg.nit, xmin1_ncg.nfev],
+        ["Newton-CG", x_guess2, xmin2_ncg.x, xmin2_ncg.fun,xmin2_ncg.nit, xmin2_ncg.nfev],
+        ]
+
 )
 
 txt_file, tex_file, pdf_file = doc.save_all()

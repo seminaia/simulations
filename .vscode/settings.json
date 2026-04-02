@@ -761,5 +761,6 @@
     "workbench.editor.wrapTabs": true,
     "workbench.settings.editor": "json",
     "workbench.settings.openDefaultSettings": true,
-    "workbench.browser.openLocalhostLinks": false
+    "workbench.browser.openLocalhostLinks": false,
+    "MATLAB.installPath": "/home/soki/matlab"
 }

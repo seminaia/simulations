@@ -44,15 +44,8 @@ n= 10 years, r = 0.10%
 \label{subsec:a.)ComputeNetPresentValueforOptionsAandB}%
 \begin{align*}%
 \text{Present Value formula:}\ \text{PV} &= \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r} \\%
-\text{Net Present Value formula:}\ \text{NPV} &= C_{0} + \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r} \\%
-\text{Annual payment formula:}\ \text{P} &= \frac{C_{0} \cdot r \cdot \left(r + 1\right)^{n}}{\left(r + 1\right)^{n} - 1}%
+\text{Net Present Value formula:}\ \text{NPV} &= C_{0} + \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r}%
 \end{align*}%
-\[%
-\text{Annual payment for option A:}\ \text{P}_A = \$492,117.38/\text{year}%
-\]%
-\[%
-\text{Annual payment for option B:}\ \text{P}_B = \$647,522.87/\text{year}%
-\]%
 \[%
 \text{NPV}_A = \$2,959,023.82,\quad \text{NPV}_B = \$3,663,839.62%
 \]%
@@ -65,7 +58,13 @@ NPV is higher for option B at 10\% yearly interest, so B is preferred under thes
 P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years%
 \par%
 \[%
-\text{Annual payment for option A:}\ \text{P}_A = \$492,117.38/\text{year},\quad \text{Annual payment for option B:}\ \text{P}_B = \$647,522.87/\text{year}%
+\text{Annual payment formula:}\ \text{P} = \frac{C_{0} \cdot r \cdot \left(r + 1\right)^{n}}{\left(r + 1\right)^{n} - 1}%
+\]%
+\[%
+\text{Annual payment for option A:}\ \text{P}_A = \$492,117.38/\text{year}%
+\]%
+\[%
+\text{Annual payment for option B:}\ \text{P}_B = \$647,522.87/\text{year}%
 \]
 
 %
@@ -124,9 +123,9 @@ Determine if each function is convex%
 \hline%
 Function&Hessian&Eigenvalues&Convex?&Reason\\%
 \hline%
-$x_{2}^{2} + \left(x_{1} - x_{2}\right)^{2}$&$\left[\begin{matrix}2 & -2\\-2 & 4\end{matrix}\right]$&$\left[\begin{matrix}3 - \sqrt{5}\\\sqrt{5} + 3\end{matrix}\right]$&Yes&Eigenvalues are positive\\%
+$x_{2}^{2} + \left(x_{1} - x_{2}\right)^{2}$&$\left[\begin{matrix}2 & -2\\-2 & 4\end{matrix}\right]$&$\left[\begin{matrix}3 - \sqrt{5}\\\sqrt{5} + 3\end{matrix}\right]$&Yes&Eigenvalues are non{-}negative\\%
 \hline%
-$x_{1}^{2} + x_{2}^{2} + x_{3}^{2}$&$\left[\begin{matrix}2 & 0 & 0\\0 & 2 & 0\\0 & 0 & 2\end{matrix}\right]$&$\left[\begin{matrix}2\end{matrix}\right]$&Yes&Eigenvalues are positive\\%
+$x_{1}^{2} + x_{2}^{2} + x_{3}^{2}$&$\left[\begin{matrix}2 & 0 & 0\\0 & 2 & 0\\0 & 0 & 2\end{matrix}\right]$&$\left[\begin{matrix}2\end{matrix}\right]$&Yes&Eigenvalues are non{-}negative\\%
 \hline%
 $e^{x_{1}} + e^{x_{2}}$&$\left[\begin{matrix}e^{x_{1}} & 0\\0 & e^{x_{2}}\end{matrix}\right]$&$\left[\begin{matrix}e^{x_{1}}\\e^{x_{2}}\end{matrix}\right]$&Yes&Eigenvalues are non{-}negative\\%
 \hline%
@@ -178,10 +177,10 @@ Given that:%
 Expanded form:%
 \par%
 \[%
-\frac{df}{dx} = - x^{5} + 4 x^{4} - x^{3} - 10 x^{2} + 4 x + 8%
+\frac{df}{dx} = x^{5} - 4 x^{4} + x^{3} + 10 x^{2} - 4 x - 8%
 \]%
 \[%
-\frac{d^2f}{dx^2} = - 5 x^{4} + 16 x^{3} - 3 x^{2} - 20 x + 4%
+\frac{d^2f}{dx^2} = 5 x^{4} - 16 x^{3} + 3 x^{2} + 20 x - 4%
 \]%
 The roots to df/dx are x* = {-}1, 2%
 \par%
@@ -343,11 +342,11 @@ Using the Newton Conjugate Gradient method with initial guesses x0 = 5: %
 \par%
 One of the roots of df/dx are found to be x* = 2.0038%
 \par%
-The corresponding optimum function values are f(x*) = {-}9.2667%
+The corresponding optimum function values are f(x*) = 9.2667%
 \par%
 \begin{align*}%
 x^* &= 2.0038 \\%
-f(x^*) &= -9.2667 \\%
+f(x^*) &= 9.2667 \\%
 \text{iterations} &= 19 \\%
 \text{function calls} &= 19%
 \end{align*}%
@@ -355,11 +354,11 @@ Using the Newton Conjugate Gradient method with initial guesses x0 = {-}5: %
 \par%
 One of the roots of df/dx are found to be x* = {-}1.0001%
 \par%
-The corresponding optimum function values are f(x*) = 2.8833%
+The corresponding optimum function values are f(x*) = {-}2.8833%
 \par%
 \begin{align*}%
 x^* &= -1.0001 \\%
-f(x^*) &= 2.8833 \\%
+f(x^*) &= -2.8833 \\%
 \text{iterations} &= 20 \\%
 \text{function calls} &= 20%
 \end{align*}
@@ -373,15 +372,15 @@ f(x^*) &= 2.8833 \\%
 \hline%
 Method&Initial Guess&x*&f(x*)&Iterations&Function Calls\\%
 \hline%
-Nelder{-}Mead&5&1.9999&{-}9.2667&20&41\\%
+Nelder{-}Mead&5&1.9999&9.2667&20&41\\%
 \hline%
 Excel&{-}5&2.0011&9.2667&$21$&$21$\\%
 \hline%
 Excel&5&{-}1.0000&{-}2.8833&$21$&$21$\\%
 \hline%
-Newton{-}CG&5&2.0038&{-}9.2667&19&19\\%
+Newton{-}CG&5&2.0038&9.2667&19&19\\%
 \hline%
-Newton{-}CG&{-}5&{-}1.0001&2.8833&20&20\\%
+Newton{-}CG&{-}5&{-}1.0001&{-}2.8833&20&20\\%
 \hline%
 \end{tabular}%
 \end{table}%

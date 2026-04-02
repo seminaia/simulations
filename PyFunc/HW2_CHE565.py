@@ -135,10 +135,7 @@ doc.subsection("a.) Compute Net Present Value for Options A and B")
 a(
     rf"\text{{Present Value formula:}}\ \text{{PV}} &= {PV_latex}",
     rf"\text{{Net Present Value formula:}}\ \text{{NPV}} &= {NPV_latex}",
-    rf"\text{{Annual payment formula:}}\ \text{{P}} &= {P_latex}",
 )
-m(rf"\text{{Annual payment for option A:}}\ \text{{P}}_A = \${P_A:,.2f}/\text{{year}}") 
-m(rf"\text{{Annual payment for option B:}}\ \text{{P}}_B = \${P_B:,.2f}/\text{{year}}")
 m(rf"\text{{NPV}}_A = \${NPV_A:,.2f},\quad \text{{NPV}}_B = \${NPV_B:,.2f}")
 
 if NPV_A > NPV_B:
@@ -148,7 +145,9 @@ else:
 
 doc.subsection("b.) Annual Payment for 10 Year Lifetime, No Salvage Value, 5% Interest Rate")
 w(f"P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years")
-m(rf"\text{{Annual payment for option A:}}\ \text{{P}}_A = \${P_A:,.2f}/\text{{year}},\quad \text{{Annual payment for option B:}}\ \text{{P}}_B = \${P_B:,.2f}/\text{{year}}")
+m(rf"\text{{Annual payment formula:}}\ \text{{P}} = {P_latex}")
+m(rf"\text{{Annual payment for option A:}}\ \text{{P}}_A = \${P_A:,.2f}/\text{{year}}") 
+m(rf"\text{{Annual payment for option B:}}\ \text{{P}}_B = \${P_B:,.2f}/\text{{year}}")
 
 doc.section("Problem 2")
 doc.subsection("Setup")
@@ -190,6 +189,7 @@ NPV_latex = sp.latex(NPV_eq, mul_symbol = 'dot')
 pbp_solution = sp.solve(NPV_eq, n1)
 m(rf"\text{{The NPV equation for the payback period is:\\}} {NPV_latex} ")
 w(f"Discounted payback period (NPV = 0): {pbp_solution[0]:.2f} years")
+
 
 doc.section("Problem 3")
 doc.subsection("Setup")
@@ -236,8 +236,8 @@ doc.subsection(title="Results")
 
 t(['Function','Hessian','Eigenvalues','Convex?','Reason'],
  [
-      [im(fa_latex),im(HA_latex), im(eig_A_latex), "Yes", "Eigenvalues are positive"],
-      [im(fb_latex),im(HB_latex), im(eig_B_latex), "Yes", "Eigenvalues are positive"],
+      [im(fa_latex),im(HA_latex), im(eig_A_latex), "Yes", "Eigenvalues are non-negative"],
+      [im(fb_latex),im(HB_latex), im(eig_B_latex), "Yes", "Eigenvalues are non-negative"],
       [im(fc_latex),im(HC_latex), im(eig_C_latex), "Yes", "Eigenvalues are non-negative"]
   ],
  alignment='c|c|c|c|c'
@@ -260,17 +260,17 @@ PLOT_FILE="HW2_CHE565_plot.png"
 sp.plot_implicit(feasible_region,(x1,0,3),(x2,0,3),show=False, title="CHE 565: Problem 4 Feasible Region").save(PLOT_FILE)
 figlog(PLOT_FILE,"Feasible Region")
 w("The feasible region is convex because it is defined by a set of linear inequalities, which form a convex set.")
+
 doc.section(("Problem 5"))
 doc.subsection("Setup")
-w("Maximize the objective function:")
-    
+w("Maximize the objective function:")    
 x = sp.symbols('x')
 f = 1 + 8*x + 2*x**2 - sp.Rational(10,3)*x**3 - sp.Rational(1,4)*x**4 + sp.Rational(4,5)*x**5 - sp.Rational(1,6)*x**6
 func = sp.lambdify(x,-f)
-df = sp.diff(f,x)
-dfunc = sp.lambdify(x,-df)
+df = sp.diff(-f,x)
+dfunc = sp.lambdify(x,df)
 d2f = sp.diff(df,x)
-d2func = sp.lambdify(x,-d2f)
+d2func = sp.lambdify(x,d2f)
 dfun = (1 + x)**2 * (2 - x)**3
 d2fun = sp.diff(dfun,x)
 m(rf"f(x) = {sp.latex(f)}")
@@ -321,16 +321,16 @@ doc.subsection(title="c.) Numerical solution using Nelder-Mead Simplex algorithm
 x_guess = 5
 xmin = minimize(fun=func,x0=x_guess, method='Nelder-Mead')
 xmin1 = xmin.x[0]
-funmin = xmin.fun
+funmin = -xmin.fun
 niter = xmin.nit
 fun_evals = xmin.nfev
 w(f"Using Nelder-Mead Simplex algorithm with initial guesses x0 = {x_guess}: ")
 w(f"One of the roots of df/dx are found to be x* = {xmin1:.4f}")
-w(f"The corresponding optimum function values are f(x*) = {-funmin:.4f}")
+w(f"The corresponding optimum function values are f(x*) = {funmin:.4f}")
 w(f"Actual maximum of the function:")
 a(
     rf"x^* &=  {xmin1:.4f}",
-    rf"f(x^*) &= {-funmin:.4f}",
+    rf"f(x^*) &= {funmin:.4f}",
     rf"\text{{iterations}} &= {niter}",
     rf"\text{{function calls}} &= {fun_evals}"
 )
@@ -341,7 +341,7 @@ x_guess1 = [-5,5]
 xmin1_ncg = minimize(func,x_guess1[1], method='Newton-CG', jac=dfunc, hess=d2func)
 xmin2_ncg = minimize(func,x0=x_guess1[0], method='Newton-CG', jac=dfunc, hess=d2func)
 xmin1_ncg_opt = xmin1_ncg.x[0]
-funmin1_ncg = xmin1_ncg.fun
+funmin1_ncg = -xmin1_ncg.fun
 niter1_ncg = xmin1_ncg.nit
 fun_evals1_ncg = xmin1_ncg.nfev
 
@@ -356,7 +356,7 @@ a(
 )
 
 xmin2_ncg_opt = xmin2_ncg.x[0]
-funmin2_ncg = xmin2_ncg.fun
+funmin2_ncg = -xmin2_ncg.fun
 niter2_ncg = xmin2_ncg.nit
 fun_evals2_ncg = xmin2_ncg.nfev
 w(f"Using the Newton Conjugate Gradient method with initial guesses x0 = {x_guess1[0]}: ")

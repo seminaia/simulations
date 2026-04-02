@@ -23,9 +23,6 @@ a.) Compute Net Present Value for Options A and B
 [ALIGN]
 \text{Present Value formula:}\ \text{PV} &= \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r}
 \text{Net Present Value formula:}\ \text{NPV} &= C_{0} + \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r}
-\text{Annual payment formula:}\ \text{P} &= \frac{C_{0} \cdot r \cdot \left(r + 1\right)^{n}}{\left(r + 1\right)^{n} - 1}
-[MATH] \text{Annual payment for option A:}\ \text{P}_A = \$492,117.38/\text{year}
-[MATH] \text{Annual payment for option B:}\ \text{P}_B = \$647,522.87/\text{year}
 [MATH] \text{NPV}_A = \$2,959,023.82,\quad \text{NPV}_B = \$3,663,839.62
 NPV is higher for option B at 10% yearly interest, so B is preferred under these assumptions.
 
@@ -34,7 +31,9 @@ b.) Annual Payment for 10 Year Lifetime, No Salvage Value, 5% Interest Rate
 
 P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years
 
-[MATH] \text{Annual payment for option A:}\ \text{P}_A = \$492,117.38/\text{year},\quad \text{Annual payment for option B:}\ \text{P}_B = \$647,522.87/\text{year}
+[MATH] \text{Annual payment formula:}\ \text{P} = \frac{C_{0} \cdot r \cdot \left(r + 1\right)^{n}}{\left(r + 1\right)^{n} - 1}
+[MATH] \text{Annual payment for option A:}\ \text{P}_A = \$492,117.38/\text{year}
+[MATH] \text{Annual payment for option B:}\ \text{P}_B = \$647,522.87/\text{year}
 
 Problem 2
 ====================
@@ -84,8 +83,8 @@ Results
 
 Function                                                              | Hessian                                                                                                 | Eigenvalues                                                                                        | Convex? | Reason                      
 ----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------+---------+-----------------------------
-InlineMathToken(latex='x_{2}^{2} + \\left(x_{1} - x_{2}\\right)^{2}') | InlineMathToken(latex='\\left[\\begin{matrix}2 & -2\\\\-2 & 4\\end{matrix}\\right]')                    | InlineMathToken(latex='\\left[\\begin{matrix}3 - \\sqrt{5}\\\\\\sqrt{5} + 3\\end{matrix}\\right]') | Yes     | Eigenvalues are positive    
-InlineMathToken(latex='x_{1}^{2} + x_{2}^{2} + x_{3}^{2}')            | InlineMathToken(latex='\\left[\\begin{matrix}2 & 0 & 0\\\\0 & 2 & 0\\\\0 & 0 & 2\\end{matrix}\\right]') | InlineMathToken(latex='\\left[\\begin{matrix}2\\end{matrix}\\right]')                              | Yes     | Eigenvalues are positive    
+InlineMathToken(latex='x_{2}^{2} + \\left(x_{1} - x_{2}\\right)^{2}') | InlineMathToken(latex='\\left[\\begin{matrix}2 & -2\\\\-2 & 4\\end{matrix}\\right]')                    | InlineMathToken(latex='\\left[\\begin{matrix}3 - \\sqrt{5}\\\\\\sqrt{5} + 3\\end{matrix}\\right]') | Yes     | Eigenvalues are non-negative
+InlineMathToken(latex='x_{1}^{2} + x_{2}^{2} + x_{3}^{2}')            | InlineMathToken(latex='\\left[\\begin{matrix}2 & 0 & 0\\\\0 & 2 & 0\\\\0 & 0 & 2\\end{matrix}\\right]') | InlineMathToken(latex='\\left[\\begin{matrix}2\\end{matrix}\\right]')                              | Yes     | Eigenvalues are non-negative
 InlineMathToken(latex='e^{x_{1}} + e^{x_{2}}')                        | InlineMathToken(latex='\\left[\\begin{matrix}e^{x_{1}} & 0\\\\0 & e^{x_{2}}\\end{matrix}\\right]')      | InlineMathToken(latex='\\left[\\begin{matrix}e^{x_{1}}\\\\e^{x_{2}}\\end{matrix}\\right]')         | Yes     | Eigenvalues are non-negative
 
 
@@ -120,8 +119,8 @@ a.) Analytical Solution
 
 Expanded form:
 
-[MATH] \frac{df}{dx} = - x^{5} + 4 x^{4} - x^{3} - 10 x^{2} + 4 x + 8
-[MATH] \frac{d^2f}{dx^2} = - 5 x^{4} + 16 x^{3} - 3 x^{2} - 20 x + 4
+[MATH] \frac{df}{dx} = x^{5} - 4 x^{4} + x^{3} + 10 x^{2} - 4 x - 8
+[MATH] \frac{d^2f}{dx^2} = 5 x^{4} - 16 x^{3} + 3 x^{2} + 20 x - 4
 The roots to df/dx are x* = -1, 2
 
 The corresponding function values are f(x*) = -2.88, 9.27
@@ -215,22 +214,22 @@ Using the Newton Conjugate Gradient method with initial guesses x0 = 5:
 
 One of the roots of df/dx are found to be x* = 2.0038
 
-The corresponding optimum function values are f(x*) = -9.2667
+The corresponding optimum function values are f(x*) = 9.2667
 
 [ALIGN]
 x^* &= 2.0038
-f(x^*) &= -9.2667
+f(x^*) &= 9.2667
 \text{iterations} &= 19
 \text{function calls} &= 19
 Using the Newton Conjugate Gradient method with initial guesses x0 = -5: 
 
 One of the roots of df/dx are found to be x* = -1.0001
 
-The corresponding optimum function values are f(x*) = 2.8833
+The corresponding optimum function values are f(x*) = -2.8833
 
 [ALIGN]
 x^* &= -1.0001
-f(x^*) &= 2.8833
+f(x^*) &= -2.8833
 \text{iterations} &= 20
 \text{function calls} &= 20
 e.) Compare results from all methods
@@ -238,10 +237,10 @@ e.) Compare results from all methods
 
 Method      | Initial Guess | x*      | f(x*)   | Iterations                  | Function Calls             
 ------------+---------------+---------+---------+-----------------------------+----------------------------
-Nelder-Mead | 5             | 1.9999  | -9.2667 | 20                          | 41                         
+Nelder-Mead | 5             | 1.9999  | 9.2667  | 20                          | 41                         
 Excel       | -5            | 2.0011  | 9.2667  | InlineMathToken(latex='21') | InlineMathToken(latex='21')
 Excel       | 5             | -1.0000 | -2.8833 | InlineMathToken(latex='21') | InlineMathToken(latex='21')
-Newton-CG   | 5             | 2.0038  | -9.2667 | 19                          | 19                         
-Newton-CG   | -5            | -1.0001 | 2.8833  | 20                          | 20                         
+Newton-CG   | 5             | 2.0038  | 9.2667  | 19                          | 19                         
+Newton-CG   | -5            | -1.0001 | -2.8833 | 20                          | 20                         
 
 All methods found the same maximum value of the function at x* = 2 and f(x*) = 9.267, which is consistent with the analytical solution. The Nelder-Mead method required 20 iterations and 41 function calls, the Newton-CG method converged in 20 iterations, the Excel solution also converged to the same optimum value, demonstrating consistency across methods. However, Newton-CG and the excel solution are significantly more influenced by the initial guess, and can converge to a local extremum. In the case of this polynomial function, there are two critical points based on the roots of the derivative, one is an optimum at x* = 2 and the other is a saddle point at x* = -1, and the initial guess determines which extremum the algorithm converges to. The Nelder-Mead method is less sensitive to the initial guess and was able to find the global maximum regardless of the starting point.

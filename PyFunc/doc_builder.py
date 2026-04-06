@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from pydoc import doc
 from typing import Any, Iterable, Literal
 import shutil
 import subprocess
@@ -333,6 +334,34 @@ class VSpaceBlock(Block):
 
 
 @dataclass
+class SlideBlock(Block):
+    """SlideBlock represents a Beamer frame (slide). It has a title, an optional subtitle,
+    and a list of content blocks that will be rendered inside the frame environment.
+    The fragile flag enables the ``fragile`` frame option, which is required for
+    verbatim content or certain environments inside frames.
+
+    Args:
+        Block (_type_): The base Block class that this inherits from.
+    """
+    title: str
+    subtitle: str | None = None
+    blocks: list[Block] = field(default_factory=list)
+    fragile: bool = False
+
+    def __init__(
+        self,
+        title: str,
+        subtitle: str | None = None,
+        fragile: bool = False,
+    ):
+        super().__init__("slide")
+        self.title = title
+        self.subtitle = subtitle
+        self.blocks = []
+        self.fragile = fragile
+
+
+@dataclass
 class SectionNode:
     """SectionNode represents a section of the report. It has a title, a level (1 for section, 2 for subsection, 3 for subsubsection), a list of blocks that belong to this section, and a list of child sections. The blocks are the content of the section, while the children are subsections that belong to this section.
     Args:
@@ -375,23 +404,91 @@ class DocumentBuilder:
         title: str,
         author: str | None = None,
         subtitle: str | None = None,
+        institute: str | None = None,
         date_tex: str = r"\today",
+        document_options: str | None = None,
     ):
         self.base_name = base_name
         self.title = title
         self.author = author
         self.subtitle = subtitle
+        self.institute = institute
         self.date_tex = date_tex
+        self.document_options = document_options
 
         self.root = SectionNode("__root__", level=1)
         self._stack: list[SectionNode] = [self.root]
 
         self._make_title = True
         self._toc = False
+        self._active_slide: SlideBlock | None = None
+        self._beamer_theme: str = "Madrid"
+        self._beamer_theme_options: str | None = None
+        self._beamer_color_theme: str | None = None
+        self._raw_preamble: list[str] = []
+        self._raw_body: list[str] = []
+        self._raw_tail: list[str] = []
 
     # -------------------------------------------------------------------------
     # Document controls
     # -------------------------------------------------------------------------
+
+    def beamer_theme(
+        self,
+        theme: str = "Madrid",
+        color_theme: str | None = None,
+        theme_options: str | None = None,
+    ) -> None:
+        """Set the Beamer theme and optional color theme.
+
+        Args:
+            theme: Beamer presentation theme (e.g. Madrid, Berlin, metropolis).
+            color_theme: Optional color theme (e.g. whale, dolphin, crane).
+            theme_options: Optional theme options string
+                (e.g. ``"numbering=none,progressbar=frametitle"``).
+        """
+        self._beamer_theme = theme
+        self._beamer_color_theme = color_theme
+        self._beamer_theme_options = theme_options
+
+    def raw_preamble(self, tex: str) -> None:
+        """Append raw LaTeX to the document preamble.
+
+        Use this for custom ``\\usepackage``, ``\\definecolor``,
+        ``\\newcommand``, ``\\setbeamertemplate``, etc.  Lines are
+        emitted after the standard packages and before the title
+        metadata.
+
+        Args:
+            tex: Raw LaTeX string (may contain multiple lines).
+        """
+        self._raw_preamble.append(tex)
+
+    def raw_body(self, tex: str) -> None:
+        """Append raw LaTeX directly to the document body.
+
+        Unlike ``raw_tex()`` which goes inside a section/frame, this
+        content is emitted at the top of ``\\begin{document}``
+        *before* any sections or frames — useful for custom title
+        slides with scoped background changes.
+
+        Args:
+            tex: Raw LaTeX string.
+        """
+        self._raw_body.append(tex)
+
+    def raw_tail(self, tex: str) -> None:
+        """Append raw LaTeX to the end of the document body.
+
+        Content added here is emitted *after* all sections and frames
+        but before ``\\end{document}`` — useful for scoped final
+        slides with custom backgrounds, appendices, or
+        ``\\printbibliography``.
+
+        Args:
+            tex: Raw LaTeX string.
+        """
+        self._raw_tail.append(tex)
 
     def maketitle(self, enabled: bool = True) -> None:
         """Enable or disable the title page.
@@ -458,12 +555,23 @@ class DocumentBuilder:
         """
         return self._stack[-1]
 
+    @property
+    def _slide_target(self) -> Any:
+        """Return the container that new blocks should be added to.
+
+        When a slide is open, blocks go into the slide's block list.
+        Otherwise they go into the current section node.
+        """
+        if self._active_slide is not None:
+            return self._active_slide
+        return self.current
+
     # -------------------------------------------------------------------------
     # Prose
     # -------------------------------------------------------------------------
 
     def p(self, text: str = "") -> None:
-        self.current.blocks.append(ParagraphBlock(str(text)))
+        self._slide_target.blocks.append(ParagraphBlock(str(text)))
 
     def line(self, text: str = "") -> None:
         """Add a line of text.
@@ -471,7 +579,7 @@ class DocumentBuilder:
         Args:
             text (str, optional): The text to add. Defaults to "".
         """
-        self.current.blocks.append(LineBlock(str(text)))
+        self._slide_target.blocks.append(LineBlock(str(text)))
 
     def im(self, latex: str) -> InlineMathToken:
         """Add an inline math expression.
@@ -491,7 +599,7 @@ class DocumentBuilder:
         Args:
             parts (Any): The parts of the mixed paragraph.
         """
-        self.current.blocks.append(MixedParagraphBlock(list(parts)))
+        self._slide_target.blocks.append(MixedParagraphBlock(list(parts)))
 
     def bullets(self, items: Iterable[str]) -> None:
         """Add a bullet list.
@@ -499,7 +607,7 @@ class DocumentBuilder:
         Args:
             items (Iterable[str]): The items of the bullet list.
         """
-        self.current.blocks.append(BulletListBlock([str(x) for x in items]))
+        self._slide_target.blocks.append(BulletListBlock([str(x) for x in items]))
 
     def numbered(self, items: Iterable[str]) -> None:
         """Add a numbered list.
@@ -507,16 +615,16 @@ class DocumentBuilder:
         Args:
             items (Iterable[str]): The items of the numbered list.
         """
-        self.current.blocks.append(NumberedListBlock([str(x) for x in items]))
+        self._slide_target.blocks.append(NumberedListBlock([str(x) for x in items]))
 
     def hline(self) -> None:
         """Add a horizontal line.
         """
-        self.current.blocks.append(HorizontalRuleBlock())
+        self._slide_target.blocks.append(HorizontalRuleBlock())
 
     def page_break(self) -> None:
         """Add a page break."""
-        self.current.blocks.append(PageBreakBlock())
+        self._slide_target.blocks.append(PageBreakBlock())
     
     def vspace(self, amount: str = "1em") -> None:
         """Add vertical space.
@@ -524,7 +632,36 @@ class DocumentBuilder:
         Args:
             amount (str, optional): The amount of vertical space. Defaults to "1em".
         """
-        self.current.blocks.append(VSpaceBlock(amount))
+        self._slide_target.blocks.append(VSpaceBlock(amount))
+
+    # -------------------------------------------------------------------------
+    # Slides (Beamer)
+    # -------------------------------------------------------------------------
+
+    def slide(self, title: str, subtitle: str | None = None, fragile: bool = False) -> None:
+        """Start a new Beamer slide (frame).
+
+        All content added after this call and before the next ``slide()`` or
+        ``end_slide()`` will be placed inside this frame.  If there is an
+        open slide when a new one is started the previous slide is closed
+        automatically.
+
+        Args:
+            title: The frame title.
+            subtitle: Optional frame subtitle.
+            fragile: If *True* the frame gets the ``fragile`` option
+                (needed for verbatim content).
+        """
+        if self._active_slide is not None:
+            self.end_slide()
+        slide_block = SlideBlock(title, subtitle=subtitle, fragile=fragile)
+        self._active_slide = slide_block
+
+    def end_slide(self) -> None:
+        """Close the current slide and append it to the current section."""
+        if self._active_slide is not None:
+            self.current.blocks.append(self._active_slide)
+            self._active_slide = None
 
     # -------------------------------------------------------------------------
     # Math
@@ -536,7 +673,7 @@ class DocumentBuilder:
         Args:
             latex (str): The LaTeX code for the equation.
         """
-        self.current.blocks.append(EquationBlock(latex.strip()))
+        self._slide_target.blocks.append(EquationBlock(latex.strip()))
 
     def align(self, *lines: str) -> None:
         """Add an aligned equation.
@@ -545,7 +682,7 @@ class DocumentBuilder:
             lines (str): The lines of the aligned equation.
         """
         cleaned = [str(object=line).strip() for line in lines if str(line).strip()]
-        self.current.blocks.append(AlignBlock(cleaned))
+        self._slide_target.blocks.append(AlignBlock(cleaned))
 
     # -------------------------------------------------------------------------
     # Tables / figures / raw tex
@@ -572,7 +709,7 @@ class DocumentBuilder:
             longtable (bool, optional): Whether to use a longtable. Defaults to False.
             alignment (str | None, optional): The alignment of the table. Defaults to None.
         """
-        self.current.blocks.append(
+        self._slide_target.blocks.append(
             TableBlock(
                 headers=list(headers),
                 rows=[list(r) for r in rows],
@@ -630,7 +767,7 @@ class DocumentBuilder:
             width (str, optional): The width of the figure. Defaults to r"0.95\textwidth".
             position (str, optional): The LaTeX figure placement specifier (e.g., "H", "t", "b", "p"). Defaults to "H".
         """
-        self.current.blocks.append(
+        self._slide_target.blocks.append(
             FigureBlock(path, caption=caption, label=label, width=width, position=position)
         )
 
@@ -640,7 +777,7 @@ class DocumentBuilder:
         Args:
             tex (str): The raw LaTeX code to include in the document.
         """
-        self.current.blocks.append(RawTexBlock(tex))
+        self._slide_target.blocks.append(RawTexBlock(tex))
 
     # =============================================================================
     # TXT rendering
@@ -777,6 +914,66 @@ class DocumentBuilder:
             return NoEscape(rf"${val.latex}$")
         return str(val)
     
+    def _new_slidedeck(self) -> Document:
+        """Create a new PyLaTeX Document object for a Beamer presentation.
+
+        Includes the configured Beamer theme and color theme, common
+        packages, user raw-preamble lines, title metadata, and an
+        optional title frame / TOC outline.
+
+        Returns:
+            Document: A configured Beamer PyLaTeX Document.
+        """
+        doc_opts = self.document_options or None
+        deck = Document(
+            self.base_name,
+            documentclass="beamer",
+            document_options=doc_opts,
+            page_numbers=False,
+        )
+        # -- theme --------------------------------------------------------
+        if self._beamer_theme_options:
+            deck.preamble.append(NoEscape(
+                rf"\usetheme[{self._beamer_theme_options}]{{{self._beamer_theme}}}"
+            ))
+        else:
+            deck.preamble.append(NoEscape(rf"\usetheme{{{self._beamer_theme}}}"))
+        if self._beamer_color_theme:
+            deck.preamble.append(NoEscape(rf"\usecolortheme{{{self._beamer_color_theme}}}"))
+        # -- packages -----------------------------------------------------
+        deck.preamble.append(Command("usepackage", "amsmath"))
+        deck.preamble.append(Command("usepackage", arguments="amssymb"))
+        deck.preamble.append(Command("usepackage", "booktabs"))
+        deck.preamble.append(Command("usepackage", "graphicx"))
+        deck.preamble.append(Command("usepackage", "caption"))
+        deck.preamble.append(Command("usepackage", "hyperref"))
+        # -- user raw preamble --------------------------------------------
+        for line in self._raw_preamble:
+            deck.preamble.append(NoEscape(line))
+        # -- metadata -----------------------------------------------------
+        deck.preamble.append(Command("title", self.title))
+        if self.subtitle:
+            deck.preamble.append(Command("subtitle", self.subtitle))
+        if self.author:
+            deck.preamble.append(Command("author", self.author))
+        if self.institute:
+            deck.preamble.append(Command("institute", self.institute))
+        deck.preamble.append(Command("date", NoEscape(self.date_tex)))
+        # -- title frame --------------------------------------------------
+        if self._make_title:
+            deck.append(NoEscape(r"\begin{frame}"))
+            deck.append(NoEscape(r"\titlepage"))
+            deck.append(NoEscape(r"\end{frame}"))
+        # -- raw body (before sections) -----------------------------------
+        for line in self._raw_body:
+            deck.append(NoEscape(line))
+        # -- outline / TOC ------------------------------------------------
+        if self._toc:
+            deck.append(NoEscape(r"\begin{frame}{Outline}"))
+            deck.append(NoEscape(r"\tableofcontents"))
+            deck.append(NoEscape(r"\end{frame}"))
+        return deck
+
     def _new_document(self) -> Document:
         """Create a new PyLaTeX Document object with the preamble configured for this worklog.
         This includes loading common packages, setting the title, author, date, and page geometry,
@@ -785,7 +982,7 @@ class DocumentBuilder:
         Returns:
             Document: A configured PyLaTeX Document object ready for content to be appended.
         """
-        doc = Document(self.base_name, geometry_options={"margin": "1in"})
+        doc = Document(self.base_name, geometry_options={"margin": "1in"}, documentclass="article")
         doc.preamble.append(Command("usepackage", "amsmath"))
         doc.preamble.append(Command("usepackage", arguments="amssymb"))
         doc.preamble.append(Command("usepackage", "booktabs"))
@@ -808,7 +1005,7 @@ class DocumentBuilder:
             doc.append(NoEscape(r"\newpage"))
         return doc
 
-    def _append_tex_block(self, container: Any, block: Block) -> None:
+    def _append_tex_block(self, container: Any, block: Block, beamer: bool = False) -> None:
         """Append a single block to a PyLaTeX container.
         This function handles the different block types and appends the appropriate LaTeX
         representation to the given container, which can be a Document, Section, or other
@@ -817,6 +1014,8 @@ class DocumentBuilder:
         Args:
             container (Any): The PyLaTeX container to append content to.
             block (Block): The block to render into LaTeX and append.
+            beamer (bool): When True, avoid float environments (table[H], figure[H])
+                that are incompatible with Beamer frames.
         """
         if block.kind == "paragraph":
             if block.text.strip():
@@ -872,8 +1071,6 @@ class DocumentBuilder:
                 if block.label:
                     container.append(NoEscape(rf"\label{{{block.label}}}"))
             else:
-                container.append(NoEscape(r"\begin{table}[H]"))
-                container.append(NoEscape(r"\centering"))
                 tab = Tabular(colspec)
                 tab.add_hline()
                 tab.add_row(block.headers)
@@ -883,19 +1080,39 @@ class DocumentBuilder:
                         self._render_table_cell(v, block.float_fmt) for v in row
                     ])
                     tab.add_hline()
-                container.append(tab)
+                if beamer:
+                    # Beamer frames don't support float environments
+                    container.append(NoEscape(r"\centering"))
+                    container.append(tab)
+                    if block.caption:
+                        container.append(NoEscape(rf"\captionof{{table}}{{{escape_latex(block.caption)}}}"))
+                    if block.label:
+                        container.append(NoEscape(rf"\label{{{block.label}}}"))
+                else:
+                    container.append(NoEscape(r"\begin{table}[H]"))
+                    container.append(NoEscape(r"\centering"))
+                    container.append(tab)
+                    if block.caption:
+                        container.append(NoEscape(rf"\caption{{{escape_latex(block.caption)}}}"))
+                    if block.label:
+                        container.append(NoEscape(rf"\label{{{block.label}}}"))
+                    container.append(NoEscape(r"\end{table}"))
+        elif block.kind == "figure":
+            if beamer:
+                # Beamer frames don't support float figure environments
+                container.append(NoEscape(r"\centering"))
+                container.append(NoEscape(rf"\includegraphics[width={block.width}]{{{block.path}}}"))
                 if block.caption:
-                    container.append(NoEscape(rf"\caption{{{escape_latex(block.caption)}}}"))
+                    container.append(NoEscape(rf"\captionof{{figure}}{{{escape_latex(block.caption)}}}"))
                 if block.label:
                     container.append(NoEscape(rf"\label{{{block.label}}}"))
-                container.append(NoEscape(r"\end{table}"))
-        elif block.kind == "figure":
-            with container.create(Figure(position=block.position)) as fig:
-                fig.add_image(block.path, width=NoEscape(block.width))
-                if block.caption:
-                    fig.add_caption(block.caption)
-                if block.label:
-                    fig.append(NoEscape(rf"\label{{{block.label}}}"))
+            else:
+                with container.create(Figure(position=block.position)) as fig:
+                    fig.add_image(block.path, width=NoEscape(block.width))
+                    if block.caption:
+                        fig.add_caption(block.caption)
+                    if block.label:
+                        fig.append(NoEscape(rf"\label{{{block.label}}}"))
         elif block.kind == "raw_tex":
             container.append(NoEscape(block.tex))
         elif block.kind == "horizontal_rule":
@@ -930,9 +1147,160 @@ class DocumentBuilder:
 
         with parent.create(env) as section_container:
             for block in node.blocks:
-                self._append_tex_block(section_container, block)
+                self._append_tex_block(section_container, block, beamer=False)
             for child in node.children:
                 self._append_node(section_container, child)
+
+    # =================================================================
+    # Beamer rendering helpers
+    # =================================================================
+
+    def _append_beamer_slide(self, doc: Any, slide: "SlideBlock") -> None:
+        """Render a single SlideBlock as a Beamer frame.
+
+        For fragile frames ``\\end{frame}`` is emitted with a trailing
+        newline so that the ``%`` PyLaTeX appends lands on the *next*
+        line.  Beamer's verbatim scanner needs ``\\end{frame}`` alone
+        on its line — a trailing ``%`` on the same line breaks it.
+
+        Args:
+            doc: The PyLaTeX Document to append to.
+            slide: The SlideBlock to render.
+        """
+        fragile = "[fragile]" if slide.fragile else ""
+        doc.append(NoEscape(rf"\begin{{frame}}{fragile}{{{escape_latex(slide.title)}}}"))
+        if slide.subtitle:
+            doc.append(NoEscape(rf"\framesubtitle{{{escape_latex(slide.subtitle)}}}"))
+        for block in slide.blocks:
+            self._append_tex_block(doc, block, beamer=True)
+        if slide.fragile:
+            # Trailing newline pushes PyLaTeX's auto-appended '%' to the
+            # next line so \end{frame} stands alone for Beamer's scanner.
+            doc.append(NoEscape("\\end{frame}\n"))
+        else:
+            doc.append(NoEscape(r"\end{frame}"))
+
+    def _append_beamer_node(self, doc: Any, node: SectionNode) -> None:
+        """Recursively render a SectionNode tree into Beamer frames.
+
+        Sections emit ``\\section{}`` commands (used by Beamer navigation
+        bars / table of contents) and then render their blocks.  SlideBlocks
+        become proper frames; consecutive non-slide blocks are collected and
+        auto-wrapped in a frame titled after the section.
+
+        Args:
+            doc: The PyLaTeX Document to append to.
+            node: The section node to render.
+        """
+        if node.title == "__root__":
+            for child in node.children:
+                self._append_beamer_node(doc, child)
+            return
+
+        # Emit Beamer section / subsection markers for navigation
+        if node.level == 1:
+            doc.append(NoEscape(rf"\section{{{escape_latex(node.title)}}}"))
+        elif node.level == 2:
+            doc.append(NoEscape(rf"\subsection{{{escape_latex(node.title)}}}"))
+        else:
+            doc.append(NoEscape(rf"\subsubsection{{{escape_latex(node.title)}}}"))
+
+        # Render blocks — SlideBlocks become frames; loose blocks get
+        # collected and auto-wrapped in a frame.
+        loose: list[Block] = []
+
+        def _flush_loose() -> None:
+            if not loose:
+                return
+            doc.append(NoEscape(rf"\begin{{frame}}{{{escape_latex(node.title)}}}"))
+            for b in loose:
+                self._append_tex_block(doc, b, beamer=True)
+            doc.append(NoEscape(r"\end{frame}"))
+            loose.clear()
+
+        for block in node.blocks:
+            if isinstance(block, SlideBlock):
+                _flush_loose()
+                self._append_beamer_slide(doc, block)
+            else:
+                loose.append(block)
+        _flush_loose()
+
+        for child in node.children:
+            self._append_beamer_node(doc, child)
+
+    # =================================================================
+    # Beamer save methods
+    # =================================================================
+
+    def save_beamer_tex(self) -> str:
+        """Generate a Beamer .tex file.
+
+        Any open slide is auto-closed before rendering.
+
+        Returns:
+            str: Path to the generated .tex file.
+        """
+        # Auto-close any dangling slide
+        if self._active_slide is not None:
+            self.end_slide()
+        deck = self._new_slidedeck()
+        self._append_beamer_node(deck, self.root)
+        # -- raw tail (after all sections/frames) -------------------------
+        for line in self._raw_tail:
+            deck.append(NoEscape(line))
+        deck.generate_tex(self.base_name)
+        return f"{self.base_name}.tex"
+
+    _AUX_EXTENSIONS = (
+        ".aux", ".log", ".nav", ".out", ".snm", ".toc",
+        ".vrb", ".synctex.gz", ".fls", ".fdb_latexmk", ".bbl", ".blg",
+    )
+
+    def _cleanup_aux(self) -> None:
+        """Remove auxiliary files produced by pdflatex / biber."""
+        for ext in self._AUX_EXTENSIONS:
+            p = Path(f"{self.base_name}{ext}")
+            if p.exists():
+                p.unlink()
+
+    def save_beamer_pdf(self, runs: int = 1, clean: bool = True) -> str | None:
+        """Generate a Beamer PDF presentation.
+
+        Writes the .tex first, then compiles with pdflatex.
+
+        Args:
+            runs: Number of pdflatex passes (useful for TOC / references).
+            clean: Remove auxiliary files (.aux, .log, .nav, etc.) after
+                a successful build.  Defaults to True.
+
+        Returns:
+            Path to the generated PDF, or *None* if compilation fails.
+        """
+        tex_path = self.save_beamer_tex()
+        engine = shutil.which("pdflatex")
+        if engine is None:
+            print("pdflatex not found; wrote .tex only")
+            return None
+
+        output_dir = str(Path(tex_path).parent)
+        pdf_path = f"{self.base_name}.pdf"
+        ok = True
+        for _ in range(max(1, runs)):
+            result = subprocess.run(
+                [engine, "-interaction=nonstopmode",
+                 f"-output-directory={output_dir}", tex_path],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                ok = False
+                print("pdflatex failed; check the .log file")
+                print(result.stdout[-3000:])
+                break
+        if ok and clean:
+            self._cleanup_aux()
+        return pdf_path if ok and Path(pdf_path).exists() else None
 
     def save_tex(self) -> str:
         """Generate the LaTeX .tex file for this worklog.
@@ -952,7 +1320,7 @@ class DocumentBuilder:
     # PDF
     # =============================================================================
 
-    def save_pdf(self, runs: int = 1) -> str | None:
+    def save_pdf(self, runs: int = 1, clean: bool = True) -> str | None:
         """Generate the PDF for this worklog by first generating the .tex file and then
         invoking pdflatex the specified number of times. If pdflatex is not found,
         only the .tex file is written and None is returned.
@@ -960,6 +1328,8 @@ class DocumentBuilder:
         Args:
             runs (int, optional): The number of times to run pdflatex to resolve
                 references. Defaults to 1.
+            clean (bool, optional): Remove auxiliary files after a successful
+                build.  Defaults to True.
 
         Returns:
             str | None: The path to the generated PDF if successful, otherwise None.
@@ -970,12 +1340,14 @@ class DocumentBuilder:
             print("pdflatex not found; wrote .tex only")
             return None
 
+        output_dir = str(Path(tex_path).parent)
         pdf_path = f"{self.base_name}.pdf"
         ok = True
 
         for _ in range(max(1, runs)):
             result = subprocess.run(
-                [engine, "-interaction=nonstopmode", tex_path],
+                [engine, "-interaction=nonstopmode",
+                 f"-output-directory={output_dir}", tex_path],
                 capture_output=True,
                 text=True,
             )
@@ -984,21 +1356,32 @@ class DocumentBuilder:
                 print("pdflatex failed; check the .log file")
                 print(result.stdout[-3000:])
                 break
+        if ok and clean:
+            self._cleanup_aux()
         return pdf_path if ok and Path(pdf_path).exists() else None
 
-    def save_all(self, runs: int = 1) -> tuple[str, str, str | None]:
-        """ Save .pdf, .tex, .txt versions of the worklog.
+    def save_all(self, runs: int = 1, beamer: bool = False) -> tuple[str, str, str | None]:
+        """Save .txt, .tex, and .pdf versions of the document.
+
+        When *beamer* is True the LaTeX / PDF output uses Beamer
+        (slide-deck format) instead of article format.
 
         Args:
             runs (int, optional): The number of times to run pdflatex to resolve
                 references when generating the PDF. Defaults to 1.
+            beamer (bool, optional): If *True* produce a Beamer presentation
+                instead of an article. Defaults to False.
 
         Returns:
-            tuple[str, str, str | None]: A tuple containing the paths to the generated
-                .txt, .tex, and .pdf files, respectively. The PDF path will be None
-                if PDF generation failed or pdflatex was not found.
+            tuple[str, str, str | None]: Paths to the .txt, .tex, and .pdf
+                files respectively. The PDF path will be None if generation
+                failed or pdflatex was not found.
         """
         txt = self.save_txt()
-        tex = self.save_tex()
-        pdf = self.save_pdf(runs=runs)
+        if beamer:
+            tex = self.save_beamer_tex()
+            pdf = self.save_beamer_pdf(runs=runs)
+        else:
+            tex = self.save_tex()
+            pdf = self.save_pdf(runs=runs)
         return txt, tex, pdf

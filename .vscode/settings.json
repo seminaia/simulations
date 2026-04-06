@@ -27,7 +27,7 @@
     "workbench.externalBrowser": "firefox",
     "workbench.preferredDarkColorTheme": "Dark Modern",
     "workbench.iconTheme": "vs-seti",
-    "workbench.settings.alwaysShowAdvancedSettings": true,
+    "workbench.settings.alwaysShowAdvancedSettings": false,
     "workbench.settings.openDefaultKeybindings": true,
     "workbench.settings.useSplitJSON": true,
     "screencastMode.keyboardOptions": {
@@ -43,7 +43,6 @@
 
     },
     "chat.unifiedAgentsBar.enabled": false,
-    "chat.tools.terminal.sandbox.enabled": true,
     "chat.tools.terminal.outputLocation": "terminal",
     "chat.mcp.discovery.enabled": {
         "claude-desktop": true,
@@ -762,5 +761,6 @@
     "workbench.settings.editor": "json",
     "workbench.settings.openDefaultSettings": true,
     "workbench.browser.openLocalhostLinks": false,
-    "MATLAB.installPath": "/home/soki/matlab"
+    "MATLAB.installPath": "/home/soki/matlab",
+    "chat.agent.sandbox": true
 }

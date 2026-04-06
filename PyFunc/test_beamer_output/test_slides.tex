@@ -1,0 +1,123 @@
+\documentclass{beamer}%
+\usepackage[T1]{fontenc}%
+\usepackage[utf8]{inputenc}%
+\usepackage{lmodern}%
+\usepackage{textcomp}%
+%
+\usetheme{Madrid}%
+\usecolortheme{whale}%
+\usepackage{amsmath}%
+\usepackage{amssymb}%
+\usepackage{booktabs}%
+\usepackage{graphicx}%
+\usepackage{caption}%
+\usepackage{hyperref}%
+\title{DocumentBuilder Beamer Test}%
+\subtitle{Verifying slide{-}deck generation}%
+\author{Test Runner}%
+\date{\today}%
+%
+\begin{document}%
+\pagestyle{empty}%
+\normalsize%
+\begin{frame}%
+\titlepage%
+\end{frame}%
+\begin{frame}{Outline}%
+\tableofcontents%
+\end{frame}%
+\section{Introduction}%
+\begin{frame}{Welcome Slide}%
+This is a paragraph inside a Beamer frame.%
+\par%
+This is a single line.%
+\\%
+\end{frame}%
+\begin{frame}{Bullet Points}%
+\begin{itemize}%
+\item%
+First bullet%
+\item%
+Second bullet with some detail%
+\item%
+Third bullet%
+\end{itemize}%
+\end{frame}%
+\begin{frame}{Numbered List}%
+\begin{enumerate}%
+\item%
+Step one%
+\item%
+Step two%
+\item%
+Step three%
+\end{enumerate}%
+\end{frame}%
+\section{Mathematics}%
+\begin{frame}{Display Equation}%
+Here is the Schrödinger equation:%
+\par%
+\[%
+i\hbar \frac{\partial}{\partial t}\Psi = \hat{H}\Psi%
+\]%
+\end{frame}%
+\begin{frame}{Aligned Equations}%
+\begin{align*}%
+a &= b + c \\%
+&= d + e + f%
+\end{align*}%
+\end{frame}%
+\begin{frame}{Mixed Paragraph with Inline Math}%
+The energy is %
+$E = mc^{2}$%
+ where %
+$m$%
+ is mass.%
+\par%
+\end{frame}%
+\section{Data}%
+\begin{frame}{Sample Table}%
+\centering%
+\begin{tabular}{ccc}%
+\hline%
+Element&Z&Mass (amu)\\%
+\hline%
+H&1&1.0080\\%
+\hline%
+He&2&4.0026\\%
+\hline%
+Li&3&6.9410\\%
+\hline%
+\end{tabular}%
+\captionof{table}{Periodic table excerpt}%
+\end{frame}%
+\section{Extras}%
+\begin{frame}{Raw LaTeX}%
+\centering \textbf{Bold centered text via raw\_tex}%
+\end{frame}%
+\begin{frame}{Vertical Space}%
+Before space%
+\par%
+\vspace{1cm}%
+After space%
+\par%
+\end{frame}%
+\section{Auto{-}Wrapped Content}%
+\begin{frame}{Auto{-}Wrapped Content}%
+This paragraph was NOT placed inside a slide() call.%
+\par%
+It should be auto{-}wrapped in a frame titled after the section.%
+\par%
+\end{frame}%
+\section{Fragile Frame}%
+\begin{frame}[fragile]{Verbatim{-}Friendly}%
+\texttt{some\_monospace\_code()}%
+\end{frame}
+%
+\section{Subtitle Demo}%
+\begin{frame}{Main Title}%
+\framesubtitle{A clarifying subtitle}%
+This slide has both a title and a subtitle.%
+\par%
+\end{frame}%
+\end{document}

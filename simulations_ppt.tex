@@ -1,0 +1,97 @@
+\documentclass[aspectratio=169,10pt]{beamer}%
+\usepackage[T1]{fontenc}%
+\usepackage[utf8]{inputenc}%
+\usepackage{lmodern}%
+\usepackage{textcomp}%
+%
+\usetheme[numbering=none,progressbar=frametitle]{metropolis}%
+\usepackage{amsmath}%
+\usepackage{amssymb}%
+\usepackage{booktabs}%
+\usepackage{graphicx}%
+\usepackage{caption}%
+\usepackage{hyperref}%
+\metroset{block=fill, titleformat frame=smallcaps}%
+\setbeamertemplate{footline}{}%
+\setbeamertemplate{navigation symbols}{}%
+\usepackage[english]{babel}%
+\usepackage{lmodern}%
+\usepackage{microtype}%
+\usepackage{csquotes}%
+\usepackage{siunitx}%
+\sisetup{detect-all}%
+\usepackage{appendixnumberbeamer}%
+\usepackage{chemformula}%
+\usepackage{subcaption}%
+\usepackage{adjustbox}%
+\definecolor{WPIred}{HTML}{A41034}%
+\definecolor{WPIgray}{HTML}{6B6F72}%
+\definecolor{WPIlight}{HTML}{F2F2F2}%
+\definecolor{Accent}{HTML}{E67E22}%
+\setbeamercolor{frametitle}{bg=WPIred, fg=white}%
+\setbeamercolor{progress bar}{fg=WPIred!80!black, bg=WPIgray!30}%
+\setbeamercolor{title separator}{fg=WPIred}%
+\setbeamercolor{alerted text}{fg=Accent}%
+\setbeamercolor{block title}{bg=WPIred!15, fg=WPIred!80!black}%
+\setbeamercolor{block body}{bg=WPIlight}%
+\newcommand{\TitleBG}{~/Templates/background1.pdf}%
+\newcommand{\BodyBG}{~/Templates/background2.pdf}%
+\newcommand{\EndBG}{~/Templates/background3.pdf}%
+\setbeamertemplate{background canvas}{\includegraphics[width=\paperwidth,height=\paperheight,keepaspectratio]{\BodyBG}}%
+\usepackage[backend=biber,style=ieee,sorting=none]{biblatex}%
+\addbibresource{}%
+\newcommand{\structureimg}[2][]{\adjincludegraphics[#1,width=0.45\linewidth,height=0.32\textheight,keepaspectratio]{#2}}%
+\title{Introduction to Atomistic and Molecular Simulations}%
+\author{Soknarith Sem}%
+\institute{Worcester Polytechnic Institute}%
+\date{\today}%
+%
+\begin{document}%
+\pagestyle{empty}%
+\normalsize%
+{%
+\setbeamertemplate{background canvas}{%
+  \includegraphics[width=\paperwidth,height=\paperheight,keepaspectratio]{\TitleBG}%
+}%
+\begin{frame}[plain]%
+  \vspace{0.20\textheight}%
+  \titlepage%
+\end{frame}%
+}%
+\section{Background}%
+\begin{frame}{Time Scales vs Length Scales}%
+\centering%
+\includegraphics[width=0.85\textwidth]{/home/soki/simulations/figures/timescale_vs_lengthscale.pdf}%
+\end{frame}%
+\begin{frame}{Quantum vs Classical Simulations}%
+\centering%
+\begin{tabular}{c|c}%
+\hline%
+Schrödinger's Equation&Newton's Equation\\%
+\hline%
+\end{tabular}%
+\end{frame}%
+\begin{frame}{Jacob's Ladder}%
+\end{frame}%
+\section{Conclusion}%
+\begin{frame}{Summary}%
+\end{frame}%
+\begin{frame}{Acknowledgments}%
+WPI Turing Computing Cluster, University of Texas, TACC, and Prof. Yu Zhong%
+\par%
+\end{frame}%
+\begin{frame}{References}%
+\end{frame}%
+{%
+\setbeamertemplate{background canvas}{%
+  \includegraphics[width=\paperwidth,height=\paperheight,keepaspectratio]{\EndBG}%
+}%
+\begin{frame}[plain]%
+  \centering%
+  {\LARGE\textbf{Thank You!}}\\[2em]%
+  \large Questions?\\[1.5em]%
+  \small%
+  \href{mailto:ssem@wpi.edu}{ssem@wpi.edu}%
+\end{frame}%
+}%
+\end{document}

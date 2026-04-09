@@ -1,0 +1,115 @@
+# ===================================================
+# VS Code R Capability Test Script
+# Run this file line by line (Ctrl+Enter) or all at once
+# ===================================================
+
+# 1. ENVIRONMENT CHECK ---------------------------------
+cat("\n--- 1. R Environment ---\n")
+cat("R version:", R.version.string, "\n")
+cat("Working directory:", getwd(), "\n")
+cat("VS Code session temp dir:", tempdir(), "\n")
+
+# Check if essential VS Code R packages are installed
+# (These help with syntax highlighting, autocomplete, etc.)
+pkgs <- c("languageserver", "httpgd", "jsonlite")
+installed <- pkgs %in% installed.packages()[,"Package"]
+if (!all(installed)) {
+  cat("\n⚠️ Recommended VS Code R packages missing:\n")
+  cat(paste(" -", pkgs[!installed]), sep = "\n")
+  cat("\nInstall them with: install.packages(c('languageserver', 'httpgd'))\n")
+} else {
+  cat("\n✅ All recommended VS Code R packages are installed.\n")
+}
+
+# 2. BASIC DATA OPERATIONS -----------------------------
+cat("\n--- 2. Basic Data Frame & Manipulation ---\n")
+
+# Create a sample data frame
+set.seed(42)  # for reproducibility
+df <- data.frame(
+  group = rep(c("A", "B", "C"), each = 10),
+  score = c(rnorm(10, mean = 70, sd = 5),
+            rnorm(10, mean = 75, sd = 5),
+            rnorm(10, mean = 80, sd = 5)),
+  date = seq.Date(as.Date("2025-01-01"), by = "day", length.out = 30)
+)
+
+cat("Sample data (first 6 rows):\n")
+print(head(df))
+
+cat("\nSummary statistics by group (using base R):\n")
+print(aggregate(score ~ group, data = df, FUN = summary))
+
+# 3. PLOTTING TEST -------------------------------------
+cat("\n--- 3. Plotting (should open a plot window) ---\n")
+cat("Creating a boxplot and a scatter plot...\n")
+
+# Base R graphics
+par(mfrow = c(1, 2))  # side-by-side plots
+boxplot(score ~ group, data = df, col = "lightblue",
+        main = "Scores by Group", xlab = "Group", ylab = "Score")
+
+plot(df$date, df$score, col = as.numeric(factor(df$group)),
+     pch = 16, main = "Score over Time", xlab = "Date", ylab = "Score")
+legend("topleft", legend = levels(factor(df$group)),
+       col = 1:3, pch = 16)
+
+# Reset plot parameters
+par(mfrow = c(1, 1))
+
+# Optional: if ggplot2 is installed, create a more advanced plot
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  cat("\n✅ ggplot2 detected. Creating a ggplot...\n")
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = date, y = score, color = group)) +
+    ggplot2::geom_point(size = 2) +
+    ggplot2::geom_smooth(method = "lm", se = FALSE) +
+    ggplot2::labs(title = "Score Trend by Group (ggplot2)")
+  print(p)
+} else {
+  cat("\nℹ️ ggplot2 not installed. Skipping advanced plot.\n")
+  cat("   Install with: install.packages('ggplot2')\n")
+}
+
+# 4. STATISTICAL MODELING ------------------------------
+cat("\n--- 4. Linear Model ---\n")
+model <- lm(score ~ group + date, data = df)
+cat("ANOVA summary:\n")
+print(anova(model))
+cat("\nModel coefficients:\n")
+print(summary(model)$coefficients)
+
+# 5. PACKAGE LOADING TEST (dplyr) ----------------------
+cat("\n--- 5. dplyr Test (if installed) ---\n")
+if (requireNamespace("dplyr", quietly = TRUE)) {
+  library(dplyr)
+  cat("✅ dplyr loaded successfully.\n")
+  
+  df_summary <- df %>%
+    group_by(group) %>%
+    summarise(
+      mean_score = mean(score),
+      sd_score = sd(score),
+      n = n(),
+      .groups = "drop"
+    )
+  cat("Grouped summary using dplyr:\n")
+  print(df_summary)
+} else {
+  cat("ℹ️ dplyr not installed. Skipping data manipulation test.\n")
+  cat("   Install with: install.packages('dplyr')\n")
+}
+
+# 6. SYSTEM COMMAND TEST (optional) --------------------
+cat("\n--- 6. System Command Test ---\n")
+if (.Platform$OS.type == "windows") {
+  sys_result <- shell("echo %OS%", intern = TRUE)
+} else {
+  sys_result <- system("uname -a", intern = TRUE)
+}
+cat("System info from shell:\n", paste(sys_result, collapse = "\n"), "\n")
+
+# 7. SESSION INFO --------------------------------------
+cat("\n--- 7. Full Session Info ---\n")
+print(sessionInfo())
+
+cat("\n✅ R in VS Code test completed.\n")

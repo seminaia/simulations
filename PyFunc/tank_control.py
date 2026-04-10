@@ -69,8 +69,8 @@ qbar0 = sp.lambdify((hbar, alpha), qbar_sol)(hbar0, alpha0)
 print(f"\nChosen steady state: hbar = {hbar0}, qbar = {qbar0}")
 
 # Evaluate A, B
-a = float(A_sym.subs({alpha: alpha0, hbar: hbar0}))
-b = float(B_sym.subs({alpha: alpha0, hbar: hbar0}))
+a = float(sp.N(A_sym.subs({alpha: alpha0, hbar: hbar0})))
+b = float(sp.N(B_sym.subs({alpha: alpha0, hbar: hbar0})))
 c = 1.0
 d = 0.0
 print(f"\nNumerical A: {a}")

@@ -1,62 +1,114 @@
-from re import M
-from numpy.random import laplace
-import scipy
 import control as ct
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.integrate
 import sympy as sp
-from sympy import Function, dsolve, diff, checkodesol
-from sympy.physics.mechanics import linearize
-from sympy.abc import F, t, s
-from IPython.display import display, Math
-sp.init_printing()
 
-h = Function('h')(t)
-H = Function('H')(s)
-q_in = Function('q_in')(t)
-Q_in = Function('Q_in')(s)
-A, cv = sp.symbols(names='A cv', positive=True)
-hbar = sp.symbols('hbar', positive=True)  # Steady-state
-q_out = cv * sp.sqrt(h)
-ode = sp.Eq(diff(h, t), (q_in - q_out) / A)
-sp.pprint(ode)
-ode_rhs = sp.simplify(ode.rhs)
-sp.pprint(ode_rhs)
-f = sp.lambdify((h, q_in, A, cv),ode_rhs, modules='numpy')
-h_lin = Function('h_lin')(t)
-h_linbar = sp.symbols('h_linbar', positive=True)
-A0= 2
-cv = 0.05
-h0 = 1
-V0 = A0 * h0
-qin = 1 
-tspan = np.linspace(0, stop=100, 1000)
+# -------------------------
+# Symbolic setup
+# -------------------------
+t = sp.symbols('t', real=True)
+h, qin = sp.symbols('h qin', positive=True, real=True)
+A, cv = sp.symbols('A cv', positive=True, real=True)
+
+f_expr = (qin - cv*sp.sqrt(h)) / A
+print("Nonlinear RHS:")
+sp.pprint(f_expr)
+
+# Steady-state symbols
+hbar, qbar = sp.symbols('hbar qbar', positive=True, real=True)
+
+# Steady-state condition
+ss_eq = sp.Eq(0, f_expr.subs({h: hbar, qin: qbar}))
+print("\nSteady-state condition:")
+sp.pprint(ss_eq)
+
+# Jacobians for linearization
+a_sym = sp.diff(f_expr, h).subs({h: hbar, qin: qbar})
+b_sym = sp.diff(f_expr, qin).subs({h: hbar, qin: qbar})
+
+print("\na = df/dh at steady state:")
+sp.pprint(sp.simplify(a_sym))
+
+print("\nb = df/dqin at steady state:")
+sp.pprint(sp.simplify(b_sym))
+
+# -------------------------
+# Numerical parameters
+# -------------------------
+A0 = 2.0
+cv0 = 0.05
+hbar0 = 1.0
+
+# To linearize about hbar0, choose the consistent steady inflow
+qbar0 = cv0 * np.sqrt(hbar0)
+
+print(f"\nChosen steady state: hbar = {hbar0}, qbar = {qbar0}")
+
+# Evaluate A, B
+a = float(a_sym.subs({A: A0, cv: cv0, hbar: hbar0}))
+b = float(b_sym.subs({A: A0, cv: cv0, hbar: hbar0}))
+c = 1.0
+d = 0.0
+
+print(f"a = {a}")
+print(f"b = {b}")
+
+# Linear state-space system in deviation variables:
+# x = h - hbar
+# u = qin - qbar
+# xdot = a x + b u
+sys = ct.ss(a, b, c, d)
+
+# -------------------------
+# Nonlinear simulation
+# -------------------------
+def f_nonlinear(h, qin, A, cv):
+    return (qin - cv*np.sqrt(max(h, 0.0))) / A
+
+tspan = np.linspace(0, 100, 1000)
 dt = tspan[1] - tspan[0]
 
-hspan =[]
-for t in tspan:
-    hdot = f(h0, qin, A0, cv)
-    h0 += hdot * dt
-    hspan.append(h0)
-plt.plot(tspan, hspan)
-plt.xlabel('Time [s]')
-plt.ylabel('Height h [m]')
-plt.title('Tank Level Response to Initial Condition')
-#sys = ct.ss(a, b, c, d, inputs='q_in', outputs='h')
-plt.show()
-# Step response (input magnitude = 1 by default)
-response = ct.step_response(sysdata=sys, X0=[1])
-t = response.time
-x = response.states   # height deviation
+# Step in inflow around steady state
+du = 0.02                 # small step
+qin_step = qbar0 + du
 
-# Compute theoretical DC gain
+h_nl = hbar0
+hspan = []
 
-# Plot
-plt.plot(t, x[0], 'b', label='Height deviation')
+for _ in tspan:
+    hdot = f_nonlinear(h_nl, qin_step, A0, cv0)
+    h_nl += hdot * dt
+    hspan.append(h_nl)
+
+hspan = np.array(hspan)
+x_nl = hspan - hbar0      # deviation from steady state
+
+# -------------------------
+# Linear step response
+# -------------------------
+# Since system uses deviation input u, apply a step of size du
+t_lin, y_lin = ct.step_response(du * sys, T=tspan)
+
+# -------------------------
+# Plot comparison
+# -------------------------
+plt.figure()
+plt.plot(tspan, x_nl, label='Nonlinear deviation: h - hbar')
+plt.plot(t_lin, y_lin, '--', label='Linearized deviation')
 plt.xlabel('Time [s]')
-plt.ylabel('Height deviation x = h - h0 [m]')
-plt.title('Tank Level Step Response (Linearized Model)')
-plt.legend()
+plt.ylabel('Height deviation [m]')
+plt.title('Tank level: nonlinear vs linearized response')
 plt.grid(True)
+plt.legend()
+plt.show()
+
+# Also plot absolute height if wanted
+plt.figure()
+plt.plot(tspan, hspan, label='Nonlinear h(t)')
+plt.plot(t_lin, hbar0 + y_lin, '--', label='Linearized h(t)')
+plt.xlabel('Time [s]')
+plt.ylabel('Height [m]')
+plt.title('Absolute tank level response')
+plt.grid(True)
+plt.legend()
 plt.show()

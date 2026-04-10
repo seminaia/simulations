@@ -24,12 +24,14 @@ sp.pprint(ode)
 ode_rhs = sp.simplify(ode.rhs)
 sp.pprint(ode_rhs)
 f = sp.lambdify((h, q_in, A, cv),ode_rhs, modules='numpy')
+h_lin = Function('h_lin')(t)
+h_linbar = sp.symbols('h_linbar', positive=True)
 A0= 2
 cv = 0.05
 h0 = 1
 V0 = A0 * h0
 qin = 1 
-tspan = np.linspace(start=0, 1000, 1000)
+tspan = np.linspace(0, stop=100, 1000)
 dt = tspan[1] - tspan[0]
 
 hspan =[]

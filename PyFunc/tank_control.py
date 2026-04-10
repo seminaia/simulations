@@ -1,11 +1,13 @@
+from IPython.core import display_functions
 import control as ct
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate._ivp.radau import P
 import sympy as sp
 from sympy.abc import x,t,s,u
-from IPython.display import display, Math
-sp.init_printing()
+from IPython.display import display, Math, Latex
+from sympy.utilities.lambdify import MATH
+sp.init_printing(use_latex=True)
 # xdot = Ax + Bu in deviation, where x = h - hbar, u = qin - qbar
 # y = Cx + Du  # output is just the height deviation, so C = 1, D = 0
 
@@ -16,10 +18,10 @@ f_expr = (qin - qout)
 f_lamda = sp.lambdify((h, qin, alpha), f_expr)
 
 hdot = sp.symbols(names='hdot', real=True)
-
+hdot_nl_eq = sp.Eq(hdot, f_expr)
+hdot_nl_eq_latex = sp.latex(hdot_nl_eq)
 print("Nonlinear:")
-sp.pprint(sp.Eq(hdot, f_expr))
-
+display(Math(hdot_nl_eq_latex))
 # Steady-state condition and linearization
 hbar, qbar = sp.symbols('hbar qbar', positive=True, real=True)
 ss_eq = sp.Eq(0, f_expr.subs({h: hbar, qin: qbar}))
@@ -27,39 +29,34 @@ ss_eq = sp.Eq(0, f_expr.subs({h: hbar, qin: qbar}))
 print("\nSteady-state:")
 sp.pprint(ss_eq)
 qbar_sol = sp.solve(ss_eq, qbar)[0]
-
 print("qbar as a function of hbar:")
-sp.pprint(sp.Eq(qbar, qbar_sol))
+print(sp.latex(sp.Eq(qbar, qbar_sol)))
 
 A_sym = sp.diff(f_expr, h).subs({h: hbar, qin: qbar}) # Linearized by taking the Jacobian of the RHS with respect to h and qin, then evaluating at the steady state
 B_sym = sp.diff(f_expr, qin).subs({h: hbar, qin: qbar})
 xp = h - hbar
 up = qin - qbar
-up_eq = sp.Eq(u, qin - qbar)
-
 rhs = A_sym*xp + B_sym*up
 
 h_taylor = qout.series(h, hbar, n=2).removeO()  # Taylor expansion of the outflow around the steady state, to visualize the nonlinearity
 lin_sys =  qbar_sol + up - h_taylor 
 
-hdot_jac = sp.Eq(sp.symbols(names='xdot'), rhs)
-hdot_taylor = sp.Eq(sp.symbols(names='xdot'),lin_sys)
+hdot_jac = sp.Eq(sp.symbols(names='xdot'), rhs).subs({xp: x, up: u})  
+hdot_taylor = sp.Eq(sp.symbols(names='xdot'),lin_sys).subs({xp: x, up: u}) 
 y = sp.Eq(sp.symbols(names='y'), sp.symbols(names='x'))  # since C = 1, D = 0, output is just the deviation in height
 
 print("\nLinearized system (xdot = A x + B u):")
-sp.pprint(sp.Eq(sp.diff(xp, t,evaluate=False),lin_sys))
-sp.pprint(sp.Eq(sp.diff(xp, t,evaluate=False), rhs))
+
 print("x= {} u= {}".format(xp, up))
-sp.pprint(sp.Eq(sp.diff(xp, t,evaluate=False), hdot_jac))
-sp.pprint(sp.Eq(sp.diff(xp, t,evaluate=False), hdot_taylor))
+print("A = {}".format(A_sym))
+print("B = {}".format(B_sym))
+sp.pprint(hdot_jac)
+sp.pprint(hdot_taylor)
+
+
 print("\nOutput equation (y = C x + D u):")
 sp.pprint(y)
 
-print("\nLinearized A and B:")
-print("A:")
-sp.pprint(A_sym)
-print("\nB:")
-sp.pprint(B_sym)
 
 # -------------------------
 # Numerical parameters
@@ -93,15 +90,15 @@ tspan = np.linspace(0, 100, 1000)
 dt = tspan[1] - tspan[0]
 A0=2
 # Step in inflow around steady state
-du = 0.01                 # small step
+du = 1                 # Unit step response
 qin_step = qbar0 + du  # step up from steady state inflow
 
 h_nl = hbar0
 hspan = []
 
 for _ in tspan:
-    hdot_lam = f_lamda(h_nl, qin_step, alpha0)
-    h_nl += hdot_lam *dt
+    hdot_nl = f_lamda(h_nl, qin_step, alpha0)
+    h_nl += hdot_nl * dt
     hspan.append(h_nl)
 
 hspan = np.array(hspan)
@@ -111,7 +108,7 @@ x_nl = hspan - hbar0      # deviation from steady state
 # Linear step response
 # -------------------------
 # Since system uses deviation input u, apply a step of size du
-t_lin, y_lin = ct.step_response(sys*du, tspan)
+t_lin, y_lin = ct.forced_response(sys, tspan, U=du*np.ones_like(tspan))
 
 # -------------------------
 # Plot comparison

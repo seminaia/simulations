@@ -11,6 +11,7 @@ from sympy.abc import x,t,s,u
 sp.init_printing()
 # xdot = Ax + Bu in deviation, where x = h - hbar, u = qin - qbar
 # y = Cx + Du  # output is just the height deviation, so C = 1, D = 0
+A0=2
 
 h, qin= sp.symbols(names='h q_in', positive=True, real=True)
 alpha = sp.symbols('alpha', positive=True, real=True)
@@ -38,7 +39,7 @@ xp = h - hbar
 up = qin - qbar
 rhs = A_sym*xp + B_sym*up
 
-h_taylor = qout.series(h, hbar, n=3).removeO()  # Taylor expansion of the outflow around the steady state, to visualize the nonlinearity
+h_taylor = qout.series(h, hbar,n=2).removeO()  # Taylor expansion of the outflow around the steady state, to visualize the nonlinearity
 lin_sys =  qbar_sol + up - h_taylor 
 
 hdot_jac = sp.Eq(sp.symbols(names='xdot'), rhs).subs({xp: x, up: u})  
@@ -61,20 +62,21 @@ sp.pprint(y)
 # -------------------------
 # Numerical parameters
 # -------------------------
-alpha0 = 0.05
+alpha0 = 2*20**(0.7-1)
+print(f"\nNumerical alpha: {alpha0:.4f}")
 hbar0 = 1.0
 
 # To linearize about hbar0, choose the consistent steady inflow
 qbar0 = sp.lambdify((hbar, alpha), qbar_sol)(hbar0, alpha0)
-print(f"\nChosen steady state: hbar = {hbar0}, qbar = {qbar0}")
+print(f"\nChosen steady state: hbar = {hbar0}, qbar = {qbar0:.4f}")
 
 # Evaluate A, B
-a = float(sp.N(A_sym.subs({alpha: alpha0, hbar: hbar0})))
-b = float(sp.N(B_sym.subs({alpha: alpha0, hbar: hbar0})))
+a = float(sp.N(A_sym.subs({alpha: alpha0, hbar: hbar0})))/A0
+b = float(sp.N(B_sym.subs({alpha: alpha0, hbar: hbar0})))/A0
 c = 1.0
 d = 0.0
-print(f"\nNumerical A: {a}")
-print(f"Numerical B: {b}")
+print(f"\nNumerical A: {a:.4f}")
+print(f"Numerical B: {b:.4f}")
 
 # Linear state-space system in deviation variables:
 # x = h - hbar
@@ -87,8 +89,7 @@ sys = ct.ss(a, b, c, d)
 # Nonlinear simulation
 # -------------------------
 tspan = np.linspace(1, 100, 1000)
-dt = tspan[1] - tspan[0]
-A0=2
+dt = tspan[1]-tspan[0]
 omega = 0.05
 A_amp = 0.2
 # Step in inflow around steady state
@@ -102,10 +103,9 @@ h_nl = hbar0
 hspan = []
 
 for i, _ in enumerate(tspan):
-    hdot_nl = f_lamda(h_nl, qin_step, alpha0)
+    hdot_nl = f_lamda(h_nl,qin_step, alpha0)/A0
     h_nl += hdot_nl * dt
     hspan.append(h_nl)
-
 hspan = np.array(hspan)
 x_nl = hspan - hbar0      # deviation from steady state
 

@@ -1,3 +1,5 @@
+from re import A
+
 from IPython.core import display_functions
 import control as ct
 import numpy as np
@@ -5,9 +7,8 @@ import matplotlib.pyplot as plt
 from scipy.integrate._ivp.radau import P
 import sympy as sp
 from sympy.abc import x,t,s,u
-from IPython.display import display, Math, Latex
-from sympy.utilities.lambdify import MATH
-sp.init_printing(use_latex=True)
+
+sp.init_printing()
 # xdot = Ax + Bu in deviation, where x = h - hbar, u = qin - qbar
 # y = Cx + Du  # output is just the height deviation, so C = 1, D = 0
 
@@ -19,9 +20,8 @@ f_lamda = sp.lambdify((h, qin, alpha), f_expr)
 
 hdot = sp.symbols(names='hdot', real=True)
 hdot_nl_eq = sp.Eq(hdot, f_expr)
-hdot_nl_eq_latex = sp.latex(hdot_nl_eq)
 print("Nonlinear:")
-display(Math(hdot_nl_eq_latex))
+sp.pprint(hdot_nl_eq)
 # Steady-state condition and linearization
 hbar, qbar = sp.symbols('hbar qbar', positive=True, real=True)
 ss_eq = sp.Eq(0, f_expr.subs({h: hbar, qin: qbar}))
@@ -30,7 +30,7 @@ print("\nSteady-state:")
 sp.pprint(ss_eq)
 qbar_sol = sp.solve(ss_eq, qbar)[0]
 print("qbar as a function of hbar:")
-print(sp.latex(sp.Eq(qbar, qbar_sol)))
+sp.pprint(sp.Eq(qbar, qbar_sol))
 
 A_sym = sp.diff(f_expr, h).subs({h: hbar, qin: qbar}) # Linearized by taking the Jacobian of the RHS with respect to h and qin, then evaluating at the steady state
 B_sym = sp.diff(f_expr, qin).subs({h: hbar, qin: qbar})
@@ -47,9 +47,9 @@ y = sp.Eq(sp.symbols(names='y'), sp.symbols(names='x'))  # since C = 1, D = 0, o
 
 print("\nLinearized system (xdot = A x + B u):")
 
-print("x= {} u= {}".format(xp, up))
-print("A = {}".format(A_sym))
-print("B = {}".format(B_sym))
+print("x= {}, u= {}".format(xp, up))
+sp.pprint(sp.Eq(sp.symbols(names='A'), A_sym))
+sp.pprint(sp.Eq(sp.symbols(names='B'), B_sym))
 sp.pprint(hdot_jac)
 sp.pprint(hdot_taylor)
 
@@ -114,11 +114,11 @@ t_lin, y_lin = ct.forced_response(sys, tspan, U=du*np.ones_like(tspan))
 # Plot comparison
 # -------------------------
 plt.figure()
-plt.plot(tspan, x_nl, label='Nonlinear deviation: h - hbar')
+plt.plot(tspan, x_nl, label='Nonlinear deviation: x = h - hbar')
 plt.plot(t_lin, y_lin, '--', label='Linearized deviation')
-plt.xlabel('Time [s]')
+plt.xlabel(xlabel='Time [s]')
 plt.ylabel('Height deviation [m]')
-plt.title('Tank level: nonlinear vs linearized response')
+plt.title(label='Tank level: nonlinear vs linearized response')
 plt.grid(True)
 plt.legend()
 plt.show()

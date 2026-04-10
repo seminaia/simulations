@@ -38,7 +38,7 @@ xp = h - hbar
 up = qin - qbar
 rhs = A_sym*xp + B_sym*up
 
-h_taylor = qout.series(h, hbar, n=2).removeO()  # Taylor expansion of the outflow around the steady state, to visualize the nonlinearity
+h_taylor = qout.series(h, hbar, n=3).removeO()  # Taylor expansion of the outflow around the steady state, to visualize the nonlinearity
 lin_sys =  qbar_sol + up - h_taylor 
 
 hdot_jac = sp.Eq(sp.symbols(names='xdot'), rhs).subs({xp: x, up: u})  
@@ -86,17 +86,22 @@ sys = ct.ss(a, b, c, d)
 # -------------------------
 # Nonlinear simulation
 # -------------------------
-tspan = np.linspace(0, 100, 1000)
+tspan = np.linspace(1, 100, 1000)
 dt = tspan[1] - tspan[0]
 A0=2
+omega = 0.05
+A_amp = 0.2
 # Step in inflow around steady state
-du = 1                 # Unit step response
-qin_step = qbar0 + du  # step up from steady state inflow
+du = 1
+usin = A_amp * np.sin(omega*tspan)  
 
+# Unit step response
+qin_step = qbar0 + du  # step up from steady state inflow
+qin_sin = qbar0 + usin     # sinusoidal variation around steady state inflow
 h_nl = hbar0
 hspan = []
 
-for _ in tspan:
+for i, _ in enumerate(tspan):
     hdot_nl = f_lamda(h_nl, qin_step, alpha0)
     h_nl += hdot_nl * dt
     hspan.append(h_nl)
@@ -108,7 +113,7 @@ x_nl = hspan - hbar0      # deviation from steady state
 # Linear step response
 # -------------------------
 # Since system uses deviation input u, apply a step of size du
-t_lin, y_lin = ct.forced_response(sys, tspan, U=du*np.ones_like(tspan))
+t_lin, y_lin = ct.forced_response(sys, tspan,U=du)
 
 # -------------------------
 # Plot comparison

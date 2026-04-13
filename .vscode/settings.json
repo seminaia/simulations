@@ -762,5 +762,5 @@
     "workbench.settings.openDefaultSettings": true,
     "workbench.browser.openLocalhostLinks": false,
     "MATLAB.installPath": "/home/soki/matlab",
-    "chat.agent.sandbox": true
+    "chat.agent.sandbox.enabled": "on"
 }

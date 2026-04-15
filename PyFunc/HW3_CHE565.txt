@@ -1,0 +1,24 @@
+CHE 565 -- Homework 3
+Soki Sem
+================================================================================
+
+Problem 1
+====================
+
+Setup
+--------
+
+Function :
+
+[MATH] f{\left(x_{1},x_{2} \right)} = 0.5 x_{1}^{2} + 1.0 x_{1} x_{2} - x_{1} + 1.0 x_{2}^{2} - x_{2}
+At x0 =[1, 1], f(x0) = 0.5
+
+Gradient of f:
+
+[MATH] \left[\begin{matrix}1.0 x_{1} + 1.0 x_{2} - 1\\1.0 x_{1} + 2.0 x_{2} - 1\end{matrix}\right]
+At x0 =[1, 1], Df(x0) = [[1.]
+ [2.]]
+
+Function g:
+
+[MATH] \text{False}

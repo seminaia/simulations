@@ -42,7 +42,7 @@ doc.maketitle(True)
 doc.toc(False)
 
 doc.section("Problem 1")
-doc.subsection("Setup")
+doc.subsection("Steepest Descent ")
 x1, x2= sp.symbols('x1 x2')
 f = sp.Function('f')(x1, x2)
 expr= -x1-x2+1/2*(x1**2+2*x1*x2+2*x2**2)
@@ -87,6 +87,16 @@ m(sp.latex(sp.Eq(0, dphi_k)))
 w(rf"Optimal alpha: {alpha_opt[0]:.2f}")
 w(rf"Next iterate x1: {x_next[0]:.2f}, x2: {x_next[1]:.2f}")
 w(rf"Function value at next iterate: {f_next:.2f}")
+
+doc.section("Problem 2")
+doc.subsection("Conjugate Gradient Method")
+s0 = -Df0
+s1= sp.Function('s1')(alpha)
+s2= sp.Function('s2')(alpha)
+s = sp.Matrix(2, 1, [s1, s2])
+expr_s = -Df_eq(*x_next) + s0*Df_eq(*x_next).T*Df_eq(*x_next)/Df_eq(*x_next).T*Df_eq(*x_next)
+s_eq = sp.Eq(s, expr_s)
+m(sp.latex(s_eq))
 
 txt_file, tex_file, pdf_file = doc.save_all()
 

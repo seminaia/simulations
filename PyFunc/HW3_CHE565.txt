@@ -5,8 +5,8 @@ Soki Sem
 Problem 1
 ====================
 
-Setup
---------
+Steepest Descent 
+-----------------
 
 Function :
 
@@ -31,3 +31,12 @@ Optimal alpha: 0.50
 Next iterate x1: 0.50, x2: 0.00
 
 Function value at next iterate: -0.38
+
+
+Problem 2
+====================
+
+Conjugate Gradient Method
+-------------------------
+
+[MATH] \left[\begin{matrix}s_{1}{\left(\alpha \right)}\\s_{2}{\left(\alpha \right)}\end{matrix}\right] = \left[\begin{matrix}-0.5\\-1.5\end{matrix}\right]

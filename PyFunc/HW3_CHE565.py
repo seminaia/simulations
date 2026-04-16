@@ -55,14 +55,13 @@ Df_eq = sp.lambdify((x1, x2), Df)
 Df0 = Df_eq(*x0)
 x = sp.Matrix([x1, x2])
 g1 = sp.Function('g1')(alpha)
+g1_lam = sp.lambdify(alpha, g1)
 g2 = sp.Function('g2')(alpha)
-g = sp.FunctionMatrix(2, 1, g1)
-g_vec = sp.Matrix([g1,g2])
+g2_lam = sp.lambdify(alpha, g2)
+g = sp.Matrix(2, 1, [g1, g2])
 
 expr_g = x - alpha*Df
 g_eq = sp.Eq(g,expr_g)
-sp.pprint(g_eq)
-g0_eq = sp.lambdify(alpha, expr_g)
 
 #phi_k_eq = sp.Eq(phi_k, phi_k)
 #phi_k_lam = sp.lambdify(alpha, phi_k)

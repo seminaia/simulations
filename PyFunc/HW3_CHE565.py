@@ -87,6 +87,7 @@ m(sp.latex(sp.Eq(0, dphi_k)))
 w(rf"Optimal alpha: {alpha_opt[0]:.2f}")
 w(rf"Next iterate x1: {x_next[0]:.2f}, x2: {x_next[1]:.2f}")
 w(rf"Function value at next iterate: {f_next:.2f}")
+
 txt_file, tex_file, pdf_file = doc.save_all()
 
 print(f"Wrote text log: {txt_file}")

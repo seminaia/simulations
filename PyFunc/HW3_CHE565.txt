@@ -22,4 +22,3 @@ At x0 =[1, 1], Df(x0) = [[1.]
 Function g:
 
 [MATH] \left[\begin{matrix}g_{1}{\left(\alpha \right)}\\g_{2}{\left(\alpha \right)}\end{matrix}\right] = \left[\begin{matrix}- \alpha \left(1.0 x_{1} + 1.0 x_{2} - 1\right) + x_{1}\\- \alpha \left(1.0 x_{1} + 2.0 x_{2} - 1\right) + x_{2}\end{matrix}\right]
-[MATH] \mathtt{\text{<function \_lambdifygenerated at 0x73cacb942a30>}}

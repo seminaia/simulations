@@ -62,10 +62,11 @@ g = sp.Matrix(2, 1, [g1, g2])
 
 expr_g = x - alpha*Df
 g_eq = sp.Eq(g,expr_g)
-
-#phi_k_eq = sp.Eq(phi_k, phi_k)
-#phi_k_lam = sp.lambdify(alpha, phi_k)
-#alpha_opt = minimize(phi_k_lam, 0.1).x[0]
+phi_k= f_eq.subs(x1, expr_g[0]).subs(x2, expr_g[1])
+phi_k_simplified = sp.simplify(phi_k)
+dphi_k = sp.diff(phi_k, alpha)
+alpha_opt = sp.solve(dphi_k, alpha)
+sp.pprint(dphi_k)
 doc.p("Function :")
 m(sp.latex(f_eq))
 w(rf"At x0 ={x0}, f(x0) = {f0}")
@@ -74,6 +75,7 @@ m(sp.latex(Df))
 w(rf"At x0 ={x0}, Df(x0) = {Df0}")
 w("Function g:")
 m(sp.latex(g_eq))
+
 #w("Function phi_k:")
 #m(sp.latex(phi_k_eq))
 #w(rf"Optimal alpha: {alpha_opt:.4f}")

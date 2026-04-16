@@ -15,11 +15,8 @@ At x0 =[1, 1], f(x0) = 0.5
 
 Gradient of f:
 
-[MATH] \left[\begin{matrix}1.0 x_{1} + 1.0 x_{2} - 1\\1.0 x_{1} + 2.0 x_{2} - 1\end{matrix}\right]
-At x0 =[1, 1], Df(x0) = [[1.]
- [2.]]
-
-Function im(g(alpha) = x-alpha*Df:
+[MATH] \nabla f = \left[\begin{pmatrix}1.0 x_{1} + 1.0 x_{2} - 1.0\\1.0 x_{1} + 2.0 x_{2} - 1\end{pmatrix}\right]
+At x0 =[1, 1], Df(x0) = 1.00, 2.00
 
 [MATH] \left[\begin{matrix}g_{1}{\left(\alpha \right)}\\g_{2}{\left(\alpha \right)}\end{matrix}\right] = \left[\begin{matrix}1 - 1.0 \alpha\\1 - 2.0 \alpha\end{matrix}\right]
 Function phi_k:
@@ -28,4 +25,9 @@ Function phi_k:
 Derivative of phi_k:
 
 [MATH] \frac{d}{d \alpha} \phi{\left(\alpha \right)} = 8.0 \alpha^{3} - 18.0 \alpha^{2} + 17.0 \alpha - 5.0
-Optimal alpha: [0.500000000000000, 0.875 - 0.695970545353753*I, 0.875 + 0.695970545353753*I]
+[MATH] 0 = 8.0 \alpha^{3} - 18.0 \alpha^{2} + 17.0 \alpha - 5.0
+Optimal alpha: 0.50
+
+Next iterate x1: 0.50, x2: 0.00
+
+Function value at next iterate: -0.38

@@ -42,11 +42,23 @@ Gradient of f:%
 At x0 ={[}1, 1{]}, Df(x0) = {[}{[}1.{]}\newline%
  {[}2.{]}{]}%
 \par%
-Function g:%
+Function im(g(alpha) = x{-}alpha*Df:%
 \par%
 \[%
-\left[\begin{matrix}g_{1}{\left(\alpha \right)}\\g_{2}{\left(\alpha \right)}\end{matrix}\right] = \left[\begin{matrix}- \alpha \left(1.0 x_{1} + 1.0 x_{2} - 1\right) + x_{1}\\- \alpha \left(1.0 x_{1} + 2.0 x_{2} - 1\right) + x_{2}\end{matrix}\right]%
-\]
+\left[\begin{matrix}g_{1}{\left(\alpha \right)}\\g_{2}{\left(\alpha \right)}\end{matrix}\right] = \left[\begin{matrix}1 - 1.0 \alpha\\1 - 2.0 \alpha\end{matrix}\right]%
+\]%
+Function phi\_k:%
+\par%
+\[%
+\phi{\left(\alpha \right)} = 2.0 \alpha^{4} - 6.0 \alpha^{3} + 8.5 \alpha^{2} - 5.0 \alpha + 0.5%
+\]%
+Derivative of phi\_k:%
+\par%
+\[%
+\frac{d}{d \alpha} \phi{\left(\alpha \right)} = 8.0 \alpha^{3} - 18.0 \alpha^{2} + 17.0 \alpha - 5.0%
+\]%
+Optimal alpha: {[}0.500000000000000, 0.875 {-} 0.695970545353753*I, 0.875 + 0.695970545353753*I{]}%
+\par
 
 %
 \end{document}

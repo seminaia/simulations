@@ -8,9 +8,9 @@ written to HW2_CHE565_results.txt and mirrored to the console.
 from math import e
 import numpy as np
 import sympy as sp
-from sympy import Add, Mul 
+from sympy import Add, Function, Mul 
 import matplotlib
-from sympy.abc import alpha
+from sympy.abc import alpha, phi
 from sympy.functions.combinatorial.factorials import rf
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize, fsolve
@@ -53,33 +53,38 @@ f0 = f0_eq(*x0)
 Df = sp.Matrix([expr]).jacobian((x1, x2)).T
 Df_eq = sp.lambdify((x1, x2), Df)
 Df0 = Df_eq(*x0)
+
 x = sp.Matrix([x1, x2])
 g1 = sp.Function('g1')(alpha)
-g1_lam = sp.lambdify(alpha, g1)
 g2 = sp.Function('g2')(alpha)
-g2_lam = sp.lambdify(alpha, g2)
 g = sp.Matrix(2, 1, [g1, g2])
 
 expr_g = x - alpha*Df
-g_eq = sp.Eq(g,expr_g)
-phi_k= f_eq.subs(x1, expr_g[0]).subs(x2, expr_g[1])
+g_eq = sp.Eq(g,expr_g).subs({x1: x0[0], x2: x0[1]})
+
+phi = Function('phi')(alpha)
+grad_phi = sp.diff(phi, alpha)
+phi_k = expr.subs({x1: expr_g[0], x2: expr_g[1]}).subs({x1: x0[0], x2: x0[1]})
 phi_k_collected = sp.collect(phi_k, alpha)
-phi_k_simplified = sp.simplify(phi_k_collected)
+phi_k_simplified = sp.simplify(expr=phi_k_collected)
 dphi_k = sp.diff(phi_k_simplified, alpha)
 alpha_opt = sp.solve(dphi_k, alpha)
-sp.pprint(dphi_k)
+sp.pprint(alpha_opt)
+
 doc.p("Function :")
 m(sp.latex(f_eq))
 w(rf"At x0 ={x0}, f(x0) = {f0}")
 w("Gradient of f:")
 m(sp.latex(Df))
 w(rf"At x0 ={x0}, Df(x0) = {Df0}")
-w("Function g:")
+px(r"Function", im(expr_g), ":")
 m(sp.latex(g_eq))
 
-#w("Function phi_k:")
-#m(sp.latex(phi_k_eq))
-#w(rf"Optimal alpha: {alpha_opt:.4f}")
+w("Function phi_k:")
+m(sp.latex(sp.Eq(phi, phi_k_simplified)))
+w("Derivative of phi_k:")
+m(sp.latex(sp.Eq(grad_phi, dphi_k)))
+w(rf"Optimal alpha: {alpha_opt}")
 
 txt_file, tex_file, pdf_file = doc.save_all()
 

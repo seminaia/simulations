@@ -111,14 +111,41 @@ t(headings_A, rows_A,float_fmt=".2f")
 rows_B = [["A","No more than 15% of 1;\n No more than 40% of 2",32.40],["B","No more than 50% of 3;\n No more than 10% of 1",31.50],["C","No less than 10% of 2;\n No more than 20% of 1", 30.60]]
 headings_B = ["Grade","Specifications","Selling Price ($/bbl)"]
 t(headings_B, rows_B, float_fmt=".2f", alignment="c p{4cm} c")
-c1, c2, c3, c4 = sp.symbols('c1 c2 c3 c4')
-A, B, C = sp.symbols('A B C')
-constrains = [
-    (A <= 0.15*c1) & (A <= 0.40*c2),
-    (B <= 0.50*c3) & (B <= 0.10*c1),
-    (C >= 0.10*c2) & (C <= 0.20*c1)
+
+a1, a2, a3, a4 = sp.symbols('a1 a2 a3 a4', nonnegative=True)
+b1, b2, b3, b4 = sp.symbols('b1 b2 b3 b4', nonnegative=True)
+c1, c2, c3, c4 = sp.symbols('c1 c2 c3 c4', nonnegative=True)
+
+A = a1 + a2 + a3 + a4
+B = b1 + b2 + b3 + b4
+C = c1 + c2 + c3 + c4
+
+# Objective
+profit = (32.40*A + 31.50*B + 30.60*C) - (
+    26.00*(a1+b1+c1) + 30.60*(a2+b2+c2) + 29.20*(a3+b3+c3) + 29.80*(a4+b4+c4)
+)
+
+# Constraints
+constraints = [
+    # Grade A specs
+    a1 <= 0.15*A,
+    a2 >= 0.40*A,
+    a3 <= 0.50*A,
+    # Grade B specs
+    b1 <= 0.10*B,
+    b2 >= 0.10*B,
+    # Grade C spec
+    c1 <= 0.20*C,
+    # Maximum constituent availability
+    a1 + b1 + c1 <= 3000,
+    a2 + b2 + c2 <= 2000,
+    a3 + b3 + c3 <= 4000,
+    a4 + b4 + c4 <= 1000,
+    # Non-negativity already enforced by `nonnegative=True`
 ]
-m(sp.latex(constrains))
+
+m(sp.latex(constraints))
+m(sp.latex(sp.Eq(sp.symbols('P'), profit)))
 txt_file, tex_file, pdf_file = doc.save_all()
 
 print(f"Wrote text log: {txt_file}")

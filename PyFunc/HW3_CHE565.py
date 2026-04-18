@@ -111,16 +111,17 @@ t(headings_A, rows_A,float_fmt=".2f")
 rows_B = [["A","No more than 15% of 1;\n No more than 40% of 2",32.40],["B","No more than 50% of 3;\n No more than 10% of 1",31.50],["C","No less than 10% of 2;\n No more than 20% of 1", 30.60]]
 headings_B = ["Grade","Specifications","Selling Price ($/bbl)"]
 t(headings_B, rows_B, float_fmt=".2f", alignment="c p{4cm} c")
+
 A, B, C, P = sp.symbols('A B C P', nonnegative=True)
 a1, a2, a3, a4 = sp.symbols('a1 a2 a3 a4', nonnegative=True)
 b1, b2, b3, b4 = sp.symbols('b1 b2 b3 b4', nonnegative=True)
 c1, c2, c3, c4 = sp.symbols('c1 c2 c3 c4', nonnegative=True)
+const_mat = sp.Matrix([a1,a2,a3,a4] + [b1,b2,b3,b4] + [c1,c2,c3,c4])
+cost_mat = sp.Matrix([26.00, 30.60, 29.20, 29.80])
+grade_mat = sp.Matrix([A,B,C])
+price_mat = sp.Matrix([32.40, 31.50, 30.60])
 
-# Objective
-expr_P = (32.40*A + 31.50*B + 30.60*C) - (
-    26.00*(a1+b1+c1) + 30.60*(a2+b2+c2) + 29.20*(a3+b3+c3) + 29.80*(a4+b4+c4)
-)
-
+expr_P = grade_mat.dot(price_mat)
 constraints = [
     sp.Eq(A, a1+a2+a3+a4),
     sp.Eq(B, b1+b2+b3+b4),
@@ -157,8 +158,7 @@ a_4 + b_4 + c_4 &\le 1000 \\[4pt]
 a_i, b_i, c_i &\ge 0,\quad i=1,\dots,4
 """)
 
-a(r"P = 32.40A + 31.50B + 30.60C - \bigl[26(a_1+b_1+c_1) + 30.60(a_2+b_2+c_2) + 29.20(a_3+b_3+c_3) + 29.80(a_4+b_4+c_4)\bigr]")
-m(sp.latex(sp.Eq(sp.symbols('P'), expr_P)))
+m(sp.latex(sp.Eq(sp.symbols('P'), expr_P, evaluate=False)))
 
 txt_file, tex_file, pdf_file = doc.save_all()
 

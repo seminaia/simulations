@@ -114,10 +114,11 @@ t(headings_B, rows_B, float_fmt=".2f", alignment="c p{4cm} c")
 c1, c2, c3, c4 = sp.symbols('c1 c2 c3 c4')
 A, B, C = sp.symbols('A B C')
 constrains = [
-    (A < 0.15*c1 + 0.40*c2)&
-    (B < 0.50*c3 + 0.10*c1)&
-    (C < 0.10*c2 + 0.20*c1)
+    (A <= 0.15*c1) & (A <= 0.40*c2),
+    (B <= 0.50*c3) & (B <= 0.10*c1),
+    (C >= 0.10*c2) & (C <= 0.20*c1)
 ]
+m(sp.latex(constrains))
 txt_file, tex_file, pdf_file = doc.save_all()
 
 print(f"Wrote text log: {txt_file}")

@@ -58,4 +58,6 @@ A     | No more than 15% of 1;
 B     | No more than 50% of 3;
  No more than 10% of 1 | 31.50                
 C     | No less than 10% of 2;
- No more than 20% of 1 | 30.60
+ No more than 20% of 1 | 30.60                
+
+[MATH] \left[ A \leq 0.15 c_{1} \wedge A \leq 0.4 c_{2}, \  B \leq 0.1 c_{1} \wedge B \leq 0.5 c_{3}, \  C \geq 0.1 c_{2} \wedge C \leq 0.2 c_{1}\right]

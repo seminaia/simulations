@@ -54,11 +54,12 @@ Df = sp.Matrix([expr]).jacobian((x1, x2)).T
 Df_eq = sp.lambdify((x1, x2), Df)
 Df0 = sp.Matrix(Df_eq(*x0))
 x = sp.Matrix([x1, x2])
+
 g1 = sp.Function('g1')(alpha)
 g2 = sp.Function('g2')(alpha)
 g = sp.Matrix(2, 1, [g1, g2])
 
-expr_g = x - alpha*Df
+expr_g = x0 - alpha*Df
 g_eq = sp.Eq(g,expr_g).subs({x1: x0[0], x2: x0[1]})
 
 phi = Function('phi')(alpha)
@@ -94,8 +95,8 @@ s0 = -Df0
 s1= sp.Function('s1')(alpha)
 s2= sp.Function('s2')(alpha)
 s = sp.Matrix(2, 1, [s1, s2])
-expr_s = -Df_eq(*x_next) + s0*Df_eq(*x_next).T*Df_eq(*x_next)/Df_eq(*x_next).T*Df_eq(*x_next)
-s_eq = sp.Eq(s, expr_s)
+expr_s = -Df_eq(x) + s0*Df_eq(x).T*Df_eq(x)/Df_eq(x).T*Df_eq(x)
+s_eq = sp.Eq(s, expr_s) 
 m(sp.latex(s_eq))
 
 txt_file, tex_file, pdf_file = doc.save_all()

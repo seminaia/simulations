@@ -117,7 +117,7 @@ b1, b2, b3, b4 = sp.symbols('b1 b2 b3 b4', nonnegative=True)
 c1, c2, c3, c4 = sp.symbols('c1 c2 c3 c4', nonnegative=True)
 
 # Objective
-profit = (32.40*A + 31.50*B + 30.60*C) - (
+expr_P = (32.40*A + 31.50*B + 30.60*C) - (
     26.00*(a1+b1+c1) + 30.60*(a2+b2+c2) + 29.20*(a3+b3+c3) + 29.80*(a4+b4+c4)
 )
 
@@ -140,7 +140,8 @@ constraints = [
     # Non-negativity already enforced by `nonnegative=True`
 ]
 m(sp.latex(constraints))
-m(sp.latex(sp.Eq(sp.symbols('P'), profit)))
+m(sp.latex(sp.Eq(sp.symbols('P'), expr_P)))
+
 txt_file, tex_file, pdf_file = doc.save_all()
 
 print(f"Wrote text log: {txt_file}")

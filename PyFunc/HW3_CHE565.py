@@ -121,37 +121,43 @@ expr_P = (32.40*A + 31.50*B + 30.60*C) - (
     26.00*(a1+b1+c1) + 30.60*(a2+b2+c2) + 29.20*(a3+b3+c3) + 29.80*(a4+b4+c4)
 )
 
-# Constraints
 constraints = [
-    # Grade A specs
+    sp.Eq(A, a1+a2+a3+a4),
+    sp.Eq(B, b1+b2+b3+b4),
+    sp.Eq(C, c1+c2+c3+c4),
+    # Grade A
     a1 <= 0.15*A,
     a2 >= 0.40*A,
-    a3 <= 0.50*A,
-    # Grade B specs
+    # Grade B
+    b3 <= 0.50*B,
     b1 <= 0.10*B,
-    b2 >= 0.10*B,
-    # Grade C spec
+    # Grade C
+    c2 >= 0.10*C,
     c1 <= 0.20*C,
-    # Maximum constituent availability
-    a1 + b1 + c1 <= 3000,
-    a2 + b2 + c2 <= 2000,
-    a3 + b3 + c3 <= 4000,
-    a4 + b4 + c4 <= 1000,
-    # Non-negativity already enforced by `nonnegative=True`
+    # Availability
+    a1+b1+c1 <= 3000,
+    a2+b2+c2 <= 2000,
+    a3+b3+c3 <= 4000,
+    a4+b4+c4 <= 1000,
 ]
 a(r"""
+A &= a_1 + a_2 + a_3 + a_4 \\
+B &= b_1 + b_2 + b_3 + b_4 \\
+C &= c_1 + c_2 + c_3 + c_4 \\[4pt]
 a_1 &\le 0.15A \\
-a_2 &\ge 0.40A \\
-a_3 &\le 0.50A \\[4pt]
-b_1 &\le 0.10B \\
-b_2 &\ge 0.10B \\[4pt]
+a_2 &\ge 0.40A \\[4pt]
+b_3 &\le 0.50B \\
+b_1 &\le 0.10B \\[4pt]
+c_2 &\ge 0.10C \\
 c_1 &\le 0.20C \\[4pt]
 a_1 + b_1 + c_1 &\le 3000 \\
 a_2 + b_2 + c_2 &\le 2000 \\
 a_3 + b_3 + c_3 &\le 4000 \\
 a_4 + b_4 + c_4 &\le 1000 \\[4pt]
-a_i, b_i, c_i &\ge 0,\; i=1,\dots,4
+a_i, b_i, c_i &\ge 0,\quad i=1,\dots,4
 """)
+
+a(r"P = 32.40A + 31.50B + 30.60C - \bigl[26(a_1+b_1+c_1) + 30.60(a_2+b_2+c_2) + 29.20(a_3+b_3+c_3) + 29.80(a_4+b_4+c_4)\bigr]")
 m(sp.latex(sp.Eq(sp.symbols('P'), expr_P)))
 
 txt_file, tex_file, pdf_file = doc.save_all()

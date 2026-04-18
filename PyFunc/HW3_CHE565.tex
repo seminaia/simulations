@@ -32,14 +32,14 @@ Function :%
 \[%
 f{\left(x_{1},x_{2} \right)} = 0.5 x_{1}^{2} + 1.0 x_{1} x_{2} - x_{1} + 1.0 x_{2}^{2} - x_{2}%
 \]%
-At x0 ={[}1, 1{]}, f(x0) = 0.5%
+At x0 =Matrix({[}{[}1{]}, {[}1{]}{]}), f(x0) = 0.500000000000000%
 \par%
 Gradient of f:%
 \par%
 \[%
 \nabla f = \left[\begin{pmatrix}1.0 x_{1} + 1.0 x_{2} - 1.0\\1.0 x_{1} + 2.0 x_{2} - 1\end{pmatrix}\right]%
 \]%
-At x0 ={[}1, 1{]}, Df(x0) = 1.00, 2.00%
+At x0 =Matrix({[}{[}1{]}, {[}1{]}{]}), Df(x0) = 1.00, 2.00%
 \par%
 \[%
 \left[\begin{matrix}g_{1}{\left(\alpha \right)}\\g_{2}{\left(\alpha \right)}\end{matrix}\right] = \left[\begin{matrix}1 - 1.0 \alpha\\1 - 2.0 \alpha\end{matrix}\right]%
@@ -47,21 +47,21 @@ At x0 ={[}1, 1{]}, Df(x0) = 1.00, 2.00%
 Function phi\_k:%
 \par%
 \[%
-\phi{\left(\alpha \right)} = 2.0 \alpha^{4} - 6.0 \alpha^{3} + 8.5 \alpha^{2} - 5.0 \alpha + 0.5%
+\phi{\left(\alpha \right)} = 6.5 \alpha^{2} - 5.0 \alpha + 0.5%
 \]%
 Derivative of phi\_k:%
 \par%
 \[%
-\frac{d}{d \alpha} \phi{\left(\alpha \right)} = 8.0 \alpha^{3} - 18.0 \alpha^{2} + 17.0 \alpha - 5.0%
+\frac{d}{d \alpha} \phi{\left(\alpha \right)} = 13.0 \alpha - 5.0%
 \]%
 \[%
-0 = 8.0 \alpha^{3} - 18.0 \alpha^{2} + 17.0 \alpha - 5.0%
+0 = 13.0 \alpha - 5.0%
 \]%
-Optimal alpha: 0.50%
+Optimal alpha: 0.38%
 \par%
-Next iterate x1: 0.50, x2: 0.00%
+Next iterate x1: 0.62, x2: 0.23%
 \par%
-Function value at next iterate: {-}0.38%
+Function value at next iterate: {-}0.46%
 \par
 
 %
@@ -70,7 +70,7 @@ Function value at next iterate: {-}0.38%
 \subsection*{Conjugate Gradient Method}%
 \label{subsec:ConjugateGradientMethod}%
 \[%
-\left[\begin{matrix}s_{1}{\left(\alpha \right)}\\s_{2}{\left(\alpha \right)}\end{matrix}\right] = \left[\begin{matrix}-0.5\\-1.5\end{matrix}\right]%
+\left[\begin{matrix}s_{1}{\left(\alpha \right)}\\s_{2}{\left(\alpha \right)}\end{matrix}\right] = \left[\begin{matrix}- 1.0 x_{3} - 1.0 x_{4} + 2 \left(- 1.0 x_{3} - 2.0 x_{4} + 1.0\right) \left(1.0 x_{3} + 2.0 x_{4} - 1\right) + 2 \left(- 1.0 x_{3} - 1.0 x_{4} + 1.0\right) \left(1.0 x_{3} + 1.0 x_{4} - 1\right) + 1\\- 1.0 x_{3} - 2.0 x_{4} + 2 \left(- 2.0 x_{3} - 4.0 x_{4} + 2.0\right) \left(1.0 x_{3} + 2.0 x_{4} - 1\right) + 2 \left(- 2.0 x_{3} - 2.0 x_{4} + 2.0\right) \left(1.0 x_{3} + 1.0 x_{4} - 1\right) + 1\end{matrix}\right]%
 \]
 
 %

@@ -43,23 +43,23 @@ doc.toc(False)
 
 doc.section("Problem 1")
 doc.subsection("Steepest Descent ")
-x1, x2= sp.symbols('x1 x2')
+x1, x2, x3, x4= sp.symbols('x1 x2 x3 x4')
 f = sp.Function('f')(x1, x2)
 expr= -x1-x2+1/2*(x1**2+2*x1*x2+2*x2**2)
 f_eq = sp.Eq(f, expr)
 f0_eq = sp.lambdify((x1, x2), expr)
-x0 = [1,1]
+x0 = sp.Matrix([1,1])
 f0 = f0_eq(*x0)
 Df = sp.Matrix([expr]).jacobian((x1, x2)).T
 Df_eq = sp.lambdify((x1, x2), Df)
 Df0 = sp.Matrix(Df_eq(*x0))
-x = sp.Matrix([x1, x2])
-
+x_old = sp.Matrix([x1, x2])
+x_new = sp.Matrix([x3, x4])
 g1 = sp.Function('g1')(alpha)
 g2 = sp.Function('g2')(alpha)
 g = sp.Matrix(2, 1, [g1, g2])
 
-expr_g = x0 - alpha*Df
+expr_g = x0 - alpha*Df0
 g_eq = sp.Eq(g,expr_g).subs({x1: x0[0], x2: x0[1]})
 
 phi = Function('phi')(alpha)
@@ -69,9 +69,9 @@ phi_k_collected = sp.collect(phi_k, alpha)
 phi_k_simplified = sp.simplify(expr=phi_k_collected)
 dphi_k = sp.diff(phi_k_simplified, alpha)
 alpha_opt = sp.Matrix(sp.solve(dphi_k, alpha))
-sp.pprint(alpha_opt)
 x_next = expr_g.subs(alpha, alpha_opt[0]).subs({x1: x0[0], x2: x0[1]})
 f_next = expr.subs({x1: x_next[0], x2: x_next[1]})
+
 doc.p("Function :")
 m(sp.latex(f_eq))
 w(rf"At x0 ={x0}, f(x0) = {f0}")
@@ -95,8 +95,11 @@ s0 = -Df0
 s1= sp.Function('s1')(alpha)
 s2= sp.Function('s2')(alpha)
 s = sp.Matrix(2, 1, [s1, s2])
-expr_s = -Df_eq(x) + s0*Df_eq(x).T*Df_eq(x)/Df_eq(x).T*Df_eq(x)
-s_eq = sp.Eq(s, expr_s) 
+expr_s = -Df_eq(*x_new) + s0*Df_eq(*x_new).T*Df_eq(*x_new)/Df_eq(*x_old).T*Df_eq(*x_old)
+s = expr_s.subs({x1: x0[0], x2: x0[1]}).subs({x3: x_next[0], x4: x_next[1]})
+s_col = sp.collect(expr_s, alpha)
+s_simplified = sp.simplify(expr=s_col)
+s_eq = sp.Eq(s, s_simplified) 
 m(sp.latex(s_eq))
 
 txt_file, tex_file, pdf_file = doc.save_all()

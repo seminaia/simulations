@@ -111,14 +111,10 @@ t(headings_A, rows_A,float_fmt=".2f")
 rows_B = [["A","No more than 15% of 1;\n No more than 40% of 2",32.40],["B","No more than 50% of 3;\n No more than 10% of 1",31.50],["C","No less than 10% of 2;\n No more than 20% of 1", 30.60]]
 headings_B = ["Grade","Specifications","Selling Price ($/bbl)"]
 t(headings_B, rows_B, float_fmt=".2f", alignment="c p{4cm} c")
-
+A, B, C, P = sp.symbols('A B C P', nonnegative=True)
 a1, a2, a3, a4 = sp.symbols('a1 a2 a3 a4', nonnegative=True)
 b1, b2, b3, b4 = sp.symbols('b1 b2 b3 b4', nonnegative=True)
 c1, c2, c3, c4 = sp.symbols('c1 c2 c3 c4', nonnegative=True)
-
-A = a1 + a2 + a3 + a4
-B = b1 + b2 + b3 + b4
-C = c1 + c2 + c3 + c4
 
 # Objective
 profit = (32.40*A + 31.50*B + 30.60*C) - (
@@ -143,7 +139,6 @@ constraints = [
     a4 + b4 + c4 <= 1000,
     # Non-negativity already enforced by `nonnegative=True`
 ]
-
 m(sp.latex(constraints))
 m(sp.latex(sp.Eq(sp.symbols('P'), profit)))
 txt_file, tex_file, pdf_file = doc.save_all()

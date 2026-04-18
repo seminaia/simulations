@@ -99,8 +99,17 @@ expr_s = -Df_eq(*x_new) + s0*Df_eq(*x_new).T*Df_eq(*x_new)/Df_eq(*x_old).T*Df_eq
 s_eq = sp.Eq(s, expr_s).subs({x1: x0[0], x2: x0[1], x3: x_next[0], x4: x_next[1]})
 m(sp.latex(s_eq))
 doc.section(title="Problem 3")
-rows = [[1, 3000, 26], [2, 2000, 30.6], [3, 4000, 29.20],[4,1000, 29.80]]
-t(["Constituents","Maximum Quantity (bbl/day)"," Production Cost ($/bbl)"], rows)
+rows_A = [
+    [1, 3000, 26.00],      
+    [2, 2000, 30.60],
+    [3, 4000, 29.20],
+    [4, 1000, 29.80]
+]
+t(["Constituents","Maximum Quantity (bbl/day)"," Production Cost ($/bbl)"], rows_A,float_fmt=".2f")
+
+rows_B = [["A","No more than 15% of 1\n No more than 40% of 2",]]
+
+
 txt_file, tex_file, pdf_file = doc.save_all()
 
 print(f"Wrote text log: {txt_file}")

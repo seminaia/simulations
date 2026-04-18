@@ -2,7 +2,7 @@
 HW2_CHE565.py
 =============
 CHE 565 – Homework 2 All five problems solved with full work shown. Results are
-written to HW2_CHE565_results.txt and mirrored to the console.
+written to HW2_CHE565_results.txtseminaia401@gmail..com and mirrored to the console.
 """
 
 from math import e

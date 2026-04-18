@@ -98,7 +98,9 @@ s = sp.Matrix(2, 1, [s1, s2])
 expr_s = -Df_eq(*x_new) + s0*Df_eq(*x_new).T*Df_eq(*x_new)/Df_eq(*x_old).T*Df_eq(*x_old)
 s_eq = sp.Eq(s, expr_s).subs({x1: x0[0], x2: x0[1], x3: x_next[0], x4: x_next[1]})
 m(sp.latex(s_eq))
-
+doc.section("Problem 3")
+rows = [["Crude Oil", 1000, 50], ["Natural Gas", 500, 30], ["Refined Products", 2000, 70]]
+t(["Constituents","Maximum Quantity (bbl/day)"," Production Cost ($/bbl)"], rows)
 txt_file, tex_file, pdf_file = doc.save_all()
 
 print(f"Wrote text log: {txt_file}")

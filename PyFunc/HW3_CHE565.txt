@@ -40,3 +40,12 @@ Conjugate Gradient Method
 -------------------------
 
 [MATH] \left[\begin{matrix}s_{1}{\left(\alpha \right)}\\s_{2}{\left(\alpha \right)}\end{matrix}\right] = \left[\begin{matrix}0.0946745562130178\\-0.195266272189349\end{matrix}\right]
+
+Problem 3
+====================
+
+Constituents     | Maximum Quantity (bbl/day) |  Production Cost ($/bbl)
+-----------------+----------------------------+-------------------------
+Crude Oil        | 1000                       | 50                      
+Natural Gas      | 500                        | 30                      
+Refined Products | 2000                       | 70

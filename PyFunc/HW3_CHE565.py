@@ -139,7 +139,19 @@ constraints = [
     a4 + b4 + c4 <= 1000,
     # Non-negativity already enforced by `nonnegative=True`
 ]
-m(sp.latex(constraints))
+a(r"""
+a_1 &\le 0.15A \\
+a_2 &\ge 0.40A \\
+a_3 &\le 0.50A \\[4pt]
+b_1 &\le 0.10B \\
+b_2 &\ge 0.10B \\[4pt]
+c_1 &\le 0.20C \\[4pt]
+a_1 + b_1 + c_1 &\le 3000 \\
+a_2 + b_2 + c_2 &\le 2000 \\
+a_3 + b_3 + c_3 &\le 4000 \\
+a_4 + b_4 + c_4 &\le 1000 \\[4pt]
+a_i, b_i, c_i &\ge 0,\; i=1,\dots,4
+""")
 m(sp.latex(sp.Eq(sp.symbols('P'), expr_P)))
 
 txt_file, tex_file, pdf_file = doc.save_all()

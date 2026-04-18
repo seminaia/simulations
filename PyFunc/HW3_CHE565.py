@@ -105,10 +105,12 @@ rows_A = [
     [3, 4000, 29.20],
     [4, 1000, 29.80]
 ]
-t(["Constituents","Maximum Quantity (bbl/day)"," Production Cost ($/bbl)"], rows_A,float_fmt=".2f")
+headings_A = ["Constituents","Maximum Quantity (bbl/day)"," Production Cost ($/bbl)"]
+t(headings_A, rows_A,float_fmt=".2f")
 
-rows_B = [["A","No more than 15% of 1\n No more than 40% of 2",]]
-
+rows_B = [["A","No more than 15% of 1\n No more than 40% of 2",32.40],["B","No more than 50% of 3\\ No more than 10% of 1",31.50],["C","No less than 10% of 2\\ No more than 20% of 1", 30.60]]
+headings_B = ["Grade","Specifications","Selling Price ($/bbl)"]
+t(headings_B, rows_B,float_fmt=".2f")
 
 txt_file, tex_file, pdf_file = doc.save_all()
 

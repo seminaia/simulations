@@ -108,9 +108,12 @@ rows_A = [
 headings_A = ["Constituents","Maximum Quantity (bbl/day)"," Production Cost ($/bbl)"]
 t(headings_A, rows_A,float_fmt=".2f")
 
-rows_B = [["A","No more than 15% of 1;\\ No more than 40% of 2",32.40],["B","No more than 50% of 3;\\ No more than 10% of 1",31.50],["C","No less than 10% of 2;\\ No more than 20% of 1", 30.60]]
+rows_B = [["A","No more than 15% of 1;\n No more than 40% of 2",32.40],["B","No more than 50% of 3;\n No more than 10% of 1",31.50],["C","No less than 10% of 2;\n No more than 20% of 1", 30.60]]
 headings_B = ["Grade","Specifications","Selling Price ($/bbl)"]
-t(headings_B, rows_B,float_fmt=".2f")
+t(headings_B, rows_B, float_fmt=".2f", alignment="c p{4cm} c")
+c1, c2, c3, c4 = sp.symbols('c1 c2 c3 c4')
+A, B, C = sp.symbols('A B C')
+grade_A = 0.15*c1 + 0.40*c2 
 
 txt_file, tex_file, pdf_file = doc.save_all()
 

@@ -39,4 +39,4 @@ Problem 2
 Conjugate Gradient Method
 -------------------------
 
-[MATH] \left[\begin{matrix}s_{1}{\left(\alpha \right)}\\s_{2}{\left(\alpha \right)}\end{matrix}\right] = \left[\begin{matrix}- 1.0 x_{3} - 1.0 x_{4} + 2 \left(- 1.0 x_{3} - 2.0 x_{4} + 1.0\right) \left(1.0 x_{3} + 2.0 x_{4} - 1\right) + 2 \left(- 1.0 x_{3} - 1.0 x_{4} + 1.0\right) \left(1.0 x_{3} + 1.0 x_{4} - 1\right) + 1\\- 1.0 x_{3} - 2.0 x_{4} + 2 \left(- 2.0 x_{3} - 4.0 x_{4} + 2.0\right) \left(1.0 x_{3} + 2.0 x_{4} - 1\right) + 2 \left(- 2.0 x_{3} - 2.0 x_{4} + 2.0\right) \left(1.0 x_{3} + 1.0 x_{4} - 1\right) + 1\end{matrix}\right]
+[MATH] \left[\begin{matrix}s_{1}{\left(\alpha \right)}\\s_{2}{\left(\alpha \right)}\end{matrix}\right] = \left[\begin{matrix}0.0946745562130178\\-0.195266272189349\end{matrix}\right]

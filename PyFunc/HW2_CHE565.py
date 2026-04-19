@@ -238,7 +238,7 @@ t(['Function','Hessian','Eigenvalues','Convex?','Reason'],
  [
       [im(fa_latex),im(HA_latex), im(eig_A_latex), "Yes", "Eigenvalues are non-negative"],
       [im(fb_latex),im(HB_latex), im(eig_B_latex), "Yes", "Eigenvalues are non-negative"],
-      [im(fc_latex),im(HC_latex), im(eig_C_latex), "Yes", "Eigenvalues are non-negative"]
+      [im(latex=fc_latex),im(HC_latex), im(eig_C_latex), "Yes", "Eigenvalues are non-negative"]
   ],
  alignment='c|c|c|c|c'
 )

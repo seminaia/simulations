@@ -8,7 +8,7 @@ written to HW2_CHE565_results.txtseminaia401@gmail..com and mirrored to the cons
 from math import e
 import numpy as np
 import sympy as sp
-from sympy import Add, Function, Mul 
+from sympy import Add, Function, LessThan, Mul 
 import matplotlib
 from sympy.abc import alpha, phi
 from sympy.functions.combinatorial.factorials import rf
@@ -98,53 +98,89 @@ s = sp.Matrix(2, 1, [s1, s2])
 expr_s = -Df_eq(*x_new) + s0*Df_eq(*x_new).T*Df_eq(*x_new)/Df_eq(*x_old).T*Df_eq(*x_old)
 s_eq = sp.Eq(s, expr_s).subs({x1: x0[0], x2: x0[1], x3: x_next[0], x4: x_next[1]})
 m(sp.latex(s_eq))
+
 doc.section(title="Problem 3")
+doc.section(title="Problem 3")
+doc.subsection("Blending LP Formulation")
+
+# Tables (unchanged)
 rows_A = [
     [1, 3000, 26.00],      
     [2, 2000, 30.60],
     [3, 4000, 29.20],
     [4, 1000, 29.80]
 ]
-headings_A = ["Constituents","Maximum Quantity (bbl/day)"," Production Cost ($/bbl)"]
-t(headings_A, rows_A,float_fmt=".2f")
+headings_A = ["Constituent", "Max quantity (bbl/day)", "Production Cost ($/bbl)"]
+t(headings_A, rows_A, float_fmt=".2f")
 
-rows_B = [["A","No more than 15% of 1;\n No more than 40% of 2",32.40],["B","No more than 50% of 3;\n No more than 10% of 1",31.50],["C","No less than 10% of 2;\n No more than 20% of 1", 30.60]]
-headings_B = ["Grade","Specifications","Selling Price ($/bbl)"]
-t(headings_B, rows_B, float_fmt=".2f", alignment="c p{4cm} c")
-
-A, B, C, P = sp.symbols('A B C P', nonnegative=True)
-a1, a2, a3, a4 = sp.symbols('a1 a2 a3 a4', nonnegative=True)
-b1, b2, b3, b4 = sp.symbols('b1 b2 b3 b4', nonnegative=True)
-c1, c2, c3, c4 = sp.symbols('c1 c2 c3 c4', nonnegative=True)
-const_mat = sp.Matrix([a1,a2,a3,a4] + [b1,b2,b3,b4] + [c1,c2,c3,c4])
-cost_mat = sp.Matrix([26.00, 30.60, 29.20, 29.80])
-grade_mat = sp.Matrix([A,B,C])
-price_mat = sp.Matrix([32.40, 31.50, 30.60])
-
-expr_P = grade_mat.dot(price_mat)
-constraints = [
-    sp.Eq(A, a1+a2+a3+a4),
-    sp.Eq(B, b1+b2+b3+b4),
-    sp.Eq(C, c1+c2+c3+c4),
-    # Grade A
-    a1 <= 0.15*A,
-    a2 >= 0.40*A,
-    # Grade B
-    b3 <= 0.50*B,
-    b1 <= 0.10*B,
-    # Grade C
-    c2 >= 0.10*C,
-    c1 <= 0.20*C,
-    # Availability
-    a1+b1+c1 <= 3000,
-    a2+b2+c2 <= 2000,
-    a3+b3+c3 <= 4000,
-    a4+b4+c4 <= 1000,
+rows_B = [
+    ["A", "Not more than 15% of 1; Not less than 40% of 2", 32.40],
+    ["B", "Not more than 50% of 3; Not more than 10% of 1", 31.50],
+    ["C", "Not less than 10% of 2; Not more than 20% of 1", 30.60]
 ]
-a(r"""
+headings_B = ["Grade", "Specifications", "Selling Price ($/bbl)"]
+t(headings_B, rows_B, float_fmt=".2f", alignment="c p{4.5cm} c")
+
+# Decision variables
+a1, a2, a3, a4 = sp.symbols('a_1 a_2 a_3 a_4', nonnegative=True)
+b1, b2, b3, b4 = sp.symbols('b_1 b_2 b_3 b_4', nonnegative=True)
+c1, c2, c3, c4 = sp.symbols('c_1 c_2 c_3 c_4', nonnegative=True)
+
+# Total production of each grade
+A = a1 + a2 + a3 + a4
+B = b1 + b2 + b3 + b4
+C = c1 + c2 + c3 + c4
+
+# Objective: Maximize Profit
+revenue = 32.40*A + 31.50*B + 30.60*C
+cost = (26.00*(a1+b1+c1) + 30.60*(a2+b2+c2) + 
+        29.20*(a3+b3+c3) + 29.80*(a4+b4+c4))
+profit_expr = revenue - cost
+P = sp.symbols('P', nonnegative=True)
+profit_eq = sp.Eq(P, profit_expr)
+
+# Constraints list (for display and later solving)
+constraints = [
+    # Grade A specs
+    (a1 <= 0.15*A),
+    (a2 >= 0.40*A),
+    # Grade B specs
+    (b3 <= 0.50*B),
+    (b1 <= 0.10*B),
+    # Grade C specs
+    (c2 >= 0.10*C),
+    (c1 <= 0.20*C),
+    # Availability limits
+    (a1 + b1 + c1 <= 3000),
+    (a2 + b2 + c2 <= 2000),
+    (a3 + b3 + c3 <= 4000),
+    (a4 + b4 + c4 <= 1000),
+]
+A= [a1, a2, a3, a4]
+B= [b1, b2, b3, b4]
+C= [c1, c2, c3, c4]
+constraint_latex = [sp.latex(c) for c in constraints]
+# Display using doc.align() for clean multi-line equations
+a( 
+  rf"Decision variables:",
+   rf"{im(sp.latex(A))}, \quad {im(sp.latex(B))}, \quad {im(sp.latex(C))}")
+m(constraint_latex[6])
+m(constraint_latex[7])
+m(constraint_latex[8])
+m(constraint_latex[9])
+doc.p("Total production:")
+
+doc.align(r"""
 A &= a_1 + a_2 + a_3 + a_4 \\
 B &= b_1 + b_2 + b_3 + b_4 \\
-C &= c_1 + c_2 + c_3 + c_4 \\[4pt]
+C &= c_1 + c_2 + c_3 + c_4
+""")
+
+doc.p("Objective (maximize profit):")
+doc.align(r"P = 32.40A + 31.50B + 30.60C - \bigl[26(a_1+b_1+c_1) + 30.60(a_2+b_2+c_2) + 29.20(a_3+b_3+c_3) + 29.80(a_4+b_4+c_4)\bigr]")
+
+doc.p("Subject to:")
+doc.align(r"""
 a_1 &\le 0.15A \\
 a_2 &\ge 0.40A \\[4pt]
 b_3 &\le 0.50B \\
@@ -157,9 +193,6 @@ a_3 + b_3 + c_3 &\le 4000 \\
 a_4 + b_4 + c_4 &\le 1000 \\[4pt]
 a_i, b_i, c_i &\ge 0,\quad i=1,\dots,4
 """)
-
-m(sp.latex(sp.Eq(sp.symbols('P'), expr_P, evaluate=False)))
-
 txt_file, tex_file, pdf_file = doc.save_all()
 
 print(f"Wrote text log: {txt_file}")

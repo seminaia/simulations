@@ -76,11 +76,17 @@ Function value at next iterate: {-}0.46%
 %
 \section*{Problem 3}%
 \label{sec:Problem3}%
+
+%
+\section*{Problem 3}%
+\label{sec:Problem3}%
+\subsection*{Blending LP Formulation}%
+\label{subsec:BlendingLPFormulation}%
 \begin{table}[H]%
 \centering%
 \begin{tabular}{ccc}%
 \hline%
-Constituents&Maximum Quantity (bbl/day)& Production Cost (\$/bbl)\\%
+Constituent&Max quantity (bbl/day)&Production Cost (\$/bbl)\\%
 \hline%
 1&3000&26.00\\%
 \hline%
@@ -94,25 +100,49 @@ Constituents&Maximum Quantity (bbl/day)& Production Cost (\$/bbl)\\%
 \end{table}%
 \begin{table}[H]%
 \centering%
-\begin{tabular}{c p{4cm} c}%
+\begin{tabular}{c p{4.5cm} c}%
 \hline%
 Grade&Specifications&Selling Price (\$/bbl)\\%
 \hline%
-A&No more than 15\% of 1;\newline%
- No more than 40\% of 2&32.40\\%
+A&Not more than 15\% of 1; Not less than 40\% of 2&32.40\\%
 \hline%
-B&No more than 50\% of 3;\newline%
- No more than 10\% of 1&31.50\\%
+B&Not more than 50\% of 3; Not more than 10\% of 1&31.50\\%
 \hline%
-C&No less than 10\% of 2;\newline%
- No more than 20\% of 1&30.60\\%
+C&Not less than 10\% of 2; Not more than 20\% of 1&30.60\\%
 \hline%
 \end{tabular}%
 \end{table}%
 \begin{align*}%
+Decision variables: \\%
+InlineMathToken(latex='\\left[ a_{1}, \\  a_{2}, \\  a_{3}, \\  a_{4}\\right]'), \quad InlineMathToken(latex='\\left[ b_{1}, \\  b_{2}, \\  b_{3}, \\  b_{4}\\right]'), \quad InlineMathToken(latex='\\left[ c_{1}, \\  c_{2}, \\  c_{3}, \\  c_{4}\\right]')%
+\end{align*}%
+\[%
+a_{1} + b_{1} + c_{1} \leq 3000%
+\]%
+\[%
+a_{2} + b_{2} + c_{2} \leq 2000%
+\]%
+\[%
+a_{3} + b_{3} + c_{3} \leq 4000%
+\]%
+\[%
+a_{4} + b_{4} + c_{4} \leq 1000%
+\]%
+Total production:%
+\par%
+\begin{align*}%
 A &= a_1 + a_2 + a_3 + a_4 \\
 B &= b_1 + b_2 + b_3 + b_4 \\
-C &= c_1 + c_2 + c_3 + c_4 \\[4pt]
+C &= c_1 + c_2 + c_3 + c_4%
+\end{align*}%
+Objective (maximize profit):%
+\par%
+\begin{align*}%
+P = 32.40A + 31.50B + 30.60C - \bigl[26(a_1+b_1+c_1) + 30.60(a_2+b_2+c_2) + 29.20(a_3+b_3+c_3) + 29.80(a_4+b_4+c_4)\bigr]%
+\end{align*}%
+Subject to:%
+\par%
+\begin{align*}%
 a_1 &\le 0.15A \\
 a_2 &\ge 0.40A \\[4pt]
 b_3 &\le 0.50B \\
@@ -124,10 +154,7 @@ a_2 + b_2 + c_2 &\le 2000 \\
 a_3 + b_3 + c_3 &\le 4000 \\
 a_4 + b_4 + c_4 &\le 1000 \\[4pt]
 a_i, b_i, c_i &\ge 0,\quad i=1,\dots,4%
-\end{align*}%
-\[%
-P = 32.4 A + 31.5 B + 30.6 C%
-\]
+\end{align*}
 
 %
 \end{document}

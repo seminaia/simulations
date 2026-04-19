@@ -66,16 +66,26 @@ C     | Not less than 10% of 2; Not more than 20% of 1 | 30.60
 
 Decision Variables:
 
-\left[\begin{matrix}a_{1}\\a_{2}\\a_{3}\\a_{4}\end{matrix}\right]\left[\begin{matrix}b_{1}\\b_{2}\\b_{3}\\b_{4}\end{matrix}\right]\left[\begin{matrix}c_{1}\\c_{2}\\c_{3}\\c_{4}\end{matrix}\right]
+a_{1} + a_{2} + a_{3} + a_{4}b_{1} + b_{2} + b_{3} + b_{4}c_{1} + c_{2} + c_{3} + c_{4}
 
+Total production:
+
+[ALIGN]
+\text{A=}a_{1} + a_{2} + a_{3} + a_{4}
+\text{B=}b_{1} + b_{2} + b_{3} + b_{4}
+\text{C=}c_{1} + c_{2} + c_{3} + c_{4}
+Objective function (Profit):
+
+[MATH] P = 6.4 a_{1} + 1.8 a_{2} + 3.2 a_{3} + 2.6 a_{4} + 5.5 b_{1} + 0.899999999999999 b_{2} + 2.3 b_{3} + 1.7 b_{4} + 4.6 c_{1} + 1.4 c_{3} + 0.800000000000001 c_{4}
+Constraints:
+
+[MATH] a_{1} \leq 0.15 a_{1} + 0.15 a_{2} + 0.15 a_{3} + 0.15 a_{4}
+[MATH] a_{2} \geq 0.4 a_{1} + 0.4 a_{2} + 0.4 a_{3} + 0.4 a_{4}
+[MATH] b_{3} \leq 0.5 b_{1} + 0.5 b_{2} + 0.5 b_{3} + 0.5 b_{4}
+[MATH] b_{1} \leq 0.1 b_{1} + 0.1 b_{2} + 0.1 b_{3} + 0.1 b_{4}
+[MATH] c_{2} \geq 0.1 c_{1} + 0.1 c_{2} + 0.1 c_{3} + 0.1 c_{4}
+[MATH] c_{1} \leq 0.2 c_{1} + 0.2 c_{2} + 0.2 c_{3} + 0.2 c_{4}
 [MATH] a_{1} + b_{1} + c_{1} \leq 3000
 [MATH] a_{2} + b_{2} + c_{2} \leq 2000
 [MATH] a_{3} + b_{3} + c_{3} \leq 4000
 [MATH] a_{4} + b_{4} + c_{4} \leq 1000
-Total production:
-
-\text{A=}\left[\begin{matrix}a_{1}\\a_{2}\\a_{3}\\a_{4}\end{matrix}\right]\text{B=}\left[\begin{matrix}b_{1}\\b_{2}\\b_{3}\\b_{4}\end{matrix}\right]\text{C=}\left[\begin{matrix}c_{1}\\c_{2}\\c_{3}\\c_{4}\end{matrix}\right]
-
-Total production vector:
-
-\left[\begin{matrix}a_{1} + b_{1} + c_{1}\\a_{2} + b_{2} + c_{2}\\a_{3} + b_{3} + c_{3}\\a_{4} + b_{4} + c_{4}\end{matrix}\right]\left[\begin{matrix}3000\\2000\\4000\\1000\end{matrix}\right]

@@ -127,14 +127,20 @@ b1, b2, b3, b4 = sp.symbols('b_1 b_2 b_3 b_4', nonnegative=True)
 c1, c2, c3, c4 = sp.symbols('c_1 c_2 c_3 c_4', nonnegative=True)
 
 # Total production of each grade
-A = a1 + a2 + a3 + a4
-B = b1 + b2 + b3 + b4
-C = c1 + c2 + c3 + c4
-
+A= sp.MatrixSymbol('A',1,4)
+B= sp.MatrixSymbol('B',1,4)
+C= sp.MatrixSymbol('C',1,4)
+price_mat = sp.Matrix([32.40,31.50,30.60])
+grade_mat = sp.Matrix([A + B + C])
 # Objective: Maximize Profit
-revenue = 32.40*A + 31.50*B + 30.60*C
-cost = (26.00*(a1+b1+c1) + 30.60*(a2+b2+c2) + 
-        29.20*(a3+b3+c3) + 29.80*(a4+b4+c4))
+revenue = price_mat.dot(grade_mat)
+cost_mat = sp.Matrix([26.00, 30.60, 29.20, 29.80])
+cost_1 = a1+b1+c1
+cost_2 = a2+b2+c2
+cost_3 = a3+b3+c3
+cost_4 = a4+b4+c4
+cost = cost_mat.dot(sp.Matrix([cost_1, cost_2, cost_3, cost_4]))
+
 profit_expr = revenue - cost
 P = sp.symbols('P', nonnegative=True)
 profit_eq = sp.Eq(P, profit_expr)
@@ -156,26 +162,23 @@ constraints = [
     (a3 + b3 + c3 <= 4000),
     (a4 + b4 + c4 <= 1000),
 ]
-A= sp.Matrix([a1, a2, a3, a4])
-B= sp.Matrix([b1, b2, b3, b4])
-C= sp.Matrix([c1, c2, c3, c4])
-constraint_latex = [sp.latex(c) for c in constraints]
 
 # Display using doc.align() for clean multi-line equations
 w("Decision Variables:")
 px(im(sp.latex(A)), im(sp.latex(B)), im(sp.latex(C)))
-m(constraint_latex[6])
-m(constraint_latex[7])
-m(constraint_latex[8])
-m(constraint_latex[9])
-
 w("Total production:")
-px(im(rf"\text{{A=}}"+sp.latex(A)), im(rf"\text{{B=}}"+sp.latex(B)), im(rf"\text{{C=}}"+sp.latex(C)))
-
+a(
+  rf"\text{{A=}}"+sp.latex(A),
+  rf"\text{{B=}}"+sp.latex(B), 
+  rf"\text{{C=}}"+sp.latex(C)
+)
 prod_tot = A + B + C 
 prod = sp.Matrix([3000, 2000, 4000, 1000])
-w("Total production vector:")
-px(im(sp.latex(prod_tot)), im(sp.latex(prod)))
+w("Objective function (Profit):")
+m(sp.latex(profit_eq))
+w("Constraints:")
+for c in constraints:
+    m(sp.latex(c))
 txt_file, tex_file, pdf_file = doc.save_all()
 
 print(f"Wrote text log: {txt_file}")

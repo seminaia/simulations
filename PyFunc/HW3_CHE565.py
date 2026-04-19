@@ -130,8 +130,20 @@ c1, c2, c3, c4 = sp.symbols('c_1 c_2 c_3 c_4', nonnegative=True)
 A= sp.MatrixSymbol('A',1,4)
 B= sp.MatrixSymbol('B',1,4)
 C= sp.MatrixSymbol('C',1,4)
+A_mat = [a1, a2, a3, a4]
+B_mat = [b1, b2, b3, b4]
+C_mat = [c1, c2, c3, c4]
+A_sum = sum(A_mat)
+B_sum = sum(B_mat)
+C_sum = sum(C_mat)
+
+tot_prod_eq = sp.latex(sp.Eq(sp.Matrix([A, B, C]), sp.Matrix([A_sum, B_sum, C_sum])))
+m(sp.latex(sp.Eq(A.apart(), A_sum)))
+m(sp.latex(sp.Eq(B.apart(), B_sum)))
+m(sp.latex(sp.Eq(C.apart(), C_sum)))
+m(tot_prod_eq)
 price_mat = sp.Matrix([32.40,31.50,30.60])
-grade_mat = sp.Matrix([A + B + C])
+grade_mat = sp.Matrix([A_sum, B_sum, C_sum])
 # Objective: Maximize Profit
 revenue = price_mat.dot(grade_mat)
 cost_mat = sp.Matrix([26.00, 30.60, 29.20, 29.80])
@@ -148,14 +160,14 @@ profit_eq = sp.Eq(P, profit_expr)
 # Constraints list (for display and later solving)
 constraints = [
     # Grade A specs
-    (a1 <= 0.15*A),
-    (a2 >= 0.40*A),
+    (a1 <= 0.15*A_sum),
+    (a2 >= 0.40*A_sum),
     # Grade B specs
-    (b3 <= 0.50*B),
-    (b1 <= 0.10*B),
+    (b3 <= 0.50*B_sum),
+    (b1 <= 0.10*B_sum),
     # Grade C specs
-    (c2 >= 0.10*C),
-    (c1 <= 0.20*C),
+    (c2 >= 0.10*C_sum),
+    (c1 <= 0.20*C_sum),
     # Availability limits
     (a1 + b1 + c1 <= 3000),
     (a2 + b2 + c2 <= 2000),

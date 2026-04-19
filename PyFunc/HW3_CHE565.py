@@ -156,43 +156,26 @@ constraints = [
     (a3 + b3 + c3 <= 4000),
     (a4 + b4 + c4 <= 1000),
 ]
-A= [a1, a2, a3, a4]
-B= [b1, b2, b3, b4]
-C= [c1, c2, c3, c4]
+A= sp.Matrix([a1, a2, a3, a4])
+B= sp.Matrix([b1, b2, b3, b4])
+C= sp.Matrix([c1, c2, c3, c4])
 constraint_latex = [sp.latex(c) for c in constraints]
+
 # Display using doc.align() for clean multi-line equations
-a( 
-  rf"Decision variables:",
-   rf"{im(sp.latex(A))}, \quad {im(sp.latex(B))}, \quad {im(sp.latex(C))}")
+w("Decision Variables:")
+px(im(sp.latex(A)), im(sp.latex(B)), im(sp.latex(C)))
 m(constraint_latex[6])
 m(constraint_latex[7])
 m(constraint_latex[8])
 m(constraint_latex[9])
-doc.p("Total production:")
 
-doc.align(r"""
-A &= a_1 + a_2 + a_3 + a_4 \\
-B &= b_1 + b_2 + b_3 + b_4 \\
-C &= c_1 + c_2 + c_3 + c_4
-""")
+w("Total production:")
+px(im(rf"\text{{A=}}"+sp.latex(A)), im(rf"\text{{B=}}"+sp.latex(B)), im(rf"\text{{C=}}"+sp.latex(C)))
 
-doc.p("Objective (maximize profit):")
-doc.align(r"P = 32.40A + 31.50B + 30.60C - \bigl[26(a_1+b_1+c_1) + 30.60(a_2+b_2+c_2) + 29.20(a_3+b_3+c_3) + 29.80(a_4+b_4+c_4)\bigr]")
-
-doc.p("Subject to:")
-doc.align(r"""
-a_1 &\le 0.15A \\
-a_2 &\ge 0.40A \\[4pt]
-b_3 &\le 0.50B \\
-b_1 &\le 0.10B \\[4pt]
-c_2 &\ge 0.10C \\
-c_1 &\le 0.20C \\[4pt]
-a_1 + b_1 + c_1 &\le 3000 \\
-a_2 + b_2 + c_2 &\le 2000 \\
-a_3 + b_3 + c_3 &\le 4000 \\
-a_4 + b_4 + c_4 &\le 1000 \\[4pt]
-a_i, b_i, c_i &\ge 0,\quad i=1,\dots,4
-""")
+prod_tot = A + B + C 
+prod = sp.Matrix([3000, 2000, 4000, 1000])
+w("Total production vector:")
+px(im(sp.latex(prod_tot)), im(sp.latex(prod)))
 txt_file, tex_file, pdf_file = doc.save_all()
 
 print(f"Wrote text log: {txt_file}")

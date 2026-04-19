@@ -112,10 +112,12 @@ C&Not less than 10\% of 2; Not more than 20\% of 1&30.60\\%
 \hline%
 \end{tabular}%
 \end{table}%
-\begin{align*}%
-Decision variables: \\%
-InlineMathToken(latex='\\left[ a_{1}, \\  a_{2}, \\  a_{3}, \\  a_{4}\\right]'), \quad InlineMathToken(latex='\\left[ b_{1}, \\  b_{2}, \\  b_{3}, \\  b_{4}\\right]'), \quad InlineMathToken(latex='\\left[ c_{1}, \\  c_{2}, \\  c_{3}, \\  c_{4}\\right]')%
-\end{align*}%
+Decision Variables:%
+\par%
+$\left[\begin{matrix}a_{1}\\a_{2}\\a_{3}\\a_{4}\end{matrix}\right]$%
+$\left[\begin{matrix}b_{1}\\b_{2}\\b_{3}\\b_{4}\end{matrix}\right]$%
+$\left[\begin{matrix}c_{1}\\c_{2}\\c_{3}\\c_{4}\end{matrix}\right]$%
+\par%
 \[%
 a_{1} + b_{1} + c_{1} \leq 3000%
 \]%
@@ -130,31 +132,15 @@ a_{4} + b_{4} + c_{4} \leq 1000%
 \]%
 Total production:%
 \par%
-\begin{align*}%
-A &= a_1 + a_2 + a_3 + a_4 \\
-B &= b_1 + b_2 + b_3 + b_4 \\
-C &= c_1 + c_2 + c_3 + c_4%
-\end{align*}%
-Objective (maximize profit):%
+$\text{A=}\left[\begin{matrix}a_{1}\\a_{2}\\a_{3}\\a_{4}\end{matrix}\right]$%
+$\text{B=}\left[\begin{matrix}b_{1}\\b_{2}\\b_{3}\\b_{4}\end{matrix}\right]$%
+$\text{C=}\left[\begin{matrix}c_{1}\\c_{2}\\c_{3}\\c_{4}\end{matrix}\right]$%
 \par%
-\begin{align*}%
-P = 32.40A + 31.50B + 30.60C - \bigl[26(a_1+b_1+c_1) + 30.60(a_2+b_2+c_2) + 29.20(a_3+b_3+c_3) + 29.80(a_4+b_4+c_4)\bigr]%
-\end{align*}%
-Subject to:%
+Total production vector:%
 \par%
-\begin{align*}%
-a_1 &\le 0.15A \\
-a_2 &\ge 0.40A \\[4pt]
-b_3 &\le 0.50B \\
-b_1 &\le 0.10B \\[4pt]
-c_2 &\ge 0.10C \\
-c_1 &\le 0.20C \\[4pt]
-a_1 + b_1 + c_1 &\le 3000 \\
-a_2 + b_2 + c_2 &\le 2000 \\
-a_3 + b_3 + c_3 &\le 4000 \\
-a_4 + b_4 + c_4 &\le 1000 \\[4pt]
-a_i, b_i, c_i &\ge 0,\quad i=1,\dots,4%
-\end{align*}
+$\left[\begin{matrix}a_{1} + b_{1} + c_{1}\\a_{2} + b_{2} + c_{2}\\a_{3} + b_{3} + c_{3}\\a_{4} + b_{4} + c_{4}\end{matrix}\right]$%
+$\left[\begin{matrix}3000\\2000\\4000\\1000\end{matrix}\right]$%
+\par
 
 %
 \end{document}

@@ -370,7 +370,7 @@ class SectionNode:
         blocks (list[Block], optional): The list of content blocks that belong to this section. Defaults to an empty list.
         children (list["SectionNode"], optional): The list of child sections that belong to this section. Defaults to an empty list.
     """
-    title: str
+    title: list[str]
     level: Literal[1, 2, 3]
     blocks: list[Block] = field(default_factory=list)
     children: list["SectionNode"] = field(default_factory=list)
@@ -872,16 +872,16 @@ class DocumentBuilder:
         if node.title != "__root__":
             if node.level == 1:
                 out.append("")
-                out.append(node.title)
-                out.append("=" * max(20, len(node.title)))
+                out.append(_txt_safe(node.title))
+                out.append("=" * max(20, len(_txt_safe(node.title))))
                 out.append("")
             elif node.level == 2:
-                out.append(node.title)
-                out.append("-" * max(8, len(node.title)))
+                out.append(_txt_safe(node.title))
+                out.append("-" * max(8, len(_txt_safe(node.title))))
                 out.append("")
             elif node.level == 3:
-                out.append(node.title)
-                out.append("~" * max(6, len(node.title)))
+                out.append(_txt_safe(node.title))
+                out.append("~" * max(6, len(_txt_safe(node.title))))
                 out.append("")
 
         for block in node.blocks:
@@ -1253,7 +1253,7 @@ class DocumentBuilder:
         return f"{self.base_name}.tex"
 
     _AUX_EXTENSIONS = (
-        ".aux", ".log", ".nav", ".out", ".snm", ".toc",
+        ".aux", ".nav", ".snm", ".toc",
         ".vrb", ".synctex.gz", ".fls", ".fdb_latexmk", ".bbl", ".blg",
     )
 

@@ -8,22 +8,23 @@ Results are written to HW4_CHE565.txt, HW4_CHE565.tex, and HW4_CHE565.pdf
 
 import numpy as np
 import matplotlib
+from sympy.matrices.expressions.matadd import rules
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from doc_builder import DocumentBuilder
+from pylatex import NoEscape
 import control as ct
 
-from doc_builder import DocumentBuilder
+OUTPUT_FILE = "HW4_CHE565"
+PLOT_FILE = "HW4_CHE565_plot.png"
+report_lines = []
 
-
-# =============================================================================
-# Output setup
-# =============================================================================
 doc = DocumentBuilder(
-    "HW4_CHE565",
+    OUTPUT_FILE,
     title="CHE 565 -- Homework 4",
     author="Soki Sem",
 )
-
+# convenience aliases
 w = doc.p
 line = doc.line
 m = doc.eq
@@ -32,10 +33,8 @@ t = doc.table
 figlog = doc.figure
 px = doc.px
 im = doc.im
-
 doc.maketitle(True)
 doc.toc(False)
-
 
 # =============================================================================
 # Problem data
@@ -81,10 +80,11 @@ def build_closed_loop(Kc, tauI):
     numD, denD = ct.pade(theta, pade_order)
     Gdelay = ct.tf(numD, denD)
 
-    Gc_blk = ct.ss(ct.tf(Gc), name='Gc', inputs='E', outputs='Yc')
-    Gp_blk = ct.ss(ct.tf(Gp_nodelay), name='Gp', inputs='P', outputs='Yp')
-    Gd_blk = ct.ss([], [], [], [[1]], name='Gd', inputs='d', outputs='Yd')
-    GD_blk = ct.ss(ct.tf(Gdelay), name='GD', inputs='Yp', outputs='Y')
+    # Named blocks
+    Gc_blk = ct.tf(Gc, name='Gc', inputs='E', outputs='Yc')
+    Gp_blk = ct.tf(Gp_nodelay, name='Gp', inputs='P', outputs='Yp')
+    Gd_blk = ct.ss([], [], [], [[1]], name='Gd', inputs='d', outputs='Yd')     # direct disturbance addition
+    GD_blk = ct.tf(Gdelay, name='GD', inputs='Yp', outputs='Y')
 
     sum1 = ct.summing_junction(inputs=['Ysp', '-Y'], output='E', name='Sum1')
     sum2 = ct.summing_junction(inputs=['Yc', 'Yd'], output='P', name='Sum2')
@@ -97,6 +97,9 @@ def build_closed_loop(Kc, tauI):
     return sys
 
 
+# ---------------------------
+# Simulation helper
+# ---------------------------
 def simulate_case(sys, t, ysp_input, d_input):
     U = np.vstack([ysp_input, d_input])
     resp = ct.forced_response(sys, T=t, U=U)
@@ -145,13 +148,89 @@ t6, y6 = simulate_case(sys_kc_half, tvals, step_off, step_on)
 # Larger tauI
 sys_tauI_large = build_closed_loop(Kc_nom, tauI_large)
 t7, y7 = simulate_case(sys_tauI_large, tvals, step_on, step_off)
-t8, y8 = simulate_case(sys_tauI_large, tvals, step_off, step_on)
+t8, y8 = simulate_case(sys_tauI_large, tvals, step_off, d_input=step_on)
+tauI_big = 2 * tauI_nom
+tauI_small = 0.5 * tauI_nom
 
-# Smaller tauI
+sys_tauI_big = build_closed_loop(Kc_nom, tauI_big)
 sys_tauI_small = build_closed_loop(Kc_nom, tauI_small)
-t9, y9 = simulate_case(sys_tauI_small, tvals, step_on, step_off)
+t9, y9 = simulate_case(sys_tauI_big, tvals, step_on, step_off)
 t10, y10 = simulate_case(sys_tauI_small, tvals, step_off, step_on)
 
+doc.subsection(["Controller Design using,", r"\lambda-Rules"])
+
+m(r"\lambda = \max\left(\frac{\tau_p}{3}, \theta \right)")
+
+a(
+    r"\lambda &= \max\left(\frac{5}{3}, 1\right)",
+    r"&= \frac{5}{3} \approx 1.667"
+)
+
+m(r"K_c = \frac{\tau_p}{K_p(\lambda + \theta)}")
+
+a(
+    r"K_c &= \frac{5}{1(1.667 + 1)}",
+    r"&= \frac{5}{2.667}",
+    r"&\approx 1.875"
+)
+
+m(r"\tau_I = \tau_p")
+
+a(
+    r"\tau_I &= 5"
+)
+
+m(r"I = \frac{1}{\tau_I}")
+
+a(
+    r"I &= \frac{1}{5}",
+    r"&= 0.2"
+)
+doc.subsection("Controller Transfer Function")
+
+m(r"G_c(s) = K_c \left(1 + \frac{1}{\tau_I s} \right)")
+
+a(
+    r"G_c(s) &= 1.875 \left(1 + \frac{1}{5s} \right)",
+    r"&= 1.875 + \frac{0.375}{s}"
+)
+
+doc.subsection("Closed-Loop System")
+
+w("The control system is arranged in a standard feedback configuration.")
+
+m(r"E = Y_{sp} - Y")
+
+m(r"Y_c = G_c(s)E")
+
+w("The disturbance is added after the controller output.")
+
+m(r"P = Y_c + d")
+
+m(r"Y = G_p(s) P")
+doc.subsection("Simulation Cases")
+
+w("The following simulations were performed:")
+
+w("1. Step change in setpoint (magnitude 1), no disturbance")
+w("2. Step change in disturbance (magnitude 1), no setpoint change")
+w("3. Double controller gain")
+w("4. Half controller gain")
+w("5. Increased and decreased integral time constant")
+
+doc.subsection("Disturbance Response")
+
+w("A unit step disturbance was applied with no setpoint change.")
+
+m(r"Y_{sp}(t) = 0, \quad d(t) = 1")
+
+doc.subsection("Effect of Controller Gain")
+
+w("The controller gain was varied to observe its effect on system response.")
+
+m(r"K_c = 2K_c^{\text{nominal}}")
+
+m(r"K_c = 0.5K_c^{\text{nominal}}")
 
 # =============================================================================
 # Save figures
@@ -170,10 +249,11 @@ save_plot(
     ysp=step_off, d=step_on
 )
 
+doc.subsection("Effect of Integral Time Constant")
 save_plot(
     "part4_setpoint_kc_double.png",
     t3, y3,
-    "Part 4: Setpoint Step with Doubled Controller Gain",
+    "Part 4: Setpoint Step with Double Controller Gain",
     ysp=step_on, d=step_off
 )
 
@@ -287,11 +367,11 @@ plt.close()
 # =============================================================================
 doc.section("Problem 1")
 
-w("Using Simulink, a closed-loop control system was constructed for the process")
+w("A closed-loop control system was constructed for the process")
 m(r"G_p(s)=\frac{e^{-s}}{5s+1}")
 w("with a disturbance added after the controller. The controller was set to ideal PI form, as required in the assignment.")
 
-doc.subsection("1. Controller Settings from the \\lambda-Rules")
+doc.subsection(f"1. Controller Settings from the {r"\lambda"}-Rules")
 
 w("For the given process model, the process gain, time constant, and dead time are identified as")
 m(r"K_p=1,\qquad \tau_p=5,\qquad \theta=1")
@@ -336,7 +416,8 @@ doc.subsection("2. Step Change in Setpoint, No Disturbance")
 w("A unit step was applied to the setpoint while the disturbance was held at zero.")
 m(r"Y_{{sp}}(t)=1,\qquad d(t)=0")
 
-w("The response of the closed-loop system is shown in Figure \\ref{fig:part2_setpoint_nominal}.")
+w(
+    "The response of the closed-loop system is shown in Figure for the nominal PI settings obtained from the lambda rules.")
 figlog(
     "part2_setpoint_nominal.png",
     caption="Closed-loop response for a unit step change in setpoint with no disturbance, using the nominal PI settings.",
@@ -363,7 +444,7 @@ a(
     rf"K_c^{{\text{{double}}}} &= 2({Kc_nom:.4f}) = {Kc_double:.4f}"
 )
 
-w("For the doubled controller gain, the setpoint response is shown in Figure \\ref{fig:part4_setpoint_kc_double}, and the disturbance response is shown in Figure \\ref{fig:part4_disturbance_kc_double}.")
+w("For the doubled controller gain, the setpoint response is shown in Figure $\\ref{fig:part4_setpoint_kc_double}$, and the disturbance response is shown in Figure \\ref{fig:part4_disturbance_kc_double}.")
 figlog(
     "part4_setpoint_kc_double.png",
     caption="Closed-loop response to a unit step in setpoint with doubled controller gain.",
@@ -479,10 +560,32 @@ a(
     rf"\tau_I &= {tauI_nom:.4f}",
     rf"I &= {I_nom:.4f}"
 )
-
-# Save outputs
 txt_file, tex_file, pdf_file = doc.save_all()
-
 print(f"Wrote text log: {txt_file}")
-print(f"Wrote LaTeX source: {tex_file}")
-print(f"Wrote PDF: {pdf_file}")
+print(f"Wrote LaTeX file: {tex_file}")
+print(f"Wrote PDF report: {pdf_file}")
+  File "/home/soki/simulations/PyFunc/HW4_CHE565.py", line 563, in <module>
+    txt_file, tex_file, pdf_file = doc.save_all()
+                                   ~~~~~~~~~~~~^^
+  File "/home/soki/simulations/PyFunc/doc_builder.py", line 1385, in save_all
+    tex = self.save_tex()
+  File "/home/soki/simulations/PyFunc/doc_builder.py", line 1315, in save_tex
+    self._append_node(doc, self.root)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/home/soki/simulations/PyFunc/doc_builder.py", line 1138, in _append_node
+    self._append_node(parent, child)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/home/soki/simulations/PyFunc/doc_builder.py", line 1152, in _append_node
+    self._append_node(section_container, child)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soki/simulations/PyFunc/doc_builder.py", line 1144, in _append_node
+    env = Subsection(node.title, numbering=False)
+  File "/home/soki/miniconda3/envs/controlsys/lib/python3.14/site-packages/pylatex/section.py", line 54, in __init__
+    self.label = Label(Marker(title, self.marker_prefix))
+                       ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soki/miniconda3/envs/controlsys/lib/python3.14/site-packages/pylatex/labelref.py", line 39, in __init__
+    name = _remove_invalid_char(name)
+  File "/home/soki/miniconda3/envs/controlsys/lib/python3.14/site-packages/pylatex/labelref.py", line 11, in _remove_invalid_char
+    s = "".join([i if ord(i) >= 32 and ord(i) < 127 else "" for i in s])
+                      ~~~^^^
+TypeError: ord() expected a character, but string of length 24 found

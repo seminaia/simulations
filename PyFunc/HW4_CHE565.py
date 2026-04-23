@@ -21,7 +21,7 @@ K_c,K_p = sp.symbols('K_c K_p')
 s = ct.tf('s')
 taui = 1
 taup = 5
-tauD = 2
+tauD = 1
 Kc = 1
 Kp = 1
 I = 1/taui
@@ -31,9 +31,9 @@ Gc = Kc*(1+I/(s))
 Gc_block = blocksim.PI('Gc(s)','E','Yc',Kc,taui)
 blocks = [Gp_block, Gc_block]
 sums = {'E':['+Ysp','-Y'],
-        'P':['+Yc', '+d']}
+        'P':['+Yc', '+Yd']}
 inputs = {'Ysp':blocksim.step(),
-          'd':blocksim.step()}
+          'Yd':blocksim.step()}
 
 Us=1/s
 Ut = sp.Heaviside(t)
@@ -46,7 +46,7 @@ GD_numer, GD_denom = ct.delay.pade(tauD,3)
 G_c_ct = ct.tf(Gc, name='Gc(s)', inputs='E', outputs='Yc')
 G_p_ct = ct.tf(Gp, name='Gp(s)', inputs='P', outputs='Yp')
 G_d_ct = ct.tf(Gd, name='Gd(s)', inputs='D', outputs='Yd')
-G_D_ct = ct.tf(GD_numer, GD_denom, name='GD(s)', inputs='U', outputs='Y')
+G_D_ct = ct.tf(GD_numer, GD_denom, name='GD(s)', inputs='Yp', outputs='Y')
 sum1 = ct.summing_junction(['Ysp','-Y'], ['E'], name='Sum1')
 sum2 = ct.summing_junction(['Yc', 'Yd'], ['P'], name='Sum2')
 system = ct.interconnect([G_c_ct, G_p_ct, G_d_ct, G_D_ct, sum1, sum2], inplist=['Ysp', 'Yd'], outlist=['Y'], )
@@ -72,10 +72,8 @@ Gt_vals = Gt_func(t_vals)
 print(f"Inputs : {Ut}, {Gt}")
 response = ct.forced_response(sysdata=system, T=t_vals, U=[Ut_vals, Gt_vals])
 
-#for signal, values in simulation.items():
-    #plt.plot(t_vals, values, label=f'Block Diagram Simulation: {signal}', linestyle='-')
+plt.plot(t_vals, results, label=f'Block Diagram Simulation: Y', linestyle='-')
 plt.plot(response.time, response.outputs[0], label='Step Response from Control Library', linestyle='--')
-plt.plot(t_vals, response.inputs[0], label='Input Step Function', linestyle=':')
 plt.legend()
 plt.xlabel('Time (s)')
 plt.ylabel('g(t)')

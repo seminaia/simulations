@@ -511,7 +511,7 @@ class DocumentBuilder:
         label: str | None = None,
         width: str | NoEscape = r"0.95\textwidth",
         height: str | NoEscape | None = None,
-        position: str = "h",
+        position: str = "H",
     ) -> None:
         path = str(path)
 

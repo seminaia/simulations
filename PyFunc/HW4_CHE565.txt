@@ -124,7 +124,7 @@ A unit step was applied to the setpoint while the disturbance was held at zero.
 Caption: Closed-loop response for a unit step change in setpoint with no disturbance, using the nominal PI settings.
 Label: fig:fig1
 
-[MATH] \text{The response of the closed-loop system is shown in Figure} \ref{fig:fig1} \\ \text{for the nominal PI settings obtained from the $\lambda$ rules.}
+[MATH] \text{The response of the closed-loop system is shown in Figure} \ref{fig:fig1} \text{for the nominal PI settings obtained from the $\lambda$ rules.}
 3. Step Change in Disturbance, No Setpoint Change
 -------------------------------------------------
 
@@ -174,7 +174,7 @@ Label: fig:fig7
 Caption: Comparison of disturbance responses for nominal, doubled, and halved controller gain.
 Label: fig:fig8
 
-[MATH] \text{A direct comparison of the gain variations is shown in Figures} \ref{fig:fig7} \text{and} \ref{fig:fig8}.
+[MATH] \text{A direct comparison of the gain variations is shown in Figures \ref{fig:fig7} and \ref{fig:fig8}.}
 5. Effect of Changing the Integral Time Constant
 ------------------------------------------------
 
@@ -196,7 +196,7 @@ Label: fig:fig9
 Caption: Closed-loop response to a unit step in disturbance with increased integral time constant.
 Label: fig:fig10
 
-[MATH] The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig9} and \ref{fig:fig10}.
+[MATH] \text{The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig9} and \ref{fig:fig10}.
 Next, the integral time constant was decreased.
 
 [ALIGN]
@@ -210,7 +210,7 @@ Label: fig:fig11
 Caption: Closed-loop response to a unit step in disturbance with decreased integral time constant.
 Label: fig:fig12
 
-[MATH] The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig11} and \ref{fig:fig12}.
+[MATH] \text{The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig11} and \ref{fig:fig12}.}
 [FIGURE] compare_tauI_setpoint.png
 Caption: Comparison of setpoint responses for nominal, increased, and decreased integral time constant.
 Label: fig:fig13
@@ -219,7 +219,7 @@ Label: fig:fig13
 Caption: Comparison of disturbance responses for nominal, increased, and decreased integral time constant.
 Label: fig:fig14
 
-[MATH] A direct comparison of the integral time constant variations is shown in Figures \ref{fig:fig13} \text{and} \ref{fig:fig14}.
+[MATH] \text{A direct comparison of the integral time constant variations is shown in Figures \ref{fig:fig13} and \ref{fig:fig14}.}
 6. Comments on the Effects of Changing Controller Parameters
 ------------------------------------------------------------
 

@@ -423,7 +423,7 @@ figlog(
     caption="Closed-loop response for a unit step change in setpoint with no disturbance, using the nominal PI settings.",
     label="fig:fig1",
 )
-m(r"\text{The response of the closed-loop system is shown in Figure}\\ \ref{fig:fig1} \\ \text{for the nominal PI settings obtained from the $\lambda$ rules.}")
+m(r"\text{The response of the closed-loop system is shown in Figure} \ref{fig:fig1} \text{for the nominal PI settings obtained from the $\lambda$ rules.}")
 
 doc.subsection("3. Step Change in Disturbance, No Setpoint Change")
 
@@ -484,7 +484,7 @@ figlog(
     caption="Comparison of disturbance responses for nominal, doubled, and halved controller gain.",
     label="fig:fig8",
 )
-m(r"\text{A direct comparison of the gain variations is shown in Figures} \ref{fig:fig7} \text{and} \ref{fig:fig8}.")
+m(r"\text{A direct comparison of the gain variations is shown in Figures \ref{fig:fig7} and \ref{fig:fig8}.}")
 
 doc.subsection("5. Effect of Changing the Integral Time Constant")
 
@@ -511,7 +511,7 @@ figlog(
     caption="Closed-loop response to a unit step in disturbance with increased integral time constant.",
     label="fig:fig10",
 )
-m(r"The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig9} and \ref{fig:fig10}.")
+m(r"\text{The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig9} and \ref{fig:fig10}.")
 w("Next, the integral time constant was decreased.")
 a(
     rf"\tau_I^{{\text{{small}}}} &= 0.5({tauI_nom:.4f}) = {tauI_small:.4f}",
@@ -528,7 +528,7 @@ figlog(
     caption="Closed-loop response to a unit step in disturbance with decreased integral time constant.",
     label="fig:fig12",
 )
-m(r"The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig11} and \ref{fig:fig12}.")
+m(r"\text{The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig11} and \ref{fig:fig12}.}")
 
 figlog(
     "compare_tauI_setpoint.png",
@@ -540,7 +540,7 @@ figlog(
     caption="Comparison of disturbance responses for nominal, increased, and decreased integral time constant.",
     label="fig:fig14",
 )
-m(r"A direct comparison of the integral time constant variations is shown in Figures \ref{fig:fig13} \text{and} \ref{fig:fig14}.")
+m(r"\text{A direct comparison of the integral time constant variations is shown in Figures \ref{fig:fig13} and \ref{fig:fig14}.}")
 
 doc.subsection("6. Comments on the Effects of Changing Controller Parameters")
 

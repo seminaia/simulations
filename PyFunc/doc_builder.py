@@ -99,15 +99,7 @@ def _fmt_cell(val: Any, float_fmt: str = ".4f") -> str:
 # =============================================================================
 # Block model
 # =============================================================================
-@dataclass
-class PyLaTeXBlock(Block):
-    """Stores a raw PyLaTeX object or NoEscape object for direct insertion."""
-    obj: Any
 
-    def __init__(self, obj: Any):
-        super().__init__("pylatex")
-        self.obj = obj
-        
 @dataclass
 class Block:
     """Base class for all content blocks in the worklog.
@@ -118,7 +110,15 @@ class Block:
         kind (str): The type of the block, which determines how it should be rendered.
     """
     kind: str
+@dataclass
+class PyLaTeXBlock(Block):
+    """Stores a raw PyLaTeX object or NoEscape object for direct insertion."""
+    obj: Any
 
+    def __init__(self, obj: Any):
+        super().__init__("pylatex")
+        self.obj = obj
+        
 @dataclass
 class ParagraphBlock(Block):
     """ParagraphBlock represents a block of text that should be rendered as a paragraph. 

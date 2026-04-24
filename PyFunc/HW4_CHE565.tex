@@ -82,7 +82,7 @@ Y_c = G_c(s)E%
 The disturbance is added after the controller output.%
 \par%
 \[%
-P = Y_c + d%
+P = Y_c + D%
 \]%
 \[%
 Y = G_p(s) P%
@@ -110,7 +110,7 @@ The following simulations were performed:%
 A unit step disturbance was applied with no setpoint change.%
 \par%
 \[%
-Y_{sp}(t) = 0, \quad d(t) = 1%
+Y_{sp}(t) = 0, \quad D(t) = 1%
 \]
 
 %
@@ -190,7 +190,7 @@ I &= 0.2000%
 A unit step was applied to the setpoint while the disturbance was held at zero.%
 \par%
 \[%
-Y_{{sp}}(t)=1,\qquad d(t)=0%
+Y_{{sp}}(t)=1,\qquad D(t)=0%
 \]%
 
 
@@ -202,9 +202,11 @@ Y_{{sp}}(t)=1,\qquad d(t)=0%
 \end{figure}
 
 %
-\[%
-\text{The response of the closed-loop system is shown in Figure} \ref{fig:fig1} \text{for the nominal PI settings obtained from the $\lambda$ rules.}%
-\]
+The response of the closed{-}loop system is shown in Figure%
+$\ref{fig:fig1}$%
+for the nominal PI settings obtained from the%
+InlineMathToken(latex='\textbackslash{}\textbackslash{}quad \textbackslash{}\textbackslash{}lambda \textbackslash{}\textbackslash{}text\{{-}rules.\}')%
+\par
 
 %
 \subsection*{3. Step Change in Disturbance, No Setpoint Change}%
@@ -212,7 +214,7 @@ Y_{{sp}}(t)=1,\qquad d(t)=0%
 A unit step was applied to the disturbance while the setpoint was held constant at zero.%
 \par%
 \[%
-Y_{{sp}}(t)=0,\qquad d(t)=1%
+Y_{{sp}}(t)=0,\qquad D(t)=1%
 \]%
 
 
@@ -224,9 +226,8 @@ Y_{{sp}}(t)=0,\qquad d(t)=1%
 \end{figure}
 
 %
-\[%
-\text{The response of the closed-loop system is shown in Figure} \ref{fig:fig2}.%
-\]
+\textbackslash{}text\{The response of the closed{-}loop system is shown in Figure\} \textbackslash{}ref\{fig:fig2\}.%
+\par
 
 %
 \subsection*{4. Effect of Doubling and Halving the Controller Gain}%
@@ -257,9 +258,11 @@ K_c^{\text{double}} &= 2(1.8750) = 3.7500%
 \end{figure}
 
 %
-\[%
-\text{For the doubled controller gain, the setpoint response is shown in Figure} \ref{fig:fig3}  \text{, and the disturbance response is shown in Figure} \ref{fig:fig4}.%
-\]%
+For the doubled controller gain, the setpoint response is shown in Figure%
+$\ref{fig:fig3}$%
+and the disturbance response is shown in Figure%
+$\ref{fig:fig4}$%
+\par%
 The controller gain was then reduced to half of its nominal value and the simulations of Parts 2 and 3 were repeated.%
 \par%
 \begin{align*}%
@@ -285,9 +288,11 @@ K_c^{\text{half}} &= 0.5(1.8750) = 0.9375%
 \end{figure}
 
 %
-\[%
-\text{For the halved controller gain, the setpoint response is shown in Figure} \ref{fig:fig5} \text{, and the disturbance response is shown in Figure} \ref{fig:fig6}.%
-\]%
+For the halved controller gain, the setpoint response is shown in Figure%
+$\ref{fig:fig5}$%
+and the disturbance response is shown in Figure%
+$\ref{fig:fig6}$%
+\par%
 
 
 \begin{figure}[H]%
@@ -348,7 +353,7 @@ I^{\text{large}} &= \frac{1}{10.0000} = 0.1000%
 
 %
 \[%
-\text{The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig9} and \ref{fig:fig10}.%
+\text{The corresponding setpoint and disturbance responses are shown in Figures} \ref{fig:fig9} and \ref{fig:fig10}.%
 \]%
 Next, the integral time constant was decreased.%
 \par%

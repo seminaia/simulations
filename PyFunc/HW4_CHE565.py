@@ -79,22 +79,23 @@ def build_closed_loop(Kc, tauI):
     Gc = Kc * (1 + I / s)
     Gp_nodelay = Kp / (taup * s + 1)
 
-    numD, denD = ct.pade(theta, pade_order)
-    Gdelay = ct.tf(numD, denD)
+    numD, denD = ct.delay.pade(theta, pade_order)
 
     # Named blocks
     Gc_blk = ct.tf(Gc, name='Gc', inputs='E', outputs='Yc')
-    Gp_blk = ct.tf(Gp_nodelay, name='Gp', inputs='P', outputs='Yp')
-    Gd_blk = ct.ss([], [], [], [[1]], name='Gd', inputs='d', outputs='Yd')     # direct disturbance addition
-    GD_blk = ct.tf(Gdelay, name='GD', inputs='Yp', outputs='Y')
+    Gp_blk = ct.tf(Gp_nodelay, name='Gp', inputs='P', outputs='Y')
+    Gd_blk = ct.tf([1], [1], name='Gd', inputs='D', outputs='Yd')     # direct disturbance addition
+    GD_blk = ct.tf(numD, denD, name='GD', inputs='Y', outputs='Ydelay')
 
     sum1 = ct.summing_junction(inputs=['Ysp', '-Y'], output='E', name='Sum1')
     sum2 = ct.summing_junction(inputs=['Yc', 'Yd'], output='P', name='Sum2')
 
     sys = ct.interconnect(
-        [Gc_blk, Gp_blk, Gd_blk, GD_blk, sum1, sum2],
-        inplist=['Ysp', 'd'],
-        outlist=['Y']
+        [Gc_blk, Gp_blk, GD_blk, Gd_blk, sum1, sum2],
+        input=['Ysp', 'D'],
+        output=['Ydelay'],
+        input_prefix = ["Ysp", "D"],
+        output_prefix = ["Y"],
     )
     return sys
 
@@ -136,7 +137,7 @@ def save_plot(filename, t, y, title, ysp=None, d=None):
 sys_nom = build_closed_loop(Kc_nom, tauI_nom)
 t1, y1 = simulate_case(sys_nom, tvals, step_on, step_off)   # setpoint step
 t2, y2 = simulate_case(sys_nom, tvals, step_off, step_on)   # disturbance step
-
+print(sys_nom)
 # Double gain
 sys_kc_double = build_closed_loop(Kc_double, tauI_nom)
 t3, y3 = simulate_case(sys_kc_double, tvals, step_on, step_off)
@@ -207,7 +208,7 @@ m(r"Y_c = G_c(s)E")
 
 w("The disturbance is added after the controller output.")
 
-m(r"P = Y_c + d")
+m(r"P = Y_c + D")
 
 m(r"Y = G_p(s) P")
 doc.subsection("Simulation Cases")
@@ -224,7 +225,7 @@ doc.subsection("Disturbance Response")
 
 w("A unit step disturbance was applied with no setpoint change.")
 
-m(r"Y_{sp}(t) = 0, \quad d(t) = 1")
+m(r"Y_{sp}(t) = 0, \quad D(t) = 1")
 
 doc.subsection("Effect of Controller Gain")
 
@@ -416,26 +417,28 @@ a(
 doc.subsection("2. Step Change in Setpoint, No Disturbance")
 
 w("A unit step was applied to the setpoint while the disturbance was held at zero.")
-m(r"Y_{{sp}}(t)=1,\qquad d(t)=0")
+m(r"Y_{{sp}}(t)=1,\qquad D(t)=0")
 
 figlog(
     "part2_setpoint_nominal.png",
     caption="Closed-loop response for a unit step change in setpoint with no disturbance, using the nominal PI settings.",
     label="fig:fig1",
 )
-m(r"\text{The response of the closed-loop system is shown in Figure} \ref{fig:fig1} \text{for the nominal PI settings obtained from the $\lambda$ rules.}")
+px("The response of the closed-loop system is shown in Figure", 
+   im(r"\ref{fig:fig1}"),
+   "for the nominal PI settings obtained from the", rf"{im(r"\quad \lambda \text{-rules.}")}")
 
 doc.subsection("3. Step Change in Disturbance, No Setpoint Change")
 
 w("A unit step was applied to the disturbance while the setpoint was held constant at zero.")
-m(r"Y_{{sp}}(t)=0,\qquad d(t)=1")
+m(r"Y_{{sp}}(t)=0,\qquad D(t)=1")
 
 figlog(
     "part3_disturbance_nominal.png",
     caption="Closed-loop response for a unit step change in disturbance with no setpoint change, using the nominal PI settings.",
     label="fig:fig2",
 )
-m(r"\text{The response of the closed-loop system is shown in Figure} \ref{fig:fig2}.")
+px(r"\text{The response of the closed-loop system is shown in Figure} \ref{fig:fig2}.")
 
 doc.subsection("4. Effect of Doubling and Halving the Controller Gain")
 
@@ -455,7 +458,10 @@ figlog(
     caption="Closed-loop response to a unit step in disturbance with doubled controller gain.",
     label="fig:fig4",
 )
-m(r"\text{For the doubled controller gain, the setpoint response is shown in Figure} \ref{fig:fig3}  \text{, and the disturbance response is shown in Figure} \ref{fig:fig4}.")
+px("For the doubled controller gain, the setpoint response is shown in Figure",
+   im(r"\ref{fig:fig3}"),
+   "and the disturbance response is shown in Figure", 
+   im(r"\ref{fig:fig4}"))
 
 w("The controller gain was then reduced to half of its nominal value and the simulations of Parts 2 and 3 were repeated.")
 a(
@@ -473,7 +479,11 @@ figlog(
     caption="Closed-loop response to a unit step in disturbance with half the nominal controller gain.",
     label="fig:fig6",
 )
-m(r"\text{For the halved controller gain, the setpoint response is shown in Figure} \ref{fig:fig5} \text{, and the disturbance response is shown in Figure} \ref{fig:fig6}.")
+px("For the halved controller gain, the setpoint response is shown in Figure",
+   im(r"\ref{fig:fig5}"),
+   "and the disturbance response is shown in Figure",
+   im(r"\ref{fig:fig6}"))
+
 figlog(
     "compare_kc_setpoint.png",
     caption="Comparison of setpoint responses for nominal, doubled, and halved controller gain.",
@@ -511,7 +521,7 @@ figlog(
     caption="Closed-loop response to a unit step in disturbance with increased integral time constant.",
     label="fig:fig10",
 )
-m(r"\text{The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig9} and \ref{fig:fig10}.")
+m(r"\text{The corresponding setpoint and disturbance responses are shown in Figures} \ref{fig:fig9} and \ref{fig:fig10}.")
 w("Next, the integral time constant was decreased.")
 a(
     rf"\tau_I^{{\text{{small}}}} &= 0.5({tauI_nom:.4f}) = {tauI_small:.4f}",

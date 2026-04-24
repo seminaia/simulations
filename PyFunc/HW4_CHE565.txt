@@ -40,7 +40,7 @@ The control system is arranged in a standard feedback configuration.
 [MATH] Y_c = G_c(s)E
 The disturbance is added after the controller output.
 
-[MATH] P = Y_c + d
+[MATH] P = Y_c + D
 [MATH] Y = G_p(s) P
 Simulation Cases
 ----------------
@@ -62,7 +62,7 @@ Disturbance Response
 
 A unit step disturbance was applied with no setpoint change.
 
-[MATH] Y_{sp}(t) = 0, \quad d(t) = 1
+[MATH] Y_{sp}(t) = 0, \quad D(t) = 1
 Effect of Controller Gain
 -------------------------
 
@@ -119,23 +119,25 @@ I &= 0.2000
 
 A unit step was applied to the setpoint while the disturbance was held at zero.
 
-[MATH] Y_{{sp}}(t)=1,\qquad d(t)=0
+[MATH] Y_{{sp}}(t)=1,\qquad D(t)=0
 [FIGURE] part2_setpoint_nominal.png
 Caption: Closed-loop response for a unit step change in setpoint with no disturbance, using the nominal PI settings.
 Label: fig:fig1
 
-[MATH] \text{The response of the closed-loop system is shown in Figure} \ref{fig:fig1} \text{for the nominal PI settings obtained from the $\lambda$ rules.}
+The response of the closed-loop system is shown in Figure\ref{fig:fig1}for the nominal PI settings obtained from theInlineMathToken(latex='\\quad \\lambda \\text{-rules.}')
+
 3. Step Change in Disturbance, No Setpoint Change
 -------------------------------------------------
 
 A unit step was applied to the disturbance while the setpoint was held constant at zero.
 
-[MATH] Y_{{sp}}(t)=0,\qquad d(t)=1
+[MATH] Y_{{sp}}(t)=0,\qquad D(t)=1
 [FIGURE] part3_disturbance_nominal.png
 Caption: Closed-loop response for a unit step change in disturbance with no setpoint change, using the nominal PI settings.
 Label: fig:fig2
 
-[MATH] \text{The response of the closed-loop system is shown in Figure} \ref{fig:fig2}.
+\text{The response of the closed-loop system is shown in Figure} \ref{fig:fig2}.
+
 4. Effect of Doubling and Halving the Controller Gain
 -----------------------------------------------------
 
@@ -152,7 +154,8 @@ Label: fig:fig3
 Caption: Closed-loop response to a unit step in disturbance with doubled controller gain.
 Label: fig:fig4
 
-[MATH] \text{For the doubled controller gain, the setpoint response is shown in Figure} \ref{fig:fig3}  \text{, and the disturbance response is shown in Figure} \ref{fig:fig4}.
+For the doubled controller gain, the setpoint response is shown in Figure\ref{fig:fig3}and the disturbance response is shown in Figure\ref{fig:fig4}
+
 The controller gain was then reduced to half of its nominal value and the simulations of Parts 2 and 3 were repeated.
 
 [ALIGN]
@@ -165,7 +168,8 @@ Label: fig:fig5
 Caption: Closed-loop response to a unit step in disturbance with half the nominal controller gain.
 Label: fig:fig6
 
-[MATH] \text{For the halved controller gain, the setpoint response is shown in Figure} \ref{fig:fig5} \text{, and the disturbance response is shown in Figure} \ref{fig:fig6}.
+For the halved controller gain, the setpoint response is shown in Figure\ref{fig:fig5}and the disturbance response is shown in Figure\ref{fig:fig6}
+
 [FIGURE] compare_kc_setpoint.png
 Caption: Comparison of setpoint responses for nominal, doubled, and halved controller gain.
 Label: fig:fig7
@@ -196,7 +200,7 @@ Label: fig:fig9
 Caption: Closed-loop response to a unit step in disturbance with increased integral time constant.
 Label: fig:fig10
 
-[MATH] \text{The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig9} and \ref{fig:fig10}.
+[MATH] \text{The corresponding setpoint and disturbance responses are shown in Figures} \ref{fig:fig9} and \ref{fig:fig10}.
 Next, the integral time constant was decreased.
 
 [ALIGN]

@@ -155,7 +155,6 @@ save_plot(
     ysp=step_off,
     d=step_on,
 )
-
 # =============================================================================
 # Document writeup
 # =============================================================================
@@ -167,6 +166,9 @@ figlog(
     "HW5_CHE565_block_diagram.png",
     caption="Block diagram of the closed-loop system without cascade control and with a unit step disturbance from Simulink.",
     label="fig:block_diagram",
+    width=NoEscape(r"0.8\linewidth"),
+    height=NoEscape(r"0.5\textheight"),
+    position="h"
 )
 
 px("The Simulink block diagram is shown in ", doc.figref("fig:block_diagram"), ".")
@@ -175,6 +177,8 @@ figlog(
     "closed_loop_no_cascade_simulink.png",
     caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance from Simulink.",
     label="fig:no_cascade_simulink",
+    width=NoEscape(r"0.8\textwidth"),
+    height=NoEscape(r"0.8\textheight"),
 )
 
 px(
@@ -187,6 +191,8 @@ figlog(
     "closed_loop_no_cascade.png",
     caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance from Python.",
     label="fig:no_cascade_python",
+    width=NoEscape(r"0.8\textwidth"),
+    height=NoEscape(r"0.8\textheight"),
 )
 
 px(
@@ -206,18 +212,13 @@ p(
     f"which gave P = {P:.4f} and I = {I:.4f}."
 )
 
-save_plot(
-    "closed_loop_no_cascade_autotuning_python.png",
-    t2,
-    y2,
-    "Closed-loop response to unit step disturbance with PI autotuning",
-    ysp=step_off,
-    d=step_on,
-)
+
 
 figlog(
     "closed_loop_no_cascade_autotuning_python.png",
     caption="Closed-loop response to no step change in setpoint and a unit step disturbance using the Simulink autotuned PI values in Python.",
+    width=NoEscape(r"0.8\textwidth"),
+    height=NoEscape(r"0.8\textheight"),
     label="fig:autotuned_python",
 )
 
@@ -231,6 +232,8 @@ figlog(
     "closed_loop_no_cascade_simulink_autotuning.png",
     caption="Closed-loop response to no step change in setpoint and a unit step disturbance using PI autotuning from Simulink.",
     label="fig:autotuned_simulink",
+    width=NoEscape(r"0.8\textwidth"),
+    height=NoEscape(r"0.8\textheight"),
 )
 
 px(

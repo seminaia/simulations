@@ -69,6 +69,8 @@ class DocumentBuilder:
         self._beamer_theme_options: str | None = None
 
         self.doc = self._new_document()
+        self._build_preamble_and_title()
+        
         self.current = self.doc
         self.stack: list[Any] = [self.doc]
 
@@ -509,7 +511,7 @@ class DocumentBuilder:
         label: str | None = None,
         width: str | NoEscape = r"0.95\textwidth",
         height: str | NoEscape | None = None,
-        position: str = "H",
+        position: str = "h",
     ) -> None:
         path = str(path)
 
@@ -627,7 +629,6 @@ class DocumentBuilder:
 
     def save_tex(self) -> str:
         self.end_slide()
-        self._build_preamble_and_title()
 
         for line in self._raw_tail:
             self.doc.append(NoEscape(line))

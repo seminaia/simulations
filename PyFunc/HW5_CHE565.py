@@ -26,15 +26,22 @@ OUTPUT_FILE = "HW5_CHE565"
 PLOT_FILE = "HW5_CHE565_plot.png"
 report_lines = []
 
-doc = PyLatexDocumentBuilder(
+doc = DocumentBuilder(
     OUTPUT_FILE,
     title="CHE 565 -- Homework 5",
     author="Soki Sem",
 )
 # convenience aliases
 p = doc.p
+line = doc.line
 m = doc.eq
+a = doc.align
+t = doc.table
 figlog = doc.figure
+px = doc.px
+im = doc.im
+doc.maketitle(True)
+doc.toc(False)
 
 # =============================================================================
 # Problem data

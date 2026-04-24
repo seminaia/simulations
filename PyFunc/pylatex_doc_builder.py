@@ -62,6 +62,55 @@ class PyLatexDocumentBuilder:
     def ref(self, label):
         return NoEscape(rf"\ref{{{label}}}")
 
+    _AUX_EXTENSIONS = (
+        ".aux", ".nav", ".snm", ".toc",
+        ".vrb", ".synctex.gz", ".fls", ".fdb_latexmk", ".bbl", ".blg",
+    )
+
+    def _cleanup_aux(self) -> None:
+        """Remove auxiliary files produced by pdflatex / biber."""
+        for ext in self._AUX_EXTENSIONS:
+            p = Path(f"{self.base_name}{ext}")
+            if p.exists():
+                p.unlink()
+
+    def save_beamer_pdf(self, runs: int = 1, clean: bool = True) -> str | None:
+        """Generate a Beamer PDF presentation.
+
+        Writes the .tex first, then compiles with pdflatex.
+
+        Args:
+            runs: Number of pdflatex passes (useful for TOC / references).
+            clean: Remove auxiliary files (.aux, .log, .nav, etc.) after
+                a successful build.  Defaults to True.
+
+        Returns:
+            Path to the generated PDF, or *None* if compilation fails.
+        """
+        tex_path = self.save_beamer_tex()
+        engine = shutil.which("pdflatex")
+        if engine is None:
+            print("pdflatex not found; wrote .tex only")
+            return None
+
+        output_dir = str(Path(tex_path).parent)
+        pdf_path = f"{self.base_name}.pdf"
+        ok = True
+        for _ in range(max(1, runs)):
+            result = subprocess.run(
+                [engine, "-interaction=nonstopmode",
+                 f"-output-directory={output_dir}", tex_path],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                ok = False
+                print("pdflatex failed; check the .log file")
+                print(result.stdout[-3000:])
+                break
+        if ok and clean:
+            self._cleanup_aux()
+        return pdf_path if ok and Path(pdf_path).exists() else None
     def save_tex(self):
         self.doc.generate_tex(self.base_name)
         return f"{self.base_name}.tex"
@@ -83,3 +132,29 @@ class PyLatexDocumentBuilder:
 
         pdf_path = f"{self.base_name}.pdf"
         return pdf_path if Path(pdf_path).exists() else None
+
+    def save_all(self, runs: int = 1, beamer: bool = False) -> tuple[str, str, str | None]:
+        """Save .txt, .tex, and .pdf versions of the document.
+
+        When *beamer* is True the LaTeX / PDF output uses Beamer
+        (slide-deck format) instead of article format.
+
+        Args:
+            runs (int, optional): The number of times to run pdflatex to resolve
+                references when generating the PDF. Defaults to 1.
+            beamer (bool, optional): If *True* produce a Beamer presentation
+                instead of an article. Defaults to False.
+
+        Returns:
+            tuple[str, str, str | None]: Paths to the .txt, .tex, and .pdf
+                files respectively. The PDF path will be None if generation
+                failed or pdflatex was not found.
+        """
+        txt = self.save_txt()
+        if beamer:
+            tex = self.save_beamer_tex()
+            pdf = self.save_beamer_pdf(runs=runs)
+        else:
+            tex = self.save_tex()
+            pdf = self.save_pdf(runs=runs)
+        return txt, tex, pdf

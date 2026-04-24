@@ -1,0 +1,13 @@
+CHE 565 -- Homework 5
+Soki Sem
+================================================================================
+
+Untitled Section
+====================
+
+Closed-loop response to step disturbance
+----------------------------------------
+
+[FIGURE] closed_loop_no_cascade.png
+Caption: Closed-loop response to no step change in setpoint and a unit step change in disturbance
+Label: fig:fig1

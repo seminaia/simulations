@@ -99,7 +99,15 @@ def _fmt_cell(val: Any, float_fmt: str = ".4f") -> str:
 # =============================================================================
 # Block model
 # =============================================================================
+@dataclass
+class PyLaTeXBlock(Block):
+    """Stores a raw PyLaTeX object or NoEscape object for direct insertion."""
+    obj: Any
 
+    def __init__(self, obj: Any):
+        super().__init__("pylatex")
+        self.obj = obj
+        
 @dataclass
 class Block:
     """Base class for all content blocks in the worklog.
@@ -589,6 +597,30 @@ class DocumentBuilder:
             parts (Any): The parts of the mixed paragraph.
         """
         self._slide_target.blocks.append(MixedParagraphBlock(list(parts)))
+    
+    def append(self, obj: Any) -> None:
+        """Append a PyLaTeX object directly to the current document location."""
+        self._slide_target.blocks.append(PyLaTeXBlock(obj))
+
+
+    def ref(self, label: str) -> NoEscape:
+        """Return a LaTeX reference."""
+        return NoEscape(rf"\ref{{{label}}}")
+
+
+    def figref(self, label: str) -> NoEscape:
+        """Return a LaTeX figure reference."""
+        return NoEscape(rf"Figure~\ref{{{label}}}")
+
+
+    def eqref(self, label: str) -> NoEscape:
+        """Return a LaTeX equation reference."""
+        return NoEscape(rf"Eq.~\eqref{{{label}}}")
+
+
+    def raw_inline(self, tex: str) -> NoEscape:
+        """Return raw LaTeX for use inside px()."""
+        return NoEscape(tex)
 
     def bullets(self, items: Iterable[str]) -> None:
         """Add a bullet list.
@@ -785,6 +817,10 @@ class DocumentBuilder:
 
         if block.kind == "paragraph":
             out.append(_txt_safe(block.text))
+            out.append("")
+        elif block.kind == "pylatex":
+            out.append("[PYLATEX]")
+            out.append(str(block.obj))
             out.append("")
         elif block.kind == "line":
             out.append(_txt_safe(block.text))
@@ -1012,6 +1048,8 @@ class DocumentBuilder:
             if block.text.strip():
                 container.append(escape_latex(block.text))
             container.append(NoEscape(r"\par"))
+        elif block.kind == "pylatex":
+            container.append(block.obj)
         elif block.kind == "line":
             if block.text.strip():
                 container.append(escape_latex(block.text))
@@ -1022,6 +1060,8 @@ class DocumentBuilder:
             for part in block.parts:
                 if isinstance(part, InlineMathToken):
                     container.append(NoEscape(f"${part.latex}$"))
+                elif isinstance(part, NoEscape):
+                    container.append(part)
                 else:
                     container.append(escape_latex(str(part)))
             container.append(NoEscape(r"\par"))

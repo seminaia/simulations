@@ -26,7 +26,7 @@
 \maketitle%
 \section*{Untitled Section}%
 \label{sec:UntitledSection}%
-\subsection*{Controller Design using \$\textbackslash{}lambda\${-}Rules}%
+\subsection*{Controller Design using  $\lambda$  -Rules}%
 \label{subsec:ControllerDesignusinglambda{-}Rules}%
 \[%
 \lambda = \max\left(\frac{\tau_p}{3}, \theta \right)%
@@ -139,7 +139,7 @@ G_p(s)=\frac{e^{-s}}{5s+1}%
 \]%
 with a disturbance added after the controller. The controller was set to ideal PI form, as required in the assignment.%
 \par%
-\subsection*{1. Controller Settings from the \textbackslash{}lambda{-}Rules}%
+\subsection*{1. Controller Settings from the $\lambda$-Rules}%
 \label{subsec:1.ControllerSettingsfromthelambda{-}Rules}%
 For the given process model, the process gain, time constant, and dead time are identified as%
 \par%
@@ -192,16 +192,19 @@ A unit step was applied to the setpoint while the disturbance was held at zero.%
 \[%
 Y_{{sp}}(t)=1,\qquad d(t)=0%
 \]%
-The response of the closed{-}loop system is shown in Figure for the nominal PI settings obtained from the lambda rules.%
-\par%
 
 
 \begin{figure}[H]%
 \centering%
 \includegraphics[width=0.95\textwidth]{part2_setpoint_nominal.png}%
 \caption{Closed{-}loop response for a unit step change in setpoint with no disturbance, using the nominal PI settings.}%
-\label{fig:part2_setpoint_nominal}%
+\label{fig:fig1}%
 \end{figure}
+
+%
+\[%
+\text{The response of the closed-loop system is shown in Figure} \ref{fig:fig1} \\ \text{for the nominal PI settings obtained from the $\lambda$ rules.}%
+\]
 
 %
 \subsection*{3. Step Change in Disturbance, No Setpoint Change}%
@@ -211,16 +214,19 @@ A unit step was applied to the disturbance while the setpoint was held constant 
 \[%
 Y_{{sp}}(t)=0,\qquad d(t)=1%
 \]%
-The response of the closed{-}loop system is shown in Figure \textbackslash{}ref\{fig:part3\_disturbance\_nominal\}.%
-\par%
 
 
 \begin{figure}[H]%
 \centering%
 \includegraphics[width=0.95\textwidth]{part3_disturbance_nominal.png}%
 \caption{Closed{-}loop response for a unit step change in disturbance with no setpoint change, using the nominal PI settings.}%
-\label{fig:part3_disturbance_nominal}%
+\label{fig:fig2}%
 \end{figure}
+
+%
+\[%
+\text{The response of the closed-loop system is shown in Figure} \ref{fig:fig2}.%
+\]
 
 %
 \subsection*{4. Effect of Doubling and Halving the Controller Gain}%
@@ -231,15 +237,13 @@ The controller gain was first doubled from its nominal value and the simulations
 K_c^{\text{nominal}} &= 1.8750 \\%
 K_c^{\text{double}} &= 2(1.8750) = 3.7500%
 \end{align*}%
-For the doubled controller gain, the setpoint response is shown in Figure \$\textbackslash{}ref\{fig:part4\_setpoint\_kc\_double\}\$, and the disturbance response is shown in Figure \textbackslash{}ref\{fig:part4\_disturbance\_kc\_double\}.%
-\par%
 
 
 \begin{figure}[H]%
 \centering%
 \includegraphics[width=0.95\textwidth]{part4_setpoint_kc_double.png}%
 \caption{Closed{-}loop response to a unit step in setpoint with doubled controller gain.}%
-\label{fig:part4_setpoint_kc_double}%
+\label{fig:fig3}%
 \end{figure}
 
 %
@@ -249,24 +253,25 @@ For the doubled controller gain, the setpoint response is shown in Figure \$\tex
 \centering%
 \includegraphics[width=0.95\textwidth]{part4_disturbance_kc_double.png}%
 \caption{Closed{-}loop response to a unit step in disturbance with doubled controller gain.}%
-\label{fig:part4_disturbance_kc_double}%
+\label{fig:fig4}%
 \end{figure}
 
 %
+\[%
+\text{For the doubled controller gain, the setpoint response is shown in Figure} \ref{fig:fig3}  \text{, and the disturbance response is shown in Figure} \ref{fig:fig4}.%
+\]%
 The controller gain was then reduced to half of its nominal value and the simulations of Parts 2 and 3 were repeated.%
 \par%
 \begin{align*}%
 K_c^{\text{half}} &= 0.5(1.8750) = 0.9375%
 \end{align*}%
-For the halved controller gain, the setpoint response is shown in Figure \textbackslash{}ref\{fig:part4\_setpoint\_kc\_half\}, and the disturbance response is shown in Figure \textbackslash{}ref\{fig:part4\_disturbance\_kc\_half\}.%
-\par%
 
 
 \begin{figure}[H]%
 \centering%
 \includegraphics[width=0.95\textwidth]{part4_setpoint_kc_half.png}%
 \caption{Closed{-}loop response to a unit step in setpoint with half the nominal controller gain.}%
-\label{fig:part4_setpoint_kc_half}%
+\label{fig:fig5}%
 \end{figure}
 
 %
@@ -276,19 +281,20 @@ For the halved controller gain, the setpoint response is shown in Figure \textba
 \centering%
 \includegraphics[width=0.95\textwidth]{part4_disturbance_kc_half.png}%
 \caption{Closed{-}loop response to a unit step in disturbance with half the nominal controller gain.}%
-\label{fig:part4_disturbance_kc_half}%
+\label{fig:fig6}%
 \end{figure}
 
 %
-A direct comparison of the gain variations is shown in Figures \textbackslash{}ref\{fig:compare\_kc\_setpoint\} and \textbackslash{}ref\{fig:compare\_kc\_disturbance\}.%
-\par%
+\[%
+\text{For the halved controller gain, the setpoint response is shown in Figure} \ref{fig:fig5} \text{, and the disturbance response is shown in Figure} \ref{fig:fig6}.%
+\]%
 
 
 \begin{figure}[H]%
 \centering%
 \includegraphics[width=0.95\textwidth]{compare_kc_setpoint.png}%
 \caption{Comparison of setpoint responses for nominal, doubled, and halved controller gain.}%
-\label{fig:compare_kc_setpoint}%
+\label{fig:fig7}%
 \end{figure}
 
 %
@@ -298,8 +304,13 @@ A direct comparison of the gain variations is shown in Figures \textbackslash{}r
 \centering%
 \includegraphics[width=0.95\textwidth]{compare_kc_disturbance.png}%
 \caption{Comparison of disturbance responses for nominal, doubled, and halved controller gain.}%
-\label{fig:compare_kc_disturbance}%
+\label{fig:fig8}%
 \end{figure}
+
+%
+\[%
+\text{A direct comparison of the gain variations is shown in Figures} \ref{fig:fig7} \text{and} \ref{fig:fig8}.%
+\]
 
 %
 \subsection*{5. Effect of Changing the Integral Time Constant}%
@@ -316,15 +327,13 @@ First, the integral time constant was increased.%
 \tau_I^{\text{large}} &= 2(5.0000) = 10.0000 \\%
 I^{\text{large}} &= \frac{1}{10.0000} = 0.1000%
 \end{align*}%
-The corresponding setpoint and disturbance responses are shown in Figures \textbackslash{}ref\{fig:part5\_setpoint\_tauI\_large\} and \textbackslash{}ref\{fig:part5\_disturbance\_tauI\_large\}.%
-\par%
 
 
 \begin{figure}[H]%
 \centering%
 \includegraphics[width=0.95\textwidth]{part5_setpoint_tauI_large.png}%
 \caption{Closed{-}loop response to a unit step in setpoint with increased integral time constant.}%
-\label{fig:part5_setpoint_tauI_large}%
+\label{fig:fig9}%
 \end{figure}
 
 %
@@ -334,25 +343,26 @@ The corresponding setpoint and disturbance responses are shown in Figures \textb
 \centering%
 \includegraphics[width=0.95\textwidth]{part5_disturbance_tauI_large.png}%
 \caption{Closed{-}loop response to a unit step in disturbance with increased integral time constant.}%
-\label{fig:part5_disturbance_tauI_large}%
+\label{fig:fig10}%
 \end{figure}
 
 %
+\[%
+The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig9} and \ref{fig:fig10}.%
+\]%
 Next, the integral time constant was decreased.%
 \par%
 \begin{align*}%
 \tau_I^{\text{small}} &= 0.5(5.0000) = 2.5000 \\%
 I^{\text{small}} &= \frac{1}{2.5000} = 0.4000%
 \end{align*}%
-The corresponding setpoint and disturbance responses are shown in Figures \textbackslash{}ref\{fig:part5\_setpoint\_tauI\_small\} and \textbackslash{}ref\{fig:part5\_disturbance\_tauI\_small\}.%
-\par%
 
 
 \begin{figure}[H]%
 \centering%
 \includegraphics[width=0.95\textwidth]{part5_setpoint_tauI_small.png}%
 \caption{Closed{-}loop response to a unit step in setpoint with decreased integral time constant.}%
-\label{fig:part5_setpoint_tauI_small}%
+\label{fig:fig11}%
 \end{figure}
 
 %
@@ -362,19 +372,20 @@ The corresponding setpoint and disturbance responses are shown in Figures \textb
 \centering%
 \includegraphics[width=0.95\textwidth]{part5_disturbance_tauI_small.png}%
 \caption{Closed{-}loop response to a unit step in disturbance with decreased integral time constant.}%
-\label{fig:part5_disturbance_tauI_small}%
+\label{fig:fig12}%
 \end{figure}
 
 %
-A direct comparison of the integral time constant variations is shown in Figures \textbackslash{}ref\{fig:compare\_tauI\_setpoint\} and \textbackslash{}ref\{fig:compare\_tauI\_disturbance\}.%
-\par%
+\[%
+The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig11} and \ref{fig:fig12}.%
+\]%
 
 
 \begin{figure}[H]%
 \centering%
 \includegraphics[width=0.95\textwidth]{compare_tauI_setpoint.png}%
 \caption{Comparison of setpoint responses for nominal, increased, and decreased integral time constant.}%
-\label{fig:compare_tauI_setpoint}%
+\label{fig:fig13}%
 \end{figure}
 
 %
@@ -384,8 +395,13 @@ A direct comparison of the integral time constant variations is shown in Figures
 \centering%
 \includegraphics[width=0.95\textwidth]{compare_tauI_disturbance.png}%
 \caption{Comparison of disturbance responses for nominal, increased, and decreased integral time constant.}%
-\label{fig:compare_tauI_disturbance}%
+\label{fig:fig14}%
 \end{figure}
+
+%
+\[%
+A direct comparison of the integral time constant variations is shown in Figures \ref{fig:fig13} \text{and} \ref{fig:fig14}.%
+\]
 
 %
 \subsection*{6. Comments on the Effects of Changing Controller Parameters}%

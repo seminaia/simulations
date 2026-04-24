@@ -8,11 +8,13 @@ Results are written to HW4_CHE565.txt, HW4_CHE565.tex, and HW4_CHE565.pdf
 
 import numpy as np
 import matplotlib
+from sympy import true
 from sympy.matrices.expressions.matadd import rules
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from doc_builder import DocumentBuilder
 from pylatex import NoEscape
+from pylatex import Math
 import control as ct
 
 OUTPUT_FILE = "HW4_CHE565"
@@ -157,7 +159,7 @@ sys_tauI_small = build_closed_loop(Kc_nom, tauI_small)
 t9, y9 = simulate_case(sys_tauI_big, tvals, step_on, step_off)
 t10, y10 = simulate_case(sys_tauI_small, tvals, step_off, step_on)
 
-doc.subsection(["Controller Design using,", r"\lambda-Rules"])
+doc.subsection(NoEscape(r"Controller Design using  $\lambda$  -Rules"))
 
 m(r"\lambda = \max\left(\frac{\tau_p}{3}, \theta \right)")
 
@@ -371,7 +373,7 @@ w("A closed-loop control system was constructed for the process")
 m(r"G_p(s)=\frac{e^{-s}}{5s+1}")
 w("with a disturbance added after the controller. The controller was set to ideal PI form, as required in the assignment.")
 
-doc.subsection(f"1. Controller Settings from the {r"\lambda"}-Rules")
+doc.subsection(NoEscape(r"1. Controller Settings from the $\lambda$-Rules"))
 
 w("For the given process model, the process gain, time constant, and dead time are identified as")
 m(r"K_p=1,\qquad \tau_p=5,\qquad \theta=1")
@@ -416,25 +418,24 @@ doc.subsection("2. Step Change in Setpoint, No Disturbance")
 w("A unit step was applied to the setpoint while the disturbance was held at zero.")
 m(r"Y_{{sp}}(t)=1,\qquad d(t)=0")
 
-w(
-    "The response of the closed-loop system is shown in Figure for the nominal PI settings obtained from the lambda rules.")
 figlog(
     "part2_setpoint_nominal.png",
     caption="Closed-loop response for a unit step change in setpoint with no disturbance, using the nominal PI settings.",
-    label="fig:part2_setpoint_nominal",
+    label="fig:fig1",
 )
+m(r"\text{The response of the closed-loop system is shown in Figure}\\ \ref{fig:fig1} \\ \text{for the nominal PI settings obtained from the $\lambda$ rules.}")
 
 doc.subsection("3. Step Change in Disturbance, No Setpoint Change")
 
 w("A unit step was applied to the disturbance while the setpoint was held constant at zero.")
 m(r"Y_{{sp}}(t)=0,\qquad d(t)=1")
 
-w("The response of the closed-loop system is shown in Figure \\ref{fig:part3_disturbance_nominal}.")
 figlog(
     "part3_disturbance_nominal.png",
     caption="Closed-loop response for a unit step change in disturbance with no setpoint change, using the nominal PI settings.",
-    label="fig:part3_disturbance_nominal",
+    label="fig:fig2",
 )
+m(r"\text{The response of the closed-loop system is shown in Figure} \ref{fig:fig2}.")
 
 doc.subsection("4. Effect of Doubling and Halving the Controller Gain")
 
@@ -444,46 +445,46 @@ a(
     rf"K_c^{{\text{{double}}}} &= 2({Kc_nom:.4f}) = {Kc_double:.4f}"
 )
 
-w("For the doubled controller gain, the setpoint response is shown in Figure $\\ref{fig:part4_setpoint_kc_double}$, and the disturbance response is shown in Figure \\ref{fig:part4_disturbance_kc_double}.")
 figlog(
     "part4_setpoint_kc_double.png",
     caption="Closed-loop response to a unit step in setpoint with doubled controller gain.",
-    label="fig:part4_setpoint_kc_double",
+    label="fig:fig3",
 )
 figlog(
     "part4_disturbance_kc_double.png",
     caption="Closed-loop response to a unit step in disturbance with doubled controller gain.",
-    label="fig:part4_disturbance_kc_double",
+    label="fig:fig4",
 )
+m(r"\text{For the doubled controller gain, the setpoint response is shown in Figure} \ref{fig:fig3}  \text{, and the disturbance response is shown in Figure} \ref{fig:fig4}.")
 
 w("The controller gain was then reduced to half of its nominal value and the simulations of Parts 2 and 3 were repeated.")
 a(
     rf"K_c^{{\text{{half}}}} &= 0.5({Kc_nom:.4f}) = {Kc_half:.4f}"
 )
 
-w("For the halved controller gain, the setpoint response is shown in Figure \\ref{fig:part4_setpoint_kc_half}, and the disturbance response is shown in Figure \\ref{fig:part4_disturbance_kc_half}.")
+
 figlog(
     "part4_setpoint_kc_half.png",
     caption="Closed-loop response to a unit step in setpoint with half the nominal controller gain.",
-    label="fig:part4_setpoint_kc_half",
+    label="fig:fig5",
 )
 figlog(
     "part4_disturbance_kc_half.png",
     caption="Closed-loop response to a unit step in disturbance with half the nominal controller gain.",
-    label="fig:part4_disturbance_kc_half",
+    label="fig:fig6",
 )
-
-w("A direct comparison of the gain variations is shown in Figures \\ref{fig:compare_kc_setpoint} and \\ref{fig:compare_kc_disturbance}.")
+m(r"\text{For the halved controller gain, the setpoint response is shown in Figure} \ref{fig:fig5} \text{, and the disturbance response is shown in Figure} \ref{fig:fig6}.")
 figlog(
     "compare_kc_setpoint.png",
     caption="Comparison of setpoint responses for nominal, doubled, and halved controller gain.",
-    label="fig:compare_kc_setpoint",
+    label="fig:fig7",
 )
 figlog(
     "compare_kc_disturbance.png",
     caption="Comparison of disturbance responses for nominal, doubled, and halved controller gain.",
-    label="fig:compare_kc_disturbance",
+    label="fig:fig8",
 )
+m(r"\text{A direct comparison of the gain variations is shown in Figures} \ref{fig:fig7} \text{and} \ref{fig:fig8}.")
 
 doc.subsection("5. Effect of Changing the Integral Time Constant")
 
@@ -499,47 +500,47 @@ a(
     rf"I^{{\text{{large}}}} &= \frac{{1}}{{{tauI_large:.4f}}} = {1.0/tauI_large:.4f}"
 )
 
-w("The corresponding setpoint and disturbance responses are shown in Figures \\ref{fig:part5_setpoint_tauI_large} and \\ref{fig:part5_disturbance_tauI_large}.")
+
 figlog(
     "part5_setpoint_tauI_large.png",
     caption="Closed-loop response to a unit step in setpoint with increased integral time constant.",
-    label="fig:part5_setpoint_tauI_large",
+    label="fig:fig9",
 )
 figlog(
     "part5_disturbance_tauI_large.png",
     caption="Closed-loop response to a unit step in disturbance with increased integral time constant.",
-    label="fig:part5_disturbance_tauI_large",
+    label="fig:fig10",
 )
-
+m(r"The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig9} and \ref{fig:fig10}.")
 w("Next, the integral time constant was decreased.")
 a(
     rf"\tau_I^{{\text{{small}}}} &= 0.5({tauI_nom:.4f}) = {tauI_small:.4f}",
     rf"I^{{\text{{small}}}} &= \frac{{1}}{{{tauI_small:.4f}}} = {1.0/tauI_small:.4f}"
 )
 
-w("The corresponding setpoint and disturbance responses are shown in Figures \\ref{fig:part5_setpoint_tauI_small} and \\ref{fig:part5_disturbance_tauI_small}.")
 figlog(
     "part5_setpoint_tauI_small.png",
     caption="Closed-loop response to a unit step in setpoint with decreased integral time constant.",
-    label="fig:part5_setpoint_tauI_small",
+    label="fig:fig11",
 )
 figlog(
     "part5_disturbance_tauI_small.png",
     caption="Closed-loop response to a unit step in disturbance with decreased integral time constant.",
-    label="fig:part5_disturbance_tauI_small",
+    label="fig:fig12",
 )
+m(r"The corresponding setpoint and disturbance responses are shown in Figures \ref{fig:fig11} and \ref{fig:fig12}.")
 
-w("A direct comparison of the integral time constant variations is shown in Figures \\ref{fig:compare_tauI_setpoint} and \\ref{fig:compare_tauI_disturbance}.")
 figlog(
     "compare_tauI_setpoint.png",
     caption="Comparison of setpoint responses for nominal, increased, and decreased integral time constant.",
-    label="fig:compare_tauI_setpoint",
+    label="fig:fig13",
 )
 figlog(
     "compare_tauI_disturbance.png",
     caption="Comparison of disturbance responses for nominal, increased, and decreased integral time constant.",
-    label="fig:compare_tauI_disturbance",
+    label="fig:fig14",
 )
+m(r"A direct comparison of the integral time constant variations is shown in Figures \ref{fig:fig13} \text{and} \ref{fig:fig14}.")
 
 doc.subsection("6. Comments on the Effects of Changing Controller Parameters")
 
@@ -564,28 +565,3 @@ txt_file, tex_file, pdf_file = doc.save_all()
 print(f"Wrote text log: {txt_file}")
 print(f"Wrote LaTeX file: {tex_file}")
 print(f"Wrote PDF report: {pdf_file}")
-  File "/home/soki/simulations/PyFunc/HW4_CHE565.py", line 563, in <module>
-    txt_file, tex_file, pdf_file = doc.save_all()
-                                   ~~~~~~~~~~~~^^
-  File "/home/soki/simulations/PyFunc/doc_builder.py", line 1385, in save_all
-    tex = self.save_tex()
-  File "/home/soki/simulations/PyFunc/doc_builder.py", line 1315, in save_tex
-    self._append_node(doc, self.root)
-    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
-  File "/home/soki/simulations/PyFunc/doc_builder.py", line 1138, in _append_node
-    self._append_node(parent, child)
-    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
-  File "/home/soki/simulations/PyFunc/doc_builder.py", line 1152, in _append_node
-    self._append_node(section_container, child)
-    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soki/simulations/PyFunc/doc_builder.py", line 1144, in _append_node
-    env = Subsection(node.title, numbering=False)
-  File "/home/soki/miniconda3/envs/controlsys/lib/python3.14/site-packages/pylatex/section.py", line 54, in __init__
-    self.label = Label(Marker(title, self.marker_prefix))
-                       ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soki/miniconda3/envs/controlsys/lib/python3.14/site-packages/pylatex/labelref.py", line 39, in __init__
-    name = _remove_invalid_char(name)
-  File "/home/soki/miniconda3/envs/controlsys/lib/python3.14/site-packages/pylatex/labelref.py", line 11, in _remove_invalid_char
-    s = "".join([i if ord(i) >= 32 and ord(i) < 127 else "" for i in s])
-                      ~~~^^^
-TypeError: ord() expected a character, but string of length 24 found

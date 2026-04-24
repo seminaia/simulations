@@ -100,7 +100,7 @@ For PI control using the lambda tuning rules for a first-order plus dead-time mo
 [ALIGN]
 K_c &= \frac{5}{1(1.667+1)}
 &= \frac{5}{2.667}
-&= 1.8750
+&= 2.2222
 [ALIGN]
 \tau_I &= 5.0000
 Because Simulink uses the reset rate instead of the integral time constant,
@@ -112,7 +112,7 @@ I &= \frac{1}{5.0000}
 Therefore, the controller settings entered into Simulink were
 
 [ALIGN]
-P &= K_c = 1.8750
+P &= K_c = 2.2222
 I &= 0.2000
 2. Step Change in Setpoint, No Disturbance
 ------------------------------------------
@@ -142,8 +142,8 @@ Label: fig:fig2
 The controller gain was first doubled from its nominal value and the simulations of Parts 2 and 3 were repeated.
 
 [ALIGN]
-K_c^{\text{nominal}} &= 1.8750
-K_c^{\text{double}} &= 2(1.8750) = 3.7500
+K_c^{\text{nominal}} &= 2.2222
+K_c^{\text{double}} &= 2(2.2222) = 4.4444
 [FIGURE] part4_setpoint_kc_double.png
 Caption: Closed-loop response to a unit step in setpoint with doubled controller gain.
 Label: fig:fig3
@@ -156,7 +156,7 @@ Label: fig:fig4
 The controller gain was then reduced to half of its nominal value and the simulations of Parts 2 and 3 were repeated.
 
 [ALIGN]
-K_c^{\text{half}} &= 0.5(1.8750) = 0.9375
+K_c^{\text{half}} &= 0.5(2.2222) = 1.1111
 [FIGURE] part4_setpoint_kc_half.png
 Caption: Closed-loop response to a unit step in setpoint with half the nominal controller gain.
 Label: fig:fig5
@@ -181,7 +181,7 @@ Label: fig:fig8
 The controller gain was returned to its nominal value, and the integral time constant was varied above and below its nominal value.
 
 [ALIGN]
-K_c &= 1.8750
+K_c &= 2.2222
 \tau_I^{\text{nominal}} &= 5.0000
 First, the integral time constant was increased.
 
@@ -237,6 +237,6 @@ Final Controller Parameters
 ---------------------------
 
 [ALIGN]
-K_c &= 1.8750
+K_c &= 2.2222
 \tau_I &= 5.0000
 I &= 0.2000

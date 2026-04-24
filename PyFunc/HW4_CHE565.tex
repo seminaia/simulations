@@ -163,7 +163,7 @@ K_c=\frac{\tau_p}{K_p(\lambda+\theta)}, \qquad \tau_I=\tau_p%
 \begin{align*}%
 K_c &= \frac{5}{1(1.667+1)} \\%
 &= \frac{5}{2.667} \\%
-&= 1.8750%
+&= 2.2222%
 \end{align*}%
 \begin{align*}%
 \tau_I &= 5.0000%
@@ -180,7 +180,7 @@ I &= \frac{1}{5.0000} \\%
 Therefore, the controller settings entered into Simulink were%
 \par%
 \begin{align*}%
-P &= K_c = 1.8750 \\%
+P &= K_c = 2.2222 \\%
 I &= 0.2000%
 \end{align*}
 
@@ -234,8 +234,8 @@ Y_{{sp}}(t)=0,\qquad d(t)=1%
 The controller gain was first doubled from its nominal value and the simulations of Parts 2 and 3 were repeated.%
 \par%
 \begin{align*}%
-K_c^{\text{nominal}} &= 1.8750 \\%
-K_c^{\text{double}} &= 2(1.8750) = 3.7500%
+K_c^{\text{nominal}} &= 2.2222 \\%
+K_c^{\text{double}} &= 2(2.2222) = 4.4444%
 \end{align*}%
 
 
@@ -263,7 +263,7 @@ K_c^{\text{double}} &= 2(1.8750) = 3.7500%
 The controller gain was then reduced to half of its nominal value and the simulations of Parts 2 and 3 were repeated.%
 \par%
 \begin{align*}%
-K_c^{\text{half}} &= 0.5(1.8750) = 0.9375%
+K_c^{\text{half}} &= 0.5(2.2222) = 1.1111%
 \end{align*}%
 
 
@@ -318,7 +318,7 @@ K_c^{\text{half}} &= 0.5(1.8750) = 0.9375%
 The controller gain was returned to its nominal value, and the integral time constant was varied above and below its nominal value.%
 \par%
 \begin{align*}%
-K_c &= 1.8750 \\%
+K_c &= 2.2222 \\%
 \tau_I^{\text{nominal}} &= 5.0000%
 \end{align*}%
 First, the integral time constant was increased.%
@@ -421,7 +421,7 @@ Overall, the nominal tuning obtained from the lambda rules provided a reasonable
 \subsection*{Final Controller Parameters}%
 \label{subsec:FinalControllerParameters}%
 \begin{align*}%
-K_c &= 1.8750 \\%
+K_c &= 2.2222 \\%
 \tau_I &= 5.0000 \\%
 I &= 0.2000%
 \end{align*}

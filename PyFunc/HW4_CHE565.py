@@ -47,7 +47,7 @@ theta = 1.0
 pade_order = 3
 
 # Lambda rules
-lam = max(taup / 4.0, theta)
+lam = max(taup / 3.0, theta)
 Kc_nom = taup / (Kp * (lam + theta))
 tauI_nom = taup
 I_nom = 1.0 / tauI_nom

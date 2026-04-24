@@ -1253,7 +1253,7 @@ class DocumentBuilder:
         return f"{self.base_name}.tex"
 
     _AUX_EXTENSIONS = (
-        ".aux", ".log", ".nav", ".out", ".snm", ".toc",
+        ".aux", ".nav", ".snm", ".toc",
         ".vrb", ".synctex.gz", ".fls", ".fdb_latexmk", ".bbl", ".blg",
     )
 

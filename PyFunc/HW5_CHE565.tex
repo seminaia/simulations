@@ -12,6 +12,18 @@
 \usepackage{amssymb}%
 \usepackage{booktabs}%
 \usepackage{longtable}%
+\usepackage{graphicx}%
+\usepackage{float}%
+\usepackage{caption}%
+\usepackage{hyperref}%
+\title{CHE 565 {-}{-} Homework 5}%
+\author{Soki Sem}%
+\date{\today}%
+\usepackage{amsmath}%
+\usepackage{amssymb}%
+\usepackage{booktabs}%
+\usepackage{longtable}%
+\usepackage{graphicx}%
 \usepackage{float}%
 \usepackage{caption}%
 \usepackage{hyperref}%
@@ -21,9 +33,6 @@
 %
 \begin{document}%
 \normalsize%
-\setlength{\parindent}{0pt}%
-\setlength{\parskip}{0.6em}%
-\maketitle%
 \section*{Problem 1}%
 \label{sec:Problem1}%
 \subsection*{Closed{-}loop Response to Step Disturbance}%
@@ -32,7 +41,7 @@
 
 \begin{figure}[H]%
 \centering%
-\includegraphics[width=0.95\textwidth]{HW5_CHE565_block_diagram.png}%
+\includegraphics[width=0.95\textwidth,height=0.95\textheight]{HW5_CHE565_block_diagram.png}%
 \caption{Block diagram of the closed{-}loop system without cascade control and with a unit step disturbance from Simulink.}%
 \label{fig:block_diagram}%
 \end{figure}
@@ -46,7 +55,7 @@ Figure~\ref{fig:block_diagram}%
 
 \begin{figure}[H]%
 \centering%
-\includegraphics[width=0.95\textwidth]{closed_loop_no_cascade_simulink.png}%
+\includegraphics[width=0.95\textwidth,height=0.95\textheight]{closed_loop_no_cascade_simulink.png}%
 \caption{Closed{-}loop response to no step change in setpoint and a unit step change in disturbance from Simulink.}%
 \label{fig:no_cascade_simulink}%
 \end{figure}
@@ -60,7 +69,7 @@ Figure~\ref{fig:no_cascade_simulink}%
 
 \begin{figure}[H]%
 \centering%
-\includegraphics[width=0.95\textwidth]{closed_loop_no_cascade.png}%
+\includegraphics[width=0.95\textwidth,height=0.95\textheight]{closed_loop_no_cascade.png}%
 \caption{Closed{-}loop response to no step change in setpoint and a unit step change in disturbance from Python.}%
 \label{fig:no_cascade_python}%
 \end{figure}
@@ -78,7 +87,7 @@ The PI controller was then tuned using the autotuning feature in Simulink, which
 
 \begin{figure}[H]%
 \centering%
-\includegraphics[width=0.95\textwidth]{closed_loop_no_cascade_autotuning_python.png}%
+\includegraphics[width=0.95\textwidth,height=0.95\textheight]{closed_loop_no_cascade_autotuning_python.png}%
 \caption{Closed{-}loop response to no step change in setpoint and a unit step disturbance using the Simulink autotuned PI values in Python.}%
 \label{fig:autotuned_python}%
 \end{figure}
@@ -92,7 +101,7 @@ Figure~\ref{fig:autotuned_python}%
 
 \begin{figure}[H]%
 \centering%
-\includegraphics[width=0.95\textwidth]{closed_loop_no_cascade_simulink_autotuning.png}%
+\includegraphics[width=0.95\textwidth,height=0.95\textheight]{closed_loop_no_cascade_simulink_autotuning.png}%
 \caption{Closed{-}loop response to no step change in setpoint and a unit step disturbance using PI autotuning from Simulink.}%
 \label{fig:autotuned_simulink}%
 \end{figure}
@@ -106,4 +115,10 @@ Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = 13
 \par
 
 %
+\setlength{\parindent}{0pt}%
+\setlength{\parskip}{0.6em}%
+\maketitle%
+\setlength{\parindent}{0pt}%
+\setlength{\parskip}{0.6em}%
+\maketitle%
 \end{document}

@@ -2,12 +2,12 @@ CHE 565 -- Homework 5
 Soki Sem
 ================================================================================
 
+
 Problem 1
 ====================
 
 Closed-loop Response to Step Disturbance
 ----------------------------------------
-
 [FIGURE] HW5_CHE565_block_diagram.png
 Caption: Block diagram of the closed-loop system without cascade control and with a unit step disturbance from Simulink.
 Label: fig:block_diagram

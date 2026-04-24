@@ -10,6 +10,8 @@ from math import tau
 
 import numpy as np
 import matplotlib
+import scipy
+import scipy.integrate
 from sympy import true
 from sympy.matrices.expressions.matadd import rules
 matplotlib.use("Agg")
@@ -87,7 +89,7 @@ def build_closed_loop(Kc1, Kc2, tauI1, tauI2):
     Gc2 = Kc2 * (1 + I2 / s)
     Gp1 = Kp1 / (taup1 * s + 1)
     Gp2 = Kp2 / (taup2 * s + 1)
-    Gd = 1/s
+    Gd = 1 * (1 + 0 * s)     # direct disturbance addition
     numD,denD = ct.delay.pade(theta, pade_order)    
     # Named blocks
     Gc1_blk = ct.tf(Gc1, name='Gc1', inputs='E1', outputs='Yc1')
@@ -96,11 +98,9 @@ def build_closed_loop(Kc1, Kc2, tauI1, tauI2):
     Gp2_blk = ct.tf(Gp2, name='Gp2', inputs='P', outputs='Yp2')
     Gd_blk = ct.tf(Gd, name='Gd', inputs='D', outputs='Yd')     # direct disturbance addition
     GD_blk = ct.tf(numD, denD, name='GD', inputs='Yp2', outputs='Y')
-    print(Gd_blk)
     sum1 = ct.summing_junction(inputs=['Ysp', '-Yp2'], output='E1', name='Sum1')
     sum2 = ct.summing_junction(inputs=['Yc1'], output='E2', name='Sum2')
     sum3 = ct.summing_junction(inputs=['Yp1', 'Yd'], output='P', name='Sum3')
-
     sys = ct.interconnect(
         [Gc1_blk, Gc2_blk, Gp1_blk, Gp2_blk, Gd_blk, sum1, sum2, sum3],
         input=['Ysp', 'D'],
@@ -110,6 +110,11 @@ def build_closed_loop(Kc1, Kc2, tauI1, tauI2):
     )
     print(sys)
     return sys
+
+def calculate_IAE(t, y, ysp):
+    error = ysp - y
+    iae = scipy.integrate.trapezoid(np.abs(error), t)
+    return iae
 
 # ---------------------------
 # Simulation helper
@@ -140,6 +145,8 @@ def save_plot(filename, t, y, title, ysp=None, d=None):
 
 sys1 = build_closed_loop(Kc1, Kc2, tauI1, tauI2)
 t1, y1 = simulate_case(sys1, tvals, step_off, step_on)
+iae1 = calculate_IAE(t1, y1, step_off)
+print(f"Case 1: Step disturbance, no setpoint change → IAE = {iae1:.4f}")
 save_plot("closed_loop_no_cascade.png", t1, y1, "Closed-loop response to step setpoint change", ysp=step_off, d=step_off)
 doc.subsection("Closed-loop response to step disturbance")
 figlog("closed_loop_no_cascade.png",

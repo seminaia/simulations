@@ -101,4 +101,23 @@ Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = 13
 \par
 
 %
+\subsection*{Closed{-}loop Response to Step Setpoint Change}%
+\label{subsec:Closed{-}loopResponsetoStepSetpointChange}%
+
+
+\begin{figure}[H]%
+\includegraphics[width=0.8\textwidth,height=0.8\textheight,keepaspectratio]{closed_loop_no_cascade_setpoint.png}%
+\caption{Closed{-}loop response to unit step setpoint change with no disturbance change from Python.}%
+\label{fig:no_cascade_setpoint}%
+\end{figure}
+
+%
+Next, the response to a unit step change in setpoint with no disturbance change was simulated. The Python response is shown in %
+Figure~\ref{fig:no_cascade_setpoint}%
+.%
+\par%
+Case 3: Step setpoint change with no disturbance change gave IAE = 2449.4065 in Python and IAE = 0.0000 in Simulink.%
+\par
+
+%
 \end{document}

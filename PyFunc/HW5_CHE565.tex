@@ -24,64 +24,86 @@
 \setlength{\parindent}{0pt}%
 \setlength{\parskip}{0.6em}%
 \maketitle%
-\section*{Problem 1:}%
+\section*{Problem 1}%
 \label{sec:Problem1}%
-\subsection*{Closed{-}loop response to step disturbance}%
-\label{subsec:Closed{-}loopresponsetostepdisturbance}%
+\subsection*{Closed{-}loop Response to Step Disturbance}%
+\label{subsec:Closed{-}loopResponsetoStepDisturbance}%
 
 
 \begin{figure}[H]%
 \centering%
-\includegraphics[width=0.5\textwidth,height=0.2\textheight]{HW5_CHE565_block_diagram.png}%
-\caption{Block diagram of the closed{-}loop system without cascade control and setpoint and a unit step disturbance from simulink}%
+\includegraphics[width=0.95\textwidth]{HW5_CHE565_block_diagram.png}%
+\caption{Block diagram of the closed{-}loop system without cascade control and with a unit step disturbance from Simulink.}%
 \label{fig:block_diagram}%
 \end{figure}
 
 %
+The Simulink block diagram is shown in %
+Figure~\ref{fig:block_diagram}%
+.%
+\par%
 
 
 \begin{figure}[H]%
 \centering%
 \includegraphics[width=0.95\textwidth]{closed_loop_no_cascade_simulink.png}%
-\caption{Closed{-}loop response to no step change in setpoint and a unit step change in disturbance from simulink}%
-\label{fig:fig1}%
+\caption{Closed{-}loop response to no step change in setpoint and a unit step change in disturbance from Simulink.}%
+\label{fig:no_cascade_simulink}%
 \end{figure}
 
 %
+The Simulink closed{-}loop disturbance response is shown in %
+Figure~\ref{fig:no_cascade_simulink}%
+.%
+\par%
 
 
 \begin{figure}[H]%
 \centering%
 \includegraphics[width=0.95\textwidth]{closed_loop_no_cascade.png}%
-\caption{Closed{-}loop response to no step change in setpoint and a unit step change in disturbance, from python}%
-\label{fig:fig2}%
+\caption{Closed{-}loop response to no step change in setpoint and a unit step change in disturbance from Python.}%
+\label{fig:no_cascade_python}%
 \end{figure}
 
 %
-Case 1: Step disturbance, no setpoint change, IAE = 725.3696 (python), IAE = 725.8109 (Simulink)%
+The corresponding Python response is shown in %
+Figure~\ref{fig:no_cascade_python}%
+.%
 \par%
-The PI controller was tuned using the autotuning feature in Simulink P = 0.1837, I = 0.0816 (Simulink autotuning)%
+Case 1: Step disturbance with no setpoint change gave IAE = 725.3696 in Python and IAE = 725.8109 in Simulink.%
+\par%
+The PI controller was then tuned using the autotuning feature in Simulink, which gave P = 0.1837 and I = 0.0816.%
 \par%
 
 
 \begin{figure}[H]%
 \centering%
-\includegraphics[width=0.95\textwidth]{closed_loop_no_cascade_autotuning.png}%
-\caption{Closed{-}loop response to no step change in setpoint and a unit step change in disturbance with PI controller autotuning from Simulink}%
-\label{fig:fig3}%
+\includegraphics[width=0.95\textwidth]{closed_loop_no_cascade_autotuning_python.png}%
+\caption{Closed{-}loop response to no step change in setpoint and a unit step disturbance using the Simulink autotuned PI values in Python.}%
+\label{fig:autotuned_python}%
 \end{figure}
 
 %
-Case 2: Step disturbance, no setpoint change, with PI controller autotuning, IAE = 13.0462 (python), IAE = 13.0463 (Simulink)%
+The Python response using the autotuned PI values is shown in %
+Figure~\ref{fig:autotuned_python}%
+.%
 \par%
 
 
 \begin{figure}[H]%
 \centering%
 \includegraphics[width=0.95\textwidth]{closed_loop_no_cascade_simulink_autotuning.png}%
-\caption{Closed{-}loop response to no step change in setpoint and a unit step change in disturbance using gains from Simulink autotuning}%
-\label{fig:fig4}%
+\caption{Closed{-}loop response to no step change in setpoint and a unit step disturbance using PI autotuning from Simulink.}%
+\label{fig:autotuned_simulink}%
 \end{figure}
+
+%
+The corresponding Simulink response using PI autotuning is shown in %
+Figure~\ref{fig:autotuned_simulink}%
+.%
+\par%
+Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = 13.0462 in Python and IAE = 13.0463 in Simulink.%
+\par
 
 %
 \end{document}

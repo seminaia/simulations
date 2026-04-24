@@ -2,12 +2,34 @@ CHE 565 -- Homework 5
 Soki Sem
 ================================================================================
 
-Untitled Section
+Problem 1:
 ====================
 
 Closed-loop response to step disturbance
 ----------------------------------------
 
-[FIGURE] closed_loop_no_cascade.png
-Caption: Closed-loop response to no step change in setpoint and a unit step change in disturbance
+[FIGURE] HW5_CHE565_block_diagram.png
+Caption: Block diagram of the closed-loop system without cascade control and setpoint and a unit step disturbance from simulink
+Label: fig:block_diagram
+
+[FIGURE] closed_loop_no_cascade_simulink.png
+Caption: Closed-loop response to no step change in setpoint and a unit step change in disturbance from simulink
 Label: fig:fig1
+
+[FIGURE] closed_loop_no_cascade.png
+Caption: Closed-loop response to no step change in setpoint and a unit step change in disturbance, from python
+Label: fig:fig2
+
+Case 1: Step disturbance, no setpoint change, IAE = 725.3696 (python), IAE = 725.8109 (Simulink)
+
+The PI controller was tuned using the autotuning feature in Simulink P = 0.1837, I = 0.0816 (Simulink autotuning)
+
+[FIGURE] closed_loop_no_cascade_autotuning.png
+Caption: Closed-loop response to no step change in setpoint and a unit step change in disturbance with PI controller autotuning from Simulink
+Label: fig:fig3
+
+Case 2: Step disturbance, no setpoint change, with PI controller autotuning, IAE = 13.0462 (python), IAE = 13.0463 (Simulink)
+
+[FIGURE] closed_loop_no_cascade_simulink_autotuning.png
+Caption: Closed-loop response to no step change in setpoint and a unit step change in disturbance using gains from Simulink autotuning
+Label: fig:fig4

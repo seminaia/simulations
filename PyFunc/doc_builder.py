@@ -271,6 +271,7 @@ class FigureBlock(Block):
     caption: str | None = None
     label: str | None = None
     width: str = r"0.95\textwidth"
+    height: str | None = None
     position: str = "H"
 
     def __init__(
@@ -279,13 +280,16 @@ class FigureBlock(Block):
         caption: str | None = None,
         label: str | None = None,
         width: str = r"0.95\textwidth",
+        height: str | None = None,
         position: str = "H",
     ):
+        Figure()
         super().__init__("figure")
         self.path = path
         self.caption = caption
         self.label = label
         self.width = width
+        self.height = height
         self.position = position
 
 
@@ -756,6 +760,7 @@ class DocumentBuilder:
         caption: str | None = None,
         label: str | None = None,
         width: str = r"0.95\textwidth",
+        height: str | None = None,
         position: str = "H",
     ) -> None:
         """Add a figure to the document.
@@ -765,10 +770,11 @@ class DocumentBuilder:
             caption (str | None, optional): The caption of the figure. Defaults to None.
             label (str | None, optional): The label of the figure. Defaults to None.
             width (str, optional): The width of the figure. Defaults to r"0.95\textwidth".
+            height (str | None, optional): The height of the figure. Defaults to None.
             position (str, optional): The LaTeX figure placement specifier (e.g., "H", "t", "b", "p"). Defaults to "H".
         """
         self._slide_target.blocks.append(
-            FigureBlock(path, caption=caption, label=label, width=width, position=position)
+            FigureBlock(path, caption=caption, label=label, width=width, height=height, position=position)
         )
 
     def raw_tex(self, tex: str) -> None:

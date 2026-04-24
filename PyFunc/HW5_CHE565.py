@@ -89,7 +89,7 @@ def build_closed_loop(Kc1, Kc2, tauI1, tauI2):
     Gc2 = Kc2 * (1 + I2 / s)
     Gp1 = Kp1 / (taup1 * s + 1)
     Gp2 = Kp2 / (taup2 * s + 1)
-    Gd = 1 * (1 + 0 * s)     # direct disturbance addition
+    Gd = 1 * (1 + 0 * s)    # direct disturbance addition
     numD,denD = ct.delay.pade(theta, pade_order)    
     # Named blocks
     Gc1_blk = ct.tf(Gc1, name='Gc1', inputs='E1', outputs='Yc1')
@@ -108,12 +108,11 @@ def build_closed_loop(Kc1, Kc2, tauI1, tauI2):
         input_prefix = ["Ysp", "D"],
         output_prefix = ["Yp2"],
     )
-    print(sys)
     return sys
 
 def calculate_IAE(t, y, ysp):
     error = ysp - y
-    iae = scipy.integrate.trapezoid(np.abs(error), t)
+    iae = np.trapezoid(np.abs(error), t)
     return iae
 
 # ---------------------------
@@ -146,12 +145,44 @@ def save_plot(filename, t, y, title, ysp=None, d=None):
 sys1 = build_closed_loop(Kc1, Kc2, tauI1, tauI2)
 t1, y1 = simulate_case(sys1, tvals, step_off, step_on)
 iae1 = calculate_IAE(t1, y1, step_off)
-print(f"Case 1: Step disturbance, no setpoint change → IAE = {iae1:.4f}")
-save_plot("closed_loop_no_cascade.png", t1, y1, "Closed-loop response to step setpoint change", ysp=step_off, d=step_off)
+save_plot("closed_loop_no_cascade.png", t1, y1, "Closed-loop response to unit step in disturbance", ysp=step_off, d=step_on)
+doc.section("Problem 1:")
 doc.subsection("Closed-loop response to step disturbance")
+figlog("HW5_CHE565_block_diagram.png",
+       caption="Block diagram of the closed-loop system without cascade control and setpoint and a unit step disturbance from simulink",
+       label="fig:block_diagram",
+       height=r"2.5cm")
+
+figlog("closed_loop_no_cascade_simulink.png",
+       caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance from simulink",
+       label="fig:fig1",
+       height=r"2.5cm")
+
 figlog("closed_loop_no_cascade.png",
-       caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance",
-       label="fig:fig1")
+       caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance, from python",
+       label="fig:fig2",
+       height=r"2.5cm")
+
+p(f"Case 1: Step disturbance, no setpoint change, IAE = {iae1:.4f} (python), IAE = 725.8109 (Simulink)")
+P = 0.183711730708738
+I = 0.0816496580927727
+p(f"The PI controller was tuned using the autotuning feature in Simulink P = {P:.4f}, I = {I:.4f} (Simulink autotuning)")
+
+figlog("closed_loop_no_cascade_autotuning.png",
+       caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance with PI controller autotuning from Simulink",
+       label="fig:fig3",
+       height=r"2.5cm")
+
+sys2 = build_closed_loop(P, Kc2, 1/I, tauI2)
+t2, y2 = simulate_case(sys2, tvals, step_off, step_on)
+iae2 = calculate_IAE(t2, y2, step_off)
+save_plot("closed_loop_no_cascade_autotuning.png", t2, y2, "Closed-loop response to unit step in disturbance with PI controller autotuning", ysp=step_off, d=step_on)
+p(f"Case 2: Step disturbance, no setpoint change, with PI controller autotuning, IAE = {iae2:.4f} (python), IAE = 13.0463 (Simulink)")
+
+figlog("closed_loop_no_cascade_simulink_autotuning.png",
+       caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance using gains from Simulink autotuning",
+       label="fig:fig4",
+       height=r"2.5cm")
 
 txt_file, tex_file, pdf_file = doc.save_all()
 print(f"Wrote text log: {txt_file}")

@@ -6,21 +6,7 @@ from pydoc import doc
 from typing import Any, Iterable, Literal
 import shutil
 import subprocess
-
-from pylatex import (
-    Document,
-    Section,
-    Subsection,
-    Subsubsection,
-    Figure,
-    Tabular,
-    LongTable,
-    Itemize,
-    Enumerate,
-    Alignat,
-    NoEscape,
-    Command,
-)
+from pylatex import Document, Section, Subsection, Subsubsection, Command,NoEscape, Figure, Tabular, LongTable, MultiColumn, Package
 from pylatex.utils import escape_latex
     
 """DocumentBuilder is a Module that provides a class for building documents
@@ -283,7 +269,6 @@ class FigureBlock(Block):
         height: str | None = None,
         position: str = "H",
     ):
-        Figure()
         super().__init__("figure")
         self.path = path
         self.caption = caption
@@ -1114,7 +1099,7 @@ class DocumentBuilder:
                     container.append(NoEscape(rf"\label{{{block.label}}}"))
             else:
                 with container.create(Figure(position=block.position)) as fig:
-                    fig.add_image(block.path, width=NoEscape(block.width))
+                    fig.add_image(block.path, width=NoEscape(block.width), height=NoEscape(block.height) if block.height else None)
                     if block.caption:
                         fig.add_caption(block.caption)
                     if block.label:

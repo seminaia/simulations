@@ -151,17 +151,19 @@ doc.subsection("Closed-loop response to step disturbance")
 figlog("HW5_CHE565_block_diagram.png",
        caption="Block diagram of the closed-loop system without cascade control and setpoint and a unit step disturbance from simulink",
        label="fig:block_diagram",
-       height=r"2.5cm")
+       height=NoEscape(r"0.2\textheight"),
+       width=NoEscape(r"0.5\textwidth")
+       )
 
 figlog("closed_loop_no_cascade_simulink.png",
        caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance from simulink",
        label="fig:fig1",
-       height=r"2.5cm")
+       )
 
 figlog("closed_loop_no_cascade.png",
        caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance, from python",
        label="fig:fig2",
-       height=r"2.5cm")
+       )
 
 p(f"Case 1: Step disturbance, no setpoint change, IAE = {iae1:.4f} (python), IAE = 725.8109 (Simulink)")
 P = 0.183711730708738
@@ -171,7 +173,7 @@ p(f"The PI controller was tuned using the autotuning feature in Simulink P = {P:
 figlog("closed_loop_no_cascade_autotuning.png",
        caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance with PI controller autotuning from Simulink",
        label="fig:fig3",
-       height=r"2.5cm")
+       )
 
 sys2 = build_closed_loop(P, Kc2, 1/I, tauI2)
 t2, y2 = simulate_case(sys2, tvals, step_off, step_on)
@@ -182,7 +184,7 @@ p(f"Case 2: Step disturbance, no setpoint change, with PI controller autotuning,
 figlog("closed_loop_no_cascade_simulink_autotuning.png",
        caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance using gains from Simulink autotuning",
        label="fig:fig4",
-       height=r"2.5cm")
+       )
 
 txt_file, tex_file, pdf_file = doc.save_all()
 print(f"Wrote text log: {txt_file}")

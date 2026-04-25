@@ -147,9 +147,9 @@ save_plot("closed_loop_no_cascade.png", t1, y1, "Closed-loop response to unit st
 # =============================================================================
 # Simulate Response to Step Disturbance with No Cascade Control and No Setpoint Change using Simulink autotuned values
 # =============================================================================
-P = 0.183711730708738
-I = 0.0816496580927727
-sys2 = build_closed_loop(P, Kc2, 1 / I, tauI2)
+P1 = 0.183711730708738
+I1 = 0.0816496580927727
+sys2 = build_closed_loop(P1, Kc2, 1 / I1, tauI2)
 t2, y2 = simulate_case(sys2, tvals, step_off, step_on)
 iae2 = calculate_IAE(t2, y2, step_off)
 save_plot(
@@ -173,6 +173,19 @@ save_plot(
     ysp=step_on,
     d=step_off,
 )
+P2 =P1
+I2 = I1
+sys3 = build_closed_loop(P2, Kc2, 1 / I2, tauI2)
+t4, y4 = simulate_case(sys3, tvals, step_on, step_off)
+
+save_plot(
+    "closed_loop_no_cascade_setpoint_autotuning.png",
+    t4,
+    y4,    "Closed-loop response to unit step setpoint change with PI autotuning",
+    ysp=step_on,
+    d=step_off,
+)
+
 # =============================================================================
 # Document writeup
 # =============================================================================
@@ -227,7 +240,7 @@ p(
 
 p(
     f"The PI controller was then tuned using the autotuning feature in Simulink, "
-    f"which gave P = {P:.4f} and I = {I:.4f}."
+    f"which gave P = {P1:.4f} and I = {I1:.4f}."
 )
 
 
@@ -279,10 +292,40 @@ px(
     doc.figref("fig:no_cascade_setpoint"),
     "."
 )
+figlog(
+    "closed_loop_no_cascade_setpoint_simulink.png",
+    caption="Closed-loop response to unit step setpoint change with no disturbance change from Simulink.",
+    label="fig:no_cascade_setpoint_simulink",
+    width=NoEscape(r"0.8\textwidth"),
+    height=NoEscape(r"0.8\textheight"),
+)
+
 p(
     f"Case 3: Step setpoint change with no disturbance change gave "
-    f"IAE = {iae3:.4f} in Python and IAE = 0.0000 in Simulink."
+    f"IAE = {iae3:.4f} in Python and IAE = 2450.8205 in Simulink."
 )
+
+figlog(
+    "closed_loop_no_cascade_setpoint_simulink_autotuning.png",
+    caption="Closed-loop response to unit step setpoint change with no disturbance change from Simulink using PI autotuning.",
+    label="fig:no_cascade_setpoint_simulink_autotuning",
+    width=NoEscape(r"0.8\textwidth"),
+    height=NoEscape(r"0.8\textheight"),
+)
+
+figlog(
+    "closed_loop_no_cascade_setpoint_autotuning.png",
+    caption="Closed-loop response to unit step setpoint change with no disturbance change from Python using PI autotuning.",
+    label="fig:no_cascade_setpoint_autotuning",
+    width=NoEscape(r"0.8\textwidth"),
+    height=NoEscape(r"0.8\textheight"),
+)
+px(
+    "The response to a unit step change in setpoint with no disturbance change using PI autotuning is shown in ",
+    doc.figref("fig:no_cascade_setpoint_autotuning"),
+    "."
+)
+
 
 txt_file, tex_file, pdf_file = doc.save_all(runs=2)
 print(f"Wrote text log: {txt_file}")

@@ -147,7 +147,7 @@ class DocumentBuilder:
                 doc.preamble.append(
                     NoEscape(rf"\usecolortheme{{{self._beamer_color_theme}}}")
                 )
-
+        doc.preamble.append(Command("usepackage","subcaption"))
         doc.preamble.append(Command("usepackage", "amsmath"))
         doc.preamble.append(Command("usepackage", "amssymb"))
         doc.preamble.append(Command("usepackage", "booktabs"))
@@ -230,16 +230,16 @@ class DocumentBuilder:
         return NoEscape(rf"${latex}$")
     def ref(self, label: str) -> NoEscape:
         return NoEscape(rf"\ref{{{label}}}")
-    
+
     def figref(self, label: str) -> NoEscape:
         return NoEscape(rf"Figure~\ref{{{label}}}")
-    
+
     def subfigref(self, label: str) -> NoEscape:
         return NoEscape(rf"Figure~\ref{{{label}}}")
-    
+
     def subref(self, label: str) -> NoEscape:
         return NoEscape(rf"\subref{{{label}}}")
-    
+
     def tabref(self, label: str) -> NoEscape:
         return NoEscape(rf"Table~\ref{{{label}}}")
 
@@ -529,7 +529,7 @@ class DocumentBuilder:
         """
         path = str(path)
 
-        width_tex = str(width)
+        width_tex = NoEscape(str(width))
 
         if self.is_beamer:
             self._append(NoEscape(r"\centering"))
@@ -549,8 +549,6 @@ class DocumentBuilder:
                             rf"\includegraphics[width={width_tex},keepaspectratio]{{{path}}}"
                         )
                     )
-                    fig.add_image(path, width=width_tex)
-
                     if caption:
                         fig.add_caption(caption)
                     if label:
@@ -564,12 +562,12 @@ class DocumentBuilder:
         self._txt("")
     def subfigures(
         self,
-        images,
-        caption=None,
-        label=None,
-        width=r"0.45\textwidth",
-        position="H",
-    ):
+        images: list[tuple[str, str | None]],
+        caption: str | None = None,
+        label: str | None = None,
+        width: str = r"0.45\textwidth",
+        position: str = "H",
+    ) -> None:
         """
         For generating a figure with multiple subfigures side by side.
 
@@ -589,7 +587,7 @@ class DocumentBuilder:
             self._append(NoEscape(rf"\includegraphics[width=\linewidth]{{{path}}}"))
 
             if subcap:
-                self._append(NoEscape(rf"\caption{{{escape_latex(subcap)}}}"))
+                self._append(NoEscape(rf"\subcaption{{{escape_latex(subcap)}}}"))
 
             self._append(NoEscape(r"\end{subfigure}"))
 
@@ -681,8 +679,6 @@ class DocumentBuilder:
 
     _AUX_EXTENSIONS = (
         ".aux",
-        ".log",
-        ".out",
         ".toc",
         ".nav",
         ".snm",

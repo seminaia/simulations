@@ -14,57 +14,23 @@ Label: fig:block_diagram
 
 The Simulink block diagram is shown in Figure~\ref{fig:block_diagram}.
 
-[FIGURE] closed_loop_no_cascade_simulink.png
-Caption: Closed-loop response to no step change in setpoint and a unit step change in disturbance from Simulink.
-Label: fig:no_cascade_simulink
+Case 1: Step disturbance with no setpoint change gave and step in disturbance with no setpoint change gaveIAE = 725.3696 in Python and IAE = 725.8109 in Simulink.
 
-The Simulink closed-loop disturbance response is shown in Figure~\ref{fig:no_cascade_simulink}.
-
-[FIGURE] closed_loop_no_cascade.png
-Caption: Closed-loop response to no step change in setpoint and a unit step change in disturbance from Python.
-Label: fig:no_cascade_python
-
-The corresponding Python response is shown in Figure~\ref{fig:no_cascade_python}.
-
-Case 1: Step disturbance with no setpoint change gave IAE = 725.3696 in Python and IAE = 725.8109 in Simulink.
+The closed-loop disturbance response and no cascade loop is shown in Figure~\ref{fig:no_cascade_step_disturbance}.
 
 The PI controller was then tuned using the autotuning feature in Simulink, which gave P = 0.1837 and I = 0.0816.
 
-[FIGURE] closed_loop_no_cascade_autotuning_python.png
-Caption: Closed-loop response to no step change in setpoint and a unit step disturbance using the Simulink autotuned PI values in Python.
-Label: fig:autotuned_python
-
-The Python response using the autotuned PI values is shown in Figure~\ref{fig:autotuned_python}.
-
-[FIGURE] closed_loop_no_cascade_simulink_autotuning.png
-Caption: Closed-loop response to no step change in setpoint and a unit step disturbance using PI autotuning from Simulink.
-Label: fig:autotuned_simulink
-
-The corresponding Simulink response using PI autotuning is shown in Figure~\ref{fig:autotuned_simulink}.
-
 Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = 13.0462 in Python and IAE = 13.0463 in Simulink.
+
+The response to a unit step change in disturbance with no cascade control and PI autotuning is shown in Figure~\ref{fig:no_cascade_autotuning_step_disturbance}.
 
 
 Closed-loop Response to Step Setpoint Change
 --------------------------------------------
-[FIGURE] closed_loop_no_cascade_setpoint.png
-Caption: Closed-loop response to unit step setpoint change with no disturbance change from Python.
-Label: fig:no_cascade_setpoint
-
-Next, the response to a unit step change in setpoint with no disturbance change was simulated. The Python response is shown in Figure~\ref{fig:no_cascade_setpoint}.
-
-[FIGURE] closed_loop_no_cascade_setpoint_simulink.png
-Caption: Closed-loop response to unit step setpoint change with no disturbance change from Simulink.
-Label: fig:no_cascade_setpoint_simulink
+The response to the step change in setpoint with no step disturbance is shown in Figure~\ref{fig:no_cascade_step_setpoint}.
 
 Case 3: Step setpoint change with no disturbance change gave IAE = 2449.4065 in Python and IAE = 2450.8205 in Simulink.
 
-[FIGURE] closed_loop_no_cascade_setpoint_simulink_autotuning.png
-Caption: Closed-loop response to unit step setpoint change with no disturbance change from Simulink using PI autotuning.
-Label: fig:no_cascade_setpoint_simulink_autotuning
+The response to a unit step change in setpoint with no disturbance change using PI autotuning is shown in Figure~\ref{fig:no_cascade_autotuning_step_setpoint}.
 
-[FIGURE] closed_loop_no_cascade_setpoint_autotuning.png
-Caption: Closed-loop response to unit step setpoint change with no disturbance change from Python using PI autotuning.
-Label: fig:no_cascade_setpoint_autotuning
-
-The response to a unit step change in setpoint with no disturbance change using PI autotuning is shown in Figure~\ref{fig:no_cascade_setpoint_autotuning}.
+Case 4: Step setpoint change with no disturbance change and PI autotuning gave IAE = 8.1939 in Python and IAE = 2450.8205 in Simulink.

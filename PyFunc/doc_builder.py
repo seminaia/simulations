@@ -11,6 +11,7 @@ from pylatex import (
     Subsection,
     Subsubsection,
     Figure,
+    SubFigure,
     Tabular,
     LongTable,
     Itemize,
@@ -227,13 +228,18 @@ class DocumentBuilder:
 
     def math(self, latex: str) -> NoEscape:
         return NoEscape(rf"${latex}$")
-
     def ref(self, label: str) -> NoEscape:
         return NoEscape(rf"\ref{{{label}}}")
-
+    
     def figref(self, label: str) -> NoEscape:
         return NoEscape(rf"Figure~\ref{{{label}}}")
-
+    
+    def subfigref(self, label: str) -> NoEscape:
+        return NoEscape(rf"Figure~\ref{{{label}}}")
+    
+    def subref(self, label: str) -> NoEscape:
+        return NoEscape(rf"\subref{{{label}}}")
+    
     def tabref(self, label: str) -> NoEscape:
         return NoEscape(rf"Table~\ref{{{label}}}")
 
@@ -510,46 +516,45 @@ class DocumentBuilder:
         caption: str | None = None,
         label: str | None = None,
         width: str | NoEscape = r"0.95\textwidth",
-        height: str | NoEscape | None = None,
         position: str = "H",
     ) -> None:
+        """
+        For including a single figure.
+        Args:
+            path (str): Path to the image file.
+            caption (str | None, optional): Caption for the figure. Defaults to None.
+            label (str | None, optional): Label for the figure. Defaults to None.
+            width (str | NoEscape, optional): Width of the figure. Defaults to r"0.95\textwidth".
+            position (str, optional): Position of the figure. Defaults to "H".
+        """
         path = str(path)
 
         width_tex = str(width)
-        height_tex = str(height) if height is not None else None
 
         if self.is_beamer:
             self._append(NoEscape(r"\centering"))
-
-            if height_tex is not None:
-                self._append(
-                    NoEscape(
-                        rf"\includegraphics[width={width_tex},height={height_tex},keepaspectratio]{{{path}}}"
-                    )
+            self._append(
+                NoEscape(
+                    rf"\includegraphics[width={width_tex},keepaspectratio]{{{path}}}"
                 )
-            else:
-                self._append(NoEscape(rf"\includegraphics[width={width_tex}]{{{path}}}"))
-
+            )
             if caption:
                 self._append(NoEscape(rf"\captionof{{figure}}{{{escape_latex(caption)}}}"))
             if label:
                 self._append(NoEscape(rf"\label{{{label}}}"))
-
         else:
             with self._target().create(Figure(position=position)) as fig:
-                if height_tex is not None:
                     fig.append(
                         NoEscape(
-                            rf"\includegraphics[width={width_tex},height={height_tex},keepaspectratio]{{{path}}}"
+                            rf"\includegraphics[width={width_tex},keepaspectratio]{{{path}}}"
                         )
                     )
-                else:
-                    fig.add_image(path, width=NoEscape(width_tex))
+                    fig.add_image(path, width=width_tex)
 
-                if caption:
-                    fig.add_caption(caption)
-                if label:
-                    fig.append(NoEscape(rf"\label{{{label}}}"))
+                    if caption:
+                        fig.add_caption(caption)
+                    if label:
+                        fig.append(NoEscape(rf"\label{{{label}}}"))
 
         self._txt(f"[FIGURE] {path}")
         if caption:
@@ -557,10 +562,48 @@ class DocumentBuilder:
         if label:
             self._txt(f"Label: {label}")
         self._txt("")
+    def subfigures(
+        self,
+        images,
+        caption=None,
+        label=None,
+        width=r"0.45\textwidth",
+        position="H",
+    ):
+        """
+        For generating a figure with multiple subfigures side by side.
 
-    # =========================================================================
-    # Beamer slides
-    # =========================================================================
+        Args:
+            images (list[tuple[str, str | None]]): List of tuples containing image paths and optional subcaptions.
+            caption (str | None, optional): Caption for the entire figure. Defaults to None.
+            label (str | None, optional): Label for the entire figure. Defaults to None.
+            width (str, optional): Width of each subfigure. Defaults to r"0.45\textwidth".
+            position (str, optional): Position of the figure. Defaults to "H".
+        """
+        self._append(NoEscape(rf"\begin{{figure}}[{position}]"))
+        self._append(NoEscape(r"\centering"))
+
+        for path, subcap in images:
+            self._append(NoEscape(rf"\begin{{subfigure}}{{{width}}}"))
+            self._append(NoEscape(r"\centering"))
+            self._append(NoEscape(rf"\includegraphics[width=\linewidth]{{{path}}}"))
+
+            if subcap:
+                self._append(NoEscape(rf"\caption{{{escape_latex(subcap)}}}"))
+
+            self._append(NoEscape(r"\end{subfigure}"))
+
+        if caption:
+            self._append(NoEscape(rf"\caption{{{escape_latex(caption)}}}"))
+
+        if label:
+            self._append(NoEscape(rf"\label{{{label}}}"))
+
+        self._append(NoEscape(r"\end{figure}"))
+
+# =========================================================================
+# Beamer slides
+# =========================================================================
 
     def slide(
         self,

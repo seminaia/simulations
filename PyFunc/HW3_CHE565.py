@@ -136,8 +136,9 @@ C_mat = [c1, c2, c3, c4]
 A_sum = sum(A_mat)
 B_sum = sum(B_mat)
 C_sum = sum(C_mat)
-
-tot_prod_eq = sp.latex(sp.Eq(sp.Matrix([A, B, C]), sp.Matrix([A_sum, B_sum, C_sum])))
+tot_prod = sp.MatAdd(A,B,C)
+comp_tot = sp.MatAdd(sp.Matrix(A_mat), sp.Matrix(B_mat), sp.Matrix(C_mat))
+tot_prod_eq = sp.latex(sp.Eq(tot_prod,)))
 m(sp.latex(sp.Eq(A.apart(), A_sum)))
 m(sp.latex(sp.Eq(B.apart(), B_sum)))
 m(sp.latex(sp.Eq(C.apart(), C_sum)))

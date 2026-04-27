@@ -157,6 +157,13 @@ class DocumentBuilder:
         doc.preamble.append(Command("usepackage", "caption"))
         doc.preamble.append(Command("usepackage", "hyperref"))
         doc.preamble.append(Command("usepackage", "listings"))
+        doc.preamble.append(Command("usepackage", "xcolor"))
+        doc.preamble.append(Command("lstdefinestyle",
+                                    "mystyle",
+                                    extra_arguments=NoEscape(r"backgroundcolor=\color{lightgray}, commentstyle=\color{green}, keywordstyle=\color{blue}, numberstyle=\tiny\color{gray}, stringstyle=\color{red}, basicstyle=\ttfamily\footnotesize, breakatwhitespace=false, breaklines=true, captionpos=b, keepspaces=true, numbers=left, numbersep=5pt, showspaces=false, showstringspaces=false, showtabs=false, tabsize=2"),
+                                    
+                                    ))
+        doc.preamble.append(Command("lstset","style=mystyle"))
         
         for line in self._raw_preamble:
             doc.preamble.append(NoEscape(line))

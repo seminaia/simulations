@@ -7,30 +7,45 @@ Introduction
 ====================
  The following homework was done with Simulink and the Control Systems Library in Python. The block diagram of the system is shown in Figure~\ref{fig:block_diagram}. The block diagram was created in simulink and then I built the same diagram as a python function using the control library. 
 
+Note: sum2 in the block diagram is the summing junction that takes the first controller output and subtract the P stream in order to form the inner loop. But, first in order to simulate without the inner loop, so I set cascade=False. This just converts the controller output (Yc1) to the error signal (E2) for the second controller. The disturbance D is added directly to the output of Gp1 (Yp1) 
+
+The transport delay transfer function is approximated using a Pade approximation of order 3$\ $ and a delay of $\theta_d = $1.0
+
+ which gives the following transfer function approximation: 
+[MATH] e^{-\theta_d \cdot s} \approx \frac{-1.0s^3 + 12.0s^2 + -60.0s + 120.0}{1.0s^3 + 12.0s^2 + 60.0s + 120.0}
 
 import control as ct
 
-def build_closed_loop(Kc1, Kc2, tauI1, tauI2):
+def build_closed_loop(Kc1, Kc2, tauI1, tauI2, cascade=False):
     
     s = ct.tf('s')
+    t = sp.symbols('t', real=True)
     I1 = 1.0 / tauI1
     I2 = 0
+    numD,denD = ct.delay.pade(theta, pade_order)
 
     Gc1 = Kc1 * (1 + I1 / s)
     Gc2 = Kc2 * (1 + I2 / s)
     Gp1 = Kp1 / (taup1 * s + 1)
     Gp2 = Kp2 / (taup2 * s + 1)
-    Gd = 1 * (1 + 0 * s)    # direct disturbance addition
-    numD,denD = ct.delay.pade(theta, pade_order)    
-    # Named blocks
-    Gc1_blk = ct.tf(Gc1, name='Gc1', inputs='E1', outputs='Yc1')
-    Gc2_blk = ct.tf(Gc2, name='Gc2', inputs='E2', outputs='Yc2')
-    Gp1_blk = ct.tf(Gp1, name='Gp1', inputs='Yc2', outputs='Yp1')
-    Gp2_blk = ct.tf(Gp2, name='Gp2', inputs='P', outputs='Yp2')
-    Gd_blk = ct.tf(Gd, name='Gd', inputs='D', outputs='Yd')     # direct disturbance addition
-    GD_blk = ct.tf(numD, denD, name='GD', inputs='Yp2', outputs='Y')
+    Gd = ct.tf([1], [1])    # direct disturbance addition
+    GD= ct.tf(numD, denD, name='GD', inputs='Yp2', outputs='Y')
+    # State Space Representation of the blocks for interconnection
+    # Note: the control library's interconnect function works better with state-space models, so we convert the transfer functions to state-space form.
+    # xdot = Ax + Bu
+    # y = Cx + Du
+    #
+    Gc1_blk = ct.ss(Gc1, name='Gc1', inputs='E1', outputs='Yc1')
+    Gc2_blk = ct.ss(Gc2, name='Gc2', inputs='E2', outputs='Yc2')
+    Gp1_blk = ct.ss(Gp1, name='Gp1', inputs='Yc2', outputs='Yp1')
+    Gp2_blk = ct.ss(Gp2, name='Gp2', inputs='P', outputs='Yp2')
+    Gd_blk = ct.ss(Gd, name='Gd', inputs='D', outputs='Yd')     # direct disturbance addition
+    GD_blk = ct.ss(GD, name='GD', inputs='Yp2', outputs='Y')
     sum1 = ct.summing_junction(inputs=['Ysp', '-Yp2'], output='E1', name='Sum1')
-    sum2 = ct.summing_junction(inputs=['Yc1'], output='E2', name='Sum2')
+    if cascade:
+         sum2 = ct.summing_junction(inputs=['Yc1', '-P'], output='E2', name='Sum2')
+    else:
+        sum2 = ct.summing_junction(inputs=['Yc1'], output='E2', name='Sum2')
     sum3 = ct.summing_junction(inputs=['Yp1', 'Yd'], output='P', name='Sum3')
     sys = ct.interconnect(
         [Gc1_blk, Gc2_blk, Gp1_blk, Gp2_blk, Gd_blk, sum1, sum2, sum3],
@@ -56,6 +71,7 @@ def simulate_case(sys, t, ysp_input, d_input):
 
 
 
+
 Problem 1
 ====================
 
@@ -67,13 +83,13 @@ Label: fig:block_diagram
 
 The Simulink block diagram is shown in Figure~\ref{fig:block_diagram}.
 
-Case 1: Step disturbance with no setpoint change gave and step in disturbance with no setpoint change gaveIAE = 725.3696 in Python and IAE = 725.8109 in Simulink.
+Case 1: Step disturbance with no setpoint change gave and step in disturbance with no setpoint change gave IAE = 601.8413 in Python and IAE = 725.8109 in Simulink.
 
 The closed-loop disturbance response and no cascade loop is shown in Figure~\ref{fig:no_cascade_step_disturbance}.
 
 The PI controller was then tuned using the autotuning feature in Simulink, which gave P = 0.1837 and I = 0.0816.
 
-Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = 13.0462 in Python and IAE = 13.0463 in Simulink.
+Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = 13.0259 in Python and IAE = 13.0463 in Simulink.
 
 The response to a unit step change in disturbance with no cascade control and PI autotuning is shown in Figure~\ref{fig:no_cascade_autotuning_step_disturbance}.
 
@@ -82,8 +98,8 @@ Closed-loop Response to Step Setpoint Change
 --------------------------------------------
 The response to the step change in setpoint with no step disturbance is shown in Figure~\ref{fig:no_cascade_step_setpoint}.
 
-Case 3: Step setpoint change with no disturbance change gave IAE = 2449.4065 in Python and IAE = 2450.8205 in Simulink.
+Case 3: Step setpoint change with no disturbance change gave IAE = 2146.1926 in Python and IAE = 2450.8205 in Simulink.
 
 The response to a unit step change in setpoint with no disturbance change using PI autotuning is shown in Figure~\ref{fig:no_cascade_autotuning_step_setpoint}.
 
-Case 4: Step setpoint change with no disturbance change and PI autotuning gave IAE = 8.1939 in Python and IAE = 8.1939 in Simulink.
+Case 4: Step setpoint change with no disturbance change and PI autotuning gave IAE = 9.1899 in Python and IAE = 8.1939 in Simulink.

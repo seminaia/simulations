@@ -13,13 +13,9 @@ import matplotlib
 import scipy
 import scipy.integrate
 from sympy import true
-from sympy.matrices.expressions.matadd import rules
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from doc_builder import DocumentBuilder
-from pylatex_doc_builder import PyLatexDocumentBuilder
-from pylatex import NoEscape
-from pylatex import Math
 import control as ct
 
 OUTPUT_FILE = "HW5_CHE565"
@@ -41,6 +37,7 @@ figlog = doc.figure
 subfiglog = doc.subfigures
 px = doc.px
 im = doc.im
+lst = doc.listings
 doc.maketitle(True)
 doc.toc(False)
 
@@ -203,7 +200,58 @@ images = [
 # =============================================================================
 # Document writeup
 # =============================================================================
+doc.section("Introduction")
+px(
+f" The following homework was done with Simulink and the Control Systems Library in Python. The block diagram of the system is shown in ", doc.figref("fig:block_diagram"), ". ","The block diagram was created in simulink and then I built the same diagram as a python function using the control library. "
+)
 
+lst(["""
+import control as ct
+
+def build_closed_loop(Kc1, Kc2, tauI1, tauI2):
+    
+    s = ct.tf('s')
+    I1 = 1.0 / tauI1
+    I2 = 0
+
+    Gc1 = Kc1 * (1 + I1 / s)
+    Gc2 = Kc2 * (1 + I2 / s)
+    Gp1 = Kp1 / (taup1 * s + 1)
+    Gp2 = Kp2 / (taup2 * s + 1)
+    Gd = 1 * (1 + 0 * s)    # direct disturbance addition
+    numD,denD = ct.delay.pade(theta, pade_order)    
+    # Named blocks
+    Gc1_blk = ct.tf(Gc1, name='Gc1', inputs='E1', outputs='Yc1')
+    Gc2_blk = ct.tf(Gc2, name='Gc2', inputs='E2', outputs='Yc2')
+    Gp1_blk = ct.tf(Gp1, name='Gp1', inputs='Yc2', outputs='Yp1')
+    Gp2_blk = ct.tf(Gp2, name='Gp2', inputs='P', outputs='Yp2')
+    Gd_blk = ct.tf(Gd, name='Gd', inputs='D', outputs='Yd')     # direct disturbance addition
+    GD_blk = ct.tf(numD, denD, name='GD', inputs='Yp2', outputs='Y')
+    sum1 = ct.summing_junction(inputs=['Ysp', '-Yp2'], output='E1', name='Sum1')
+    sum2 = ct.summing_junction(inputs=['Yc1'], output='E2', name='Sum2')
+    sum3 = ct.summing_junction(inputs=['Yp1', 'Yd'], output='P', name='Sum3')
+    sys = ct.interconnect(
+        [Gc1_blk, Gc2_blk, Gp1_blk, Gp2_blk, Gd_blk, sum1, sum2, sum3],
+        input=['Ysp', 'D'],
+        output=['Yp2'],
+        input_prefix = ["Ysp", "D"],
+        output_prefix = ["Yp2"],
+    )
+    return sys
+
+def calculate_IAE(t, y, ysp):
+    error = ysp - y
+    iae = np.trapezoid(np.abs(error), t)
+    return iae
+
+# ---------------------------
+# Simulation helper
+# ---------------------------
+def simulate_case(sys, t, ysp_input, d_input):
+    U = np.vstack([ysp_input, d_input])
+    resp = ct.forced_response(sys, T=t, U=U, squeeze=True)
+    return resp.time, resp.outputs
+"""])
 doc.section("Problem 1")
 doc.subsection("Closed-loop Response to Step Disturbance")
 
@@ -295,7 +343,7 @@ px(
 )
 p(
     f"Case 4: Step setpoint change with no disturbance change and PI autotuning gave "
-    f"IAE = {iae4:.4f} in Python and IAE = 2450.8205 in Simulink."
+    f"IAE = {iae4:.4f} in Python and IAE = 8.1939 in Simulink."
 )
 
 txt_file, tex_file, pdf_file = doc.save_all(runs=2)

@@ -20,7 +20,7 @@ from pylatex import (
     Command,
     Math,
 )
-from pylatex.utils import escape_latex
+from pylatex.utils import escape_latex, verbatim
 
 
 class DocumentBuilder:
@@ -156,7 +156,8 @@ class DocumentBuilder:
         doc.preamble.append(Command("usepackage", "float"))
         doc.preamble.append(Command("usepackage", "caption"))
         doc.preamble.append(Command("usepackage", "hyperref"))
-
+        doc.preamble.append(Command("usepackage", "listings"))
+        
         for line in self._raw_preamble:
             doc.preamble.append(NoEscape(line))
 
@@ -349,7 +350,13 @@ class DocumentBuilder:
         for item in items:
             self._txt(f"- {item}")
         self._txt("")
-
+    def listings(self, items: Iterable[str]) -> None:
+        self._append(NoEscape(r"\begin{lstlisting}[language=Python]"))
+        for item in items:
+            self._append(NoEscape(str(item)))
+            self._txt(str(item))
+        self._append(NoEscape(r"\end{lstlisting}"))
+        self._txt("")
     def numbered(self, items: Iterable[str]) -> None:
         with self._target().create(Enumerate()) as enum:
             for item in items:

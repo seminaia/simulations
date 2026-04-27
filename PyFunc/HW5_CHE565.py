@@ -24,12 +24,12 @@ PLOT_FILE = "HW5_CHE565_plot.png"
 report_lines = []
 xdot = sp.MatrixSymbol('xdot', 6, 1)
 x = sp.MatrixSymbol('x', 6, 1)
-y = sp.MatrixSymbol('y', 6, 1)
-u = sp.MatrixSymbol('u', 6, 1)
+y = sp.MatrixSymbol('y', 1, 1)
+u = sp.MatrixSymbol('u', 2, 1)
 A = sp.MatrixSymbol('A', 6, 6)
 B = sp.MatrixSymbol('B', 6, 2)
-C = sp.MatrixSymbol('C', 6, 1)
-D = sp.MatrixSymbol('D', 2,1 )
+C = sp.MatrixSymbol('C', 1, 6)
+D = sp.MatrixSymbol('D', 1, 2)
 
 doc = DocumentBuilder(
     OUTPUT_FILE,
@@ -176,9 +176,9 @@ def save_plot(filename, t, y, title, ysp=None, d=None):
 
 sys1 = build_closed_loop(Kc1, Kc2, tauI1, tauI2)
 A1, B1, C1, D1 = sys1.A, sys1.B, sys1.C, sys1.D
-print("State-space matrices for the closed-loop system without cascade control:"
-      f"\nA:\n{A1}\nB:\n{B1}\nC:\n{C1}\nD:\n{D1}")
-
+print("State-space Equation for the closed-loop system without cascade control:")
+sp.pprint(sp.Eq(xdot, A1*x + B1.T*u))
+sp.pprint(sp.Eq(y, C1*x + D1*u))
 
 t1, y1 = simulate_case(sys1, tvals, step_off, step_on)
 iae1 = calculate_IAE(t1, y1, step_off)

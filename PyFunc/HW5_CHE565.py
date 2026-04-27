@@ -22,9 +22,14 @@ import control as ct
 OUTPUT_FILE = "HW5_CHE565"
 PLOT_FILE = "HW5_CHE565_plot.png"
 report_lines = []
-x, xdot = sp.symbols('x xdot', real=True)
-y, u = sp.symbols('y u', real=True)
-A, B, C, D = sp.symbols('A B C D', real=True)
+xdot = sp.MatrixSymbol('xdot', 6, 1)
+x = sp.MatrixSymbol('x', 6, 1)
+y = sp.MatrixSymbol('y', 6, 1)
+u = sp.MatrixSymbol('u', 6, 1)
+A = sp.MatrixSymbol('A', 6, 6)
+B = sp.MatrixSymbol('B', 6, 2)
+C = sp.MatrixSymbol('C', 6, 1)
+D = sp.MatrixSymbol('D', 2,1 )
 
 doc = DocumentBuilder(
     OUTPUT_FILE,

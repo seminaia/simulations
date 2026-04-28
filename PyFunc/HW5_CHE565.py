@@ -16,7 +16,6 @@ import scipy as sc
 from scipy.optimize import minimize
 from scipy.signal import step
 import sympy as sp
-matplotlib.use(backend="Agg")
 import matplotlib.pyplot as plt
 from doc_builder import DocumentBuilder
 import control as ct
@@ -62,7 +61,7 @@ taup2 = 10.0
 Kc1 = 1.0
 Kc2 = 1.0
 theta = 1.0
-pade_order = 3
+pade_order = 1
 tauI1 = 1.0
 tauI2 = 1.0
 # Lambda rules
@@ -110,22 +109,22 @@ def build_closed_loop(Kc1, Kc2, tauI1, tauI2, cascade=False):
     Gp2_blk = ct.ss(Gp2, name='Gp2', inputs='P', outputs='Yp2')
     Gd_blk = ct.ss(Gd, name='Gd', inputs='D', outputs='Yd')     # direct disturbance addition
     GD_blk = ct.ss(GD, name='GD', inputs='Yp2', outputs='Y')
-    sum1 = ct.summing_junction(inputs=['Ysp', '-Yp2'], output='E1', name='Sum1')
+    sum1 = ct.summing_junction(inputs=['Ysp', '-Y'], output='E1', name='Sum1')
     if cascade:
          sum2 = ct.summing_junction(inputs=['Yc1', '-P'], output='E2', name='Sum2')
     else:
         sum2 = ct.summing_junction(inputs=['Yc1'], output='E2', name='Sum2')
     sum3 = ct.summing_junction(inputs=['Yp1', 'Yd'], output='P', name='Sum3')
-    
+    blocks = [Gc1_blk, Gc2_blk, Gp1_blk, Gp2_blk, Gd_blk, GD_blk]
+    #for blk in blocks:
+        #print(blk.name, "states = ", blk.nstates)
     sys = ct.interconnect(
-        [Gc1_blk, Gc2_blk, Gp1_blk, Gp2_blk, Gd_blk, GD_blk, sum1, sum2, sum3],
+        blocks + [sum1, sum2, sum3],
         input=['Ysp', 'D'],
         output=['Y'],
         input_prefix = ["Ysp", "D"],
         output_prefix = ["Y"],
     )
-    sys.inputs = ['Ysp', 'D']
-    sys.outputs = ['Y']
     
     return sys
 
@@ -148,8 +147,8 @@ def tuning_lqr(sys, Q, R):
     return K, S, E
 def simulate_case(sys, t, ysp_input, d_input):
     U = np.vstack([ysp_input, d_input])
-    resp = ct.forced_response(sys, T=t, U=U, squeeze=True)
-    return resp.time, resp.outputs
+    resp = ct.forced_response(sys, T=t, U=U, squeeze=True,return_states=True)
+    return resp.time, resp.outputs, resp.inputs, resp.states
 
 
 # ---------------------------
@@ -182,8 +181,9 @@ def save_plot(filename, t, y, title, ysp=None, d=None):
 
 sys1 = build_closed_loop(Kc1, Kc2, tauI1, tauI2)
 A1, B1, C1, D1 = sys1.A, sys1.B, sys1.C, sys1.D
+print(sys1)
+t1, y1, u1, x1 = simulate_case(sys1, tvals, step_off, step_on)
 
-t1, y1 = simulate_case(sys1, tvals, step_off, step_on)
 iae1 = calculate_IAE(t1, y1, step_off)
 def objective_PI(params):
     P, I = params
@@ -194,36 +194,35 @@ def objective_PI(params):
     if not np.all(np.real(ct.poles(sys)) < 0):
         return np.inf
     
-    t, y = simulate_case(sys, tvals, step_off, step_on)
+    t, y, u, x = simulate_case(sys, tvals, step_off, step_on)
     y = np.asarray(y).squeeze()
     t = np.asarray(t).squeeze()
+    u = np.asarray(u).squeeze()
+    x = np.asarray(x).squeeze()
     ysp = np.asarray(step_off).squeeze()
-    
+    n=x.shape[0]
+    m=u.shape[1]
+    print(f"Shapes:",{n, m})
     e = ysp - y
     eint = np.trapezoid(np.abs(e), t)
     u_control = P*(e+I*eint)
-    Q = 1
-    R = 1
-    cost = Q * e**2 + R * u_control**2
-    J = np.trapezoid(cost, t)
+    Q = np.eye(m)
+    R = np.eye(m)
+    print("Q, R shapes:", Q.shape, R.shape)
+    integrand = np.zeros_like(t)
+    print(len(t))
+    for k in range(len(t)):
+        xk = x[k, :]
+        print(f"xk shape: {xk.shape}")
+        uk = u[k, :]
+        print(f"uk shape: {uk.shape}")
+        integrand[k] = xk.T @ Q @ xk + uk.T @ R @ uk
+    J = np.trapezoid(integrand, t)
     iae = np.trapezoid(np.abs(e), t)
-    print(f"Evaluating P={P:.4f}, I={I:.4f}, IAE={iae:.4f}, Cost J={J:.4f}")
     return J
 initial_guess = [Kc1_nom, I1_nom]
 result = minimize(objective_PI, initial_guess)
-P_opt, I_opt = result.x
-sys_opt = build_closed_loop(P_opt, Kc2, 1 / I_opt, tauI2)
-t_opt, y_opt = simulate_case(sys_opt, tvals, step_off, step_on)
-iae_opt = calculate_IAE(t_opt, y_opt, step_off)
-save_plot(
-    "closed_loop_no_cascade_optimized.png",
-    t_opt,
-    y_opt,
-    "Closed-loop response to unit step disturbance with optimized PI parameters",
-    ysp=step_off,
-    d=step_on,)
-
-print(f"Optimal P: {P_opt:.4f}, Optimal I: {I_opt:.4f}")
+print("Optimal P, I:", result.x)
 A1_sp = sp.Matrix(A1)
 B1_sp = sp.Matrix(B1)
 C1_sp = sp.Matrix(C1)
@@ -236,12 +235,6 @@ R = np.eye(m)
 K1_sp = sp.Matrix(K1)
 S1_sp = sp.Matrix(S1)
 E1_sp = sp.Matrix(E1)
-print("LQR Gain K1:")
-sp.pprint(K1_sp)
-print("Solution to Riccati Equation S1:")
-sp.pprint(S1_sp)
-print("Closed-loop eigenvalues E1:")
-sp.pprint(E1_sp)
 save_plot("closed_loop_no_cascade.png",
           t1,
           y1,
@@ -252,7 +245,7 @@ save_plot("closed_loop_no_cascade.png",
 P1 = 0.183711730708738
 I1 = 0.0816496580927727
 sys2 = build_closed_loop(P1, Kc2, 1 / I1, tauI2)
-t2, y2 = simulate_case(sys2, tvals, step_off, step_on)
+t2, y2, u2, x2 = simulate_case(sys2, tvals, step_off, step_on)
 iae2 = calculate_IAE(t2, y2, step_off)
 save_plot(
     "closed_loop_no_cascade_autotuning_python.png",
@@ -266,7 +259,7 @@ save_plot(
 #=============================================================================
 # Simulate Response to step setpoint change with no cascade control and no disturbance change
 # =============================================================================
-t3, y3 = simulate_case(sys1, tvals, step_on, step_off)
+t3, y3, u3, x3 = simulate_case(sys1, tvals, step_on, step_off)
 iae3 = calculate_IAE(t3, y3, step_on)
 save_plot(
     "closed_loop_no_cascade_setpoint.png",
@@ -279,7 +272,7 @@ save_plot(
 P2 =P1
 I2 = I1
 sys3 = build_closed_loop(P2, Kc2, 1 / I2, tauI2)
-t4, y4 = simulate_case(sys3, tvals, step_on, step_off)
+t4, y4, u4, x4 = simulate_case(sys3, tvals, step_on, step_off)
 iae4 = calculate_IAE(t4, y4, step_on)
 
 save_plot(
@@ -318,8 +311,17 @@ im(r"\theta_d = "),
 theta)
 line(
 " which gives the following transfer function approximation: ")
+num_poly = sp.Poly(num_approx, sp.symbols('s'))
+den_poly = sp.Poly(den_approx, sp.symbols('s'))
+
 eq(
-rf"e^{{-\theta_d \cdot s}} \approx \frac{{{num_approx[0]}s^3 + {num_approx[1]}s^2 + {num_approx[2]}s + {num_approx[3]}}}{{{den_approx[0]}s^3 + {den_approx[1]}s^2 + {den_approx[2]}s + {den_approx[3]}}}")
+sp.latex(
+        sp.Eq(
+            sp.exp(-sp.Symbol("theta_d") *sp.symbols('s')),
+            num_poly / den_poly
+            )
+         )
+)
 
 lst(["""
 import control as ct
@@ -388,12 +390,7 @@ figlog(
     width=r"0.8\textwidth",
     position="H",
 )
-figlog(
-    "closed_loop_no_cascade_optimized.png",
-    "Closed-loop response to unit step disturbance with optimized PI parameters.",
-    label="fig:optimized_response",
-    width=r"0.8\textwidth",
-)
+
 px("The Simulink block diagram is shown in ", doc.figref("fig:block_diagram"), ".")
 
 p(

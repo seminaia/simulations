@@ -40,7 +40,7 @@ The block diagram was created in simulink and then I built the same diagram as a
 Note: sum2 in the block diagram is the summing junction that takes the first controller output and subtract the P stream in order to form the inner loop. But, first in order to simulate without the inner loop, so I set cascade=False. This just converts the controller output (Yc1) to the error signal (E2) for the second controller. The disturbance D is added directly to the output of Gp1 (Yp1) %
 \par%
 The transport delay transfer function is approximated using a Pade approximation of order %
-3%
+1%
 $\ $%
  and a delay of %
 $\theta_d = $%
@@ -49,7 +49,7 @@ $\theta_d = $%
  which gives the following transfer function approximation: %
 \\%
 \[%
-e^{-\theta_d \cdot s} \approx \frac{-1.0s^3 + 12.0s^2 + -60.0s + 120.0}{1.0s^3 + 12.0s^2 + 60.0s + 120.0}%
+e^{- s \theta_{d}} = \frac{2.0 - 1.0 s}{1.0 s + 2.0}%
 \]%
 \begin{lstlisting}[language=Python]%
 
@@ -125,20 +125,11 @@ def simulate_case(sys, t, ysp_input, d_input):
 \end{figure}
 
 %
-
-
-\begin{figure}[H]%
-\includegraphics[width=0.8\textwidth,keepaspectratio]{closed_loop_no_cascade_optimized.png}%
-\caption{Closed{-}loop response to unit step disturbance with optimized PI parameters.}%
-\label{fig:optimized_response}%
-\end{figure}
-
-%
 The Simulink block diagram is shown in %
 Figure~\ref{fig:block_diagram}%
 .%
 \par%
-Case 1: Step disturbance with no setpoint change gave and step in disturbance with no setpoint change gave IAE = 601.8413 in Python and IAE = 725.8109 in Simulink.%
+Case 1: Step disturbance with no setpoint change gave and step in disturbance with no setpoint change gave IAE = 37305.9383 in Python and IAE = 725.8109 in Simulink.%
 \par%
 \begin{figure}[H]%
 \centering%
@@ -161,7 +152,7 @@ Figure~\ref{fig:no_cascade_step_disturbance}%
 \par%
 The PI controller was then tuned using the autotuning feature in Simulink, which gave P = 0.1837 and I = 0.0816.%
 \par%
-Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = 13.0259 in Python and IAE = 13.0463 in Simulink.%
+Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = 13.0796 in Python and IAE = 13.0463 in Simulink.%
 \par%
 \begin{figure}[H]%
 \centering%
@@ -205,7 +196,7 @@ The response to the step change in setpoint with no step disturbance is shown in
 Figure~\ref{fig:no_cascade_step_setpoint}%
 .%
 \par%
-Case 3: Step setpoint change with no disturbance change gave IAE = 2146.1926 in Python and IAE = 2450.8205 in Simulink.%
+Case 3: Step setpoint change with no disturbance change gave IAE = 130209.8077 in Python and IAE = 2450.8205 in Simulink.%
 \par%
 \begin{figure}[H]%
 \centering%
@@ -226,7 +217,7 @@ The response to a unit step change in setpoint with no disturbance change using 
 Figure~\ref{fig:no_cascade_autotuning_step_setpoint}%
 .%
 \par%
-Case 4: Step setpoint change with no disturbance change and PI autotuning gave IAE = 9.1899 in Python and IAE = 8.1939 in Simulink.%
+Case 4: Step setpoint change with no disturbance change and PI autotuning gave IAE = 9.7272 in Python and IAE = 8.1939 in Simulink.%
 \par
 
 %

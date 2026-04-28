@@ -122,6 +122,8 @@ def build_closed_loop(Kc1, Kc2, tauI1, tauI2, cascade=False):
         input_prefix = ["Ysp", "D"],
         output_prefix = ["Y"],
     )
+    sys.inputs = ['Ysp', 'D']
+    sys.outputs = ['Y']
     
     return sys
 
@@ -150,7 +152,6 @@ def tuning_lqr(sys, Q, R):
 def simulate_case(sys, t, ysp_input, d_input):
     U = np.vstack([ysp_input, d_input])
     resp = ct.forced_response(sys, T=t, U=U, squeeze=True)
-
     return resp.time, resp.outputs
 
 
@@ -185,11 +186,27 @@ A1_sp = sp.Matrix(A1)
 B1_sp = sp.Matrix(B1)
 C1_sp = sp.Matrix(C1)
 D1_sp = sp.Matrix(D1)
-u1_sp = sp.Matrix(u1)
 print("State-space Equation for the closed-loop system without cascade control:")
 sp.pprint(xdot_eq.subs({A: A1_sp, B: B1_sp, C: C1_sp, D: D1_sp}))
 sp.pprint(y_eq.subs({A: A1_sp, B: B1_sp, C: C1_sp, D: D1_sp}))
-
+"""
+State-space Equation for the closed-loop system without cascade control:
+    ⎡0.0  0.0   -0.2   0.0           0.0                   0.0         ⎤     ⎡1.0  0.0⎤  
+    ⎢                                                                  ⎥     ⎢        ⎥  
+    ⎢1.0  -0.2  -0.2   0.0           0.0                   0.0         ⎥     ⎢1.0  0.0⎥  
+    ⎢                                                                  ⎥     ⎢        ⎥  
+    ⎢0.0  1.0   -0.1   0.0           0.0                   0.0         ⎥     ⎢0.0  1.0⎥  
+ẋ = ⎢                                                                  ⎥⋅x + ⎢        ⎥⋅u
+    ⎢0.0  0.0   0.2   -12.0   -5.99999999999999            1.2         ⎥     ⎢0.0  0.0⎥  
+    ⎢                                                                  ⎥     ⎢        ⎥  
+    ⎢0.0  0.0   0.0   10.0   -4.769731610361e-16  -5.06212546921577e-30⎥     ⎢0.0  0.0⎥  
+    ⎢                                                                  ⎥     ⎢        ⎥  
+    ⎣0.0  0.0   0.0    0.0          -10.0         4.29275844932491e-16 ⎦     ⎣0.0  0.0⎦  
+y = [0.0  0.0  -0.2  24.0  -1.14473558648664e-16  -2.39999999999999]⋅x + [0.0  0.0]⋅u
+Wrote text log: HW5_CHE565.txt
+Wrote LaTeX file: HW5_CHE565.tex
+Wrote PDF report: HW5_CHE565.pdf
+"""
 save_plot("closed_loop_no_cascade.png",
           t1,
           y1,

@@ -141,18 +141,19 @@ def tuning_lqr(sys, Q, R):
     A, B, C, D = sys.A, sys.B, sys.C, sys.D
     
     # Solve the continuous-time algebraic Riccati equation
-    K, S, E = ct.lqr(A, B, Q, R)
+    K, S, E = ct.lqr(A, B, Q, R,)
     
     return K, S, E
+def simulate_case(sys, t, ysp_input, d_input):
+    U = np.vstack([ysp_input, d_input])
+    resp = ct.forced_response(sys, T=t, U=U, squeeze=True)
+    return resp.time, resp.outputs
+
 
 # ---------------------------
 # Simulation helper
 # ---------------------------
 
-def simulate_case(sys, t, ysp_input, d_input):
-    U = np.vstack([ysp_input, d_input])
-    resp = ct.forced_response(sys, T=t, U=U, squeeze=True)
-    return resp.time, resp.outputs
 
 
 def save_plot(filename, t, y, title, ysp=None, d=None):
@@ -182,31 +183,64 @@ A1, B1, C1, D1 = sys1.A, sys1.B, sys1.C, sys1.D
 
 t1, y1 = simulate_case(sys1, tvals, step_off, step_on)
 iae1 = calculate_IAE(t1, y1, step_off)
+def objective_PI(params,t, ysp_input, d_input,):
+    P, I = params
+    if P <= 0 or I <= 0:
+        return np.inf  # Penalize non-positive parameters
+    sys = build_closed_loop(P, Kc2, 1/I, tauI2)
+    t, y = simulate_case(sys, tvals, ysp_input, d_input)
+    iae = calculate_IAE(t, y, ysp_input)
+    return iae
 A1_sp = sp.Matrix(A1)
 B1_sp = sp.Matrix(B1)
 C1_sp = sp.Matrix(C1)
 D1_sp = sp.Matrix(D1)
-print("State-space Equation for the closed-loop system without cascade control:")
-sp.pprint(xdot_eq.subs({A: A1_sp, B: B1_sp, C: C1_sp, D: D1_sp}))
-sp.pprint(y_eq.subs({A: A1_sp, B: B1_sp, C: C1_sp, D: D1_sp}))
-"""
-State-space Equation for the closed-loop system without cascade control:
-    ⎡0.0  0.0   -0.2   0.0           0.0                   0.0         ⎤     ⎡1.0  0.0⎤  
-    ⎢                                                                  ⎥     ⎢        ⎥  
-    ⎢1.0  -0.2  -0.2   0.0           0.0                   0.0         ⎥     ⎢1.0  0.0⎥  
-    ⎢                                                                  ⎥     ⎢        ⎥  
-    ⎢0.0  1.0   -0.1   0.0           0.0                   0.0         ⎥     ⎢0.0  1.0⎥  
-ẋ = ⎢                                                                  ⎥⋅x + ⎢        ⎥⋅u
-    ⎢0.0  0.0   0.2   -12.0   -5.99999999999999            1.2         ⎥     ⎢0.0  0.0⎥  
-    ⎢                                                                  ⎥     ⎢        ⎥  
-    ⎢0.0  0.0   0.0   10.0   -4.769731610361e-16  -5.06212546921577e-30⎥     ⎢0.0  0.0⎥  
-    ⎢                                                                  ⎥     ⎢        ⎥  
-    ⎣0.0  0.0   0.0    0.0          -10.0         4.29275844932491e-16 ⎦     ⎣0.0  0.0⎦  
-y = [0.0  0.0  -0.2  24.0  -1.14473558648664e-16  -2.39999999999999]⋅x + [0.0  0.0]⋅u
-Wrote text log: HW5_CHE565.txt
-Wrote LaTeX file: HW5_CHE565.tex
-Wrote PDF report: HW5_CHE565.pdf
-"""
+n = A1.shape[0]
+m = B1.shape[1]
+Q = np.eye(n)
+R = np.eye(m)
+[K1, S1, E1] = tuning_lqr(sys1, Q, R)
+K1_sp = sp.Matrix(K1)
+S1_sp = sp.Matrix(S1)
+E1_sp = sp.Matrix(E1)
+print("LQR Gain K1:")
+sp.pprint(K1_sp)
+print("Solution to Riccati Equation S1:")
+sp.pprint(S1_sp)
+print("Closed-loop eigenvalues E1:")
+sp.pprint(E1_sp)
+
+(controlsys) soki@soki-Dell-Pro-14-Plus-PB14250:~/simulations/PyFunc$ /home/soki/miniconda3/envs/controlsys/bin/python /home/soki/simulations/PyFunc/HW5_CHE565.py
+ẋ = A⋅x + B⋅u
+y = C⋅x + D⋅u
+LQR Gain K1:
+⎡ 0.968909352072201   1.05853268338369   0.236369797427847  0.0084115004289828  0.00696072461595228  -0.00191469475791998⎤
+⎢                                                                                                                        ⎥
+⎣-0.0960249963707242  0.332394793798571  0.839088491744369  0.0557644885848416  0.0531973642707312   -0.0165663368329673 ⎦
+Solution to Riccati Equation S1:
+⎡  0.994906285841716    -0.0259969337695151   -0.0960249963707242  0.00116007439789168  0.000946466336023736  -0.000258222257398616⎤
+⎢                                                                                                                                  ⎥
+⎢ -0.0259969337695151     1.0845296171532      0.332394793798571   0.00725142603109113  0.00601425827992854   -0.00165647250052137 ⎥
+⎢                                                                                                                                  ⎥
+⎢ -0.0960249963707242    0.332394793798571     0.839088491744369   0.0557644885848416    0.0531973642707312    -0.0165663368329673 ⎥
+⎢                                                                                                                                  ⎥
+⎢ 0.00116007439789168   0.00725142603109113   0.0557644885848416    0.966192672635395     1.1095902287388      -0.416550787678301  ⎥
+⎢                                                                                                                                  ⎥
+⎢0.000946466336023736   0.00601425827992854   0.0531973642707312     1.1095902287388      1.49497559778457     -0.615898057805908  ⎥
+⎢                                                                                                                                  ⎥
+⎣-0.000258222257398616  -0.00165647250052137  -0.0165663368329673  -0.416550787678301    -0.615898057805908     0.383170761367443  ⎦
+Closed-loop eigenvalues E1:
+⎡ -3.6769552230835 + 3.50881719589233⋅ⅈ ⎤
+⎢                                       ⎥
+⎢ -3.6769552230835 - 3.50881719589233⋅ⅈ ⎥
+⎢                                       ⎥
+⎢           -4.64287233352661           ⎥
+⎢                                       ⎥
+⎢-1.13211905956268 + 0.594138503074646⋅ⅈ⎥
+⎢                                       ⎥
+⎢-1.13211905956268 - 0.594138503074646⋅ⅈ⎥
+⎢                                       ⎥
+⎣          -0.905509948730469           ⎦
 save_plot("closed_loop_no_cascade.png",
           t1,
           y1,

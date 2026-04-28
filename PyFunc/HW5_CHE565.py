@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib
 import scipy as sc
 from scipy.optimize import minimize
+from scipy.signal import step
 import sympy as sp
 matplotlib.use(backend="Agg")
 import matplotlib.pyplot as plt
@@ -183,14 +184,30 @@ A1, B1, C1, D1 = sys1.A, sys1.B, sys1.C, sys1.D
 
 t1, y1 = simulate_case(sys1, tvals, step_off, step_on)
 iae1 = calculate_IAE(t1, y1, step_off)
-def objective_PI(params,t, ysp_input, d_input,):
+def objective_PI(params):
     P, I = params
     if P <= 0 or I <= 0:
         return np.inf  # Penalize non-positive parameters
-    sys = build_closed_loop(P, Kc2, 1/I, tauI2)
-    t, y = simulate_case(sys, tvals, ysp_input, d_input)
-    iae = calculate_IAE(t, y, ysp_input)
-    return iae
+    tauI = 1 / I
+    sys = build_closed_loop(P, Kc2, tauI, tauI2)
+    if not np.all(np.real(ct.poles(sys)) < 0):
+        return np.inf
+    
+    t, y = simulate_case(sys, tvals, step_off, step_on)
+    e = step_off - y
+    eint = np.abs(e)
+    u_control = P*(1+I*eint)
+    Q = 1
+    R = 10
+    cost = Q * eint**2 + R * u_control**2
+    J = np.trapezoid(cost, t)
+    IAE = calculate_IAE(t, y, step_off)
+    print(f"Evaluating P={P:.4f}, I={I:.4f}, IAE={IAE:.4f}, Cost={J:.4f}")
+    return J
+initial_guess = [Kc1_nom, I1_nom]
+result = minimize(objective_PI, initial_guess)
+P_opt, I_opt = result.x
+print(f"Optimal P: {P_opt:.4f}, Optimal I: {I_opt:.4f}, Minimum IAE: {result.fun:.4f}")
 A1_sp = sp.Matrix(A1)
 B1_sp = sp.Matrix(B1)
 C1_sp = sp.Matrix(C1)

@@ -195,15 +195,20 @@ def objective_PI(params):
         return np.inf
     
     t, y = simulate_case(sys, tvals, step_off, step_on)
-    e = step_off - y
-    eint = np.abs(e)
-    u_control = P*(1+I*eint)
+    y = np.asarray(y).squeeze()
+    t = np.asarray(t).squeeze()
+    ysp = np.asarray(step_off).squeeze()
+    
+    e = ysp - y
+    eint = np.trapezoid(np.abs(e), t)
+    u_control = P*(e+I*eint)
     Q = 1
     R = 1
-    cost = Q * eint**2 + R * u_control**2
-    IAE = calculate_IAE(t, y, step_off)
-    print(f"Evaluating P={P:.4f}, I={I:.4f}, IAE={IAE:.4f}")
-    return IAE
+    cost = Q * e**2 + R * u_control**2
+    J = np.trapezoid(cost, t)
+    iae = np.trapezoid(np.abs(e), t)
+    print(f"Evaluating P={P:.4f}, I={I:.4f}, IAE={iae:.4f}, Cost J={J:.4f}")
+    return J
 initial_guess = [Kc1_nom, I1_nom]
 result = minimize(objective_PI, initial_guess)
 P_opt, I_opt = result.x
@@ -218,7 +223,7 @@ save_plot(
     ysp=step_off,
     d=step_on,)
 
-print(f"Optimal P: {P_opt:.4f}, Optimal I: {I_opt:.4f}, Minimum IAE: {result.fun:.4f}")
+print(f"Optimal P: {P_opt:.4f}, Optimal I: {I_opt:.4f}")
 A1_sp = sp.Matrix(A1)
 B1_sp = sp.Matrix(B1)
 C1_sp = sp.Matrix(C1)

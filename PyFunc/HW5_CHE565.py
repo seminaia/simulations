@@ -114,6 +114,7 @@ def build_closed_loop(Kc1, Kc2, tauI1, tauI2, cascade=False):
     else:
         sum2 = ct.summing_junction(inputs=['Yc1'], output='E2', name='Sum2')
     sum3 = ct.summing_junction(inputs=['Yp1', 'Yd'], output='P', name='Sum3')
+    
     sys = ct.interconnect(
         [Gc1_blk, Gc2_blk, Gp1_blk, Gp2_blk, Gd_blk, GD_blk, sum1, sum2, sum3],
         input=['Ysp', 'D'],
@@ -149,6 +150,7 @@ def tuning_lqr(sys, Q, R):
 def simulate_case(sys, t, ysp_input, d_input):
     U = np.vstack([ysp_input, d_input])
     resp = ct.forced_response(sys, T=t, U=U, squeeze=True)
+
     return resp.time, resp.outputs
 
 
@@ -176,12 +178,18 @@ def save_plot(filename, t, y, title, ysp=None, d=None):
 
 sys1 = build_closed_loop(Kc1, Kc2, tauI1, tauI2)
 A1, B1, C1, D1 = sys1.A, sys1.B, sys1.C, sys1.D
-print("State-space Equation for the closed-loop system without cascade control:")
-sp.pprint(sp.Eq(xdot, A1*x + B1.T*u))
-sp.pprint(sp.Eq(y, C1*x + D1*u))
 
 t1, y1 = simulate_case(sys1, tvals, step_off, step_on)
 iae1 = calculate_IAE(t1, y1, step_off)
+A1_sp = sp.Matrix(A1)
+B1_sp = sp.Matrix(B1)
+C1_sp = sp.Matrix(C1)
+D1_sp = sp.Matrix(D1)
+u1_sp = sp.Matrix(u1)
+print("State-space Equation for the closed-loop system without cascade control:")
+sp.pprint(xdot_eq.subs({A: A1_sp, B: B1_sp, C: C1_sp, D: D1_sp}))
+sp.pprint(y_eq.subs({A: A1_sp, B: B1_sp, C: C1_sp, D: D1_sp}))
+
 save_plot("closed_loop_no_cascade.png",
           t1,
           y1,

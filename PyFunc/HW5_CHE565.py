@@ -7,6 +7,7 @@ Results are written to HW5_CHE565.txt, HW5_CHE565.tex, and HW5_CHE565.pdf
 """
 
 from math import tau
+from re import S
 
 
 import numpy as np
@@ -198,15 +199,25 @@ def objective_PI(params):
     eint = np.abs(e)
     u_control = P*(1+I*eint)
     Q = 1
-    R = 10
+    R = 1
     cost = Q * eint**2 + R * u_control**2
-    J = np.trapezoid(cost, t)
     IAE = calculate_IAE(t, y, step_off)
-    print(f"Evaluating P={P:.4f}, I={I:.4f}, IAE={IAE:.4f}, Cost={J:.4f}")
-    return J
+    print(f"Evaluating P={P:.4f}, I={I:.4f}, IAE={IAE:.4f}")
+    return IAE
 initial_guess = [Kc1_nom, I1_nom]
 result = minimize(objective_PI, initial_guess)
 P_opt, I_opt = result.x
+sys_opt = build_closed_loop(P_opt, Kc2, 1 / I_opt, tauI2)
+t_opt, y_opt = simulate_case(sys_opt, tvals, step_off, step_on)
+iae_opt = calculate_IAE(t_opt, y_opt, step_off)
+save_plot(
+    "closed_loop_no_cascade_optimized.png",
+    t_opt,
+    y_opt,
+    "Closed-loop response to unit step disturbance with optimized PI parameters",
+    ysp=step_off,
+    d=step_on,)
+
 print(f"Optimal P: {P_opt:.4f}, Optimal I: {I_opt:.4f}, Minimum IAE: {result.fun:.4f}")
 A1_sp = sp.Matrix(A1)
 B1_sp = sp.Matrix(B1)
@@ -372,7 +383,12 @@ figlog(
     width=r"0.8\textwidth",
     position="H",
 )
-
+figlog(
+    "closed_loop_no_cascade_optimized.png",
+    "Closed-loop response to unit step disturbance with optimized PI parameters.",
+    label="fig:optimized_response",
+    width=r"0.8\textwidth",
+)
 px("The Simulink block diagram is shown in ", doc.figref("fig:block_diagram"), ".")
 
 p(

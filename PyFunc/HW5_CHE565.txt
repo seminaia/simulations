@@ -81,6 +81,10 @@ Closed-loop Response to Step Disturbance
 Caption: Block diagram of the closed-loop system without cascade control and with a unit step disturbance from Simulink.
 Label: fig:block_diagram
 
+[FIGURE] closed_loop_no_cascade_optimized.png
+Caption: Closed-loop response to unit step disturbance with optimized PI parameters.
+Label: fig:optimized_response
+
 The Simulink block diagram is shown in Figure~\ref{fig:block_diagram}.
 
 Case 1: Step disturbance with no setpoint change gave and step in disturbance with no setpoint change gave IAE = 601.8413 in Python and IAE = 725.8109 in Simulink.

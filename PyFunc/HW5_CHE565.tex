@@ -32,257 +32,390 @@
 \maketitle%
 \section*{Introduction}%
 \label{sec:Introduction}%
- The following homework was done with Simulink and the Control Systems Library in Python. The block diagram of the system is shown in %
-Figure~\ref{fig:block_diagram}%
-. %
-The block diagram was created in simulink and then I built the same diagram as a python function using the control library. Simulink was mainly used as a sanity check for the response of the system in the python code. %
-\par%
-Note: sum2 in the block diagram is the summing junction that takes the first controller output and subtract the P stream in order to form the inner loop. But, first in order to simulate without the inner loop, so I set cascade=False. This just converts the controller output (Yc1) to the error signal (E2) for the second controller. The disturbance D is added directly to the output of Gp1 (Yp1) %
-\par%
-The transport delay transfer function is approximated using a Pade approximation of order %
-1%
+This homework was completed using Python with the Control Systems Library. %
+The report uses the same block{-}diagram logic as the Simulink assignment, %
+but the systems are constructed programmatically using transfer functions, %
+state{-}space conversions, and %
+$\texttt{ct.interconnect}$%
 .%
- Although it should be relatively straightforward to simulate with delay in simulink and in python, I commented through the delay blocks in simulink and in python. The assignment didn't specifiy the delay time. Also, the control library has the delay function, but it only uses the Pade approximation.%
 \par%
- Which gives the following transfer function approximation: %
-\\%
+The cascade{-}control problems compare the response with and without the inner feedback loop. The first controller is treated as an ideal PI controller, while the inner controller is P{-}only. For the no{-}cascade case, the inner feedback is disconnected and the inner controller gain is set to 1.%
+\par%
 \[%
-e^{- s \theta_{d}} = \frac{- \frac{s \theta_{d}}{2} + 1}{\frac{s \theta_{d}}{2} + 1}%
+G_{c,1}(s) = K_{c,1}\left(1 + \frac{1}{\tau_{I,1}s}\right)%
+\]%
+\[%
+G_{c,2}(s) = K_{c,2}%
+\]%
+\[%
+IAE = \int_0^T |r(t)-y(t)|\,dt%
 \]%
 \begin{lstlisting}[language=Python]%
+def p_only_controller(Kc):
+    # P-only, but represented as a transfer function so ct.ss() works.
+    return ct.tf([Kc], [1])
 
-import control as ct
-
-def build_closed_loop(Kc1, Kc2, tauI1, tauI2, cascade=False):
-    
-    s = ct.tf('s')
-    t = sp.symbols('t', real=True)
-    I1 = 1.0 / tauI1
-    I2 = 0
-    numD,denD = ct.delay.pade(theta, pade_order)
-
-    Gc1 = Kc1 * (1 + I1 / s)
-    Gc2 = Kc2 * (1 + I2 / s)
-    Gp1 = Kp1 / (taup1 * s + 1)
-    Gp2 = Kp2 / (taup2 * s + 1)
-    Gd = ct.tf([1], [1])    # direct disturbance addition
-    GD1= ct.tf(numD, denD, name='GD1', inputs='Yp1', outputs='YD')
-    GD2= ct.tf(numD, denD, name='GD2', inputs='Yp2', outputs='Y')
-    # State Space Representation of the blocks for interconnection
-    # Note: the control library's interconnect function works better with state-space models, so we convert the transfer functions to state-space form.
-    # xdot = Ax + Bu
-    # y = Cx + Du
-    
-    Gc1_blk = ct.ss(Gc1, name='Gc1', inputs='E1', outputs='Yc1')
-    Gc2_blk = ct.ss(Gc2, name='Gc2', inputs='E2', outputs='Yc2')
-    Gp1_blk = ct.ss(Gp1, name='Gp1', inputs='Yc2', outputs='Yp1')
-    Gp2_blk = ct.ss(Gp2, name='Gp2', inputs='P', outputs='Y')
-    Gd_blk = ct.ss(Gd, name='Gd', inputs='D', outputs='Yd')     # direct disturbance addition
-    #GD1_blk = ct.ss(GD1, name='GD1', inputs='Yp1', outputs='YD')
-    #GD2_blk = ct.ss(GD2, name='GD2', inputs='Yp2', outputs='Y')
-    sum1 = ct.summing_junction(inputs=['Ysp', '-Y'], output='E1', name='Sum1')
-    if cascade:
-         sum2 = ct.summing_junction(inputs=['Yc1', '-P'], output='E2', name='Sum2')
-    else:
-        sum2 = ct.summing_junction(inputs=['Yc1'], output='E2', name='Sum2')
-    sum3 = ct.summing_junction(inputs=['Yp1', 'Yd'], output='P', name='Sum3')
-    control_blks = [Gc1_blk, Gc2_blk]
-    plant_blks = [Gp1_blk, Gp2_blk]
-    disturbance_blks = [Gd_blk]
-    #delay_blks = [GD1_blk, GD2_blk]
-    sum_blks = [sum1, sum2, sum3]
-    blocks = control_blks + plant_blks + disturbance_blks + sum_blks
-    sys = ct.interconnect(
-        blocks,
-        input=['Ysp', 'D'],
-        output=['Y'],
-        input_prefix = ["Ysp", "D"],
-        output_prefix = ["Y"],
-    )
-    return sys
-
-    
-def calculate_IAE(t, y, ysp):
-    error = ysp - y
-    iae = np.trapezoid(np.abs(error), t)
-    return iae
-def simulate_case(sys, t, ysp_input, d_input):
-    U = np.vstack([ysp_input, d_input])
-    resp = ct.forced_response(sys, T=t, U=U, squeeze=True,return_states=True)
-    return resp.time, resp.outputs, resp.inputs, resp.states
-%
-\end{lstlisting}
-
-%
-\section*{Problem 1}%
-\label{sec:Problem1}%
-\subsection*{Closed{-}loop Response to Step Disturbance}%
-\label{subsec:Closed{-}loopResponsetoStepDisturbance}%
+Gc2 = p_only_controller(Kc2)
+Gc2_blk = ct.ss(Gc2, name='Gc2', inputs='E2', outputs='Yc2')%
+\end{lstlisting}%
 
 
 \begin{figure}[H]%
-\includegraphics[width=0.8\textwidth,keepaspectratio]{HW5_CHE565_block_diagram.png}%
-\caption{Block diagram of the closed{-}loop system without cascade control and with a unit step disturbance from Simulink.}%
+\includegraphics[width=0.80\textwidth,keepaspectratio]{HW5_CHE565_block_diagram.png}%
+\caption{Simulink block diagram for the cascade{-}control system.}%
 \label{fig:block_diagram}%
 \end{figure}
 
 %
-The Simulink block diagram is shown in %
-Figure~\ref{fig:block_diagram}%
-.%
+\section*{Problems 1{-}{-}3: Cascade Control}%
+\label{sec:Problems1{-}{-}3CascadeControl}%
+\subsection*{Problem 1: System Without Cascade Control}%
+\label{subsec:Problem1SystemWithoutCascadeControl}%
+For the no{-}cascade case, the inner feedback path was disconnected and the P{-}only inner controller gain was set to %
+$K_{c,2}=1$%
+. The outer PI controller was then tuned by minimizing the IAE.%
 \par%
+\[%
+K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000%
+\]%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{cccc}%
+\hline%
+Case&$K_{c,1}$&$\tau_{I,1}$&IAE\\%
+\hline%
+Disturbance&1&1&450862.8604\\%
+\hline%
+Setpoint&1&1&1233339.1635\\%
+\hline%
+\end{tabular}%
+\caption{Problem 1 results without cascade control.}%
+\label{tab:problem1_no_cascade}%
+\end{table}%
 \begin{figure}[H]%
 \centering%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_simulink.png}%
-\subcaption{Simulink}%
+\includegraphics[width=\linewidth]{HW5_plots/P1_no_cascade_disturbance.png}%
+\subcaption{Disturbance response}%
 \end{subfigure}%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade.png}%
-\subcaption{Python}%
+\includegraphics[width=\linewidth]{HW5_plots/P1_no_cascade_setpoint.png}%
+\subcaption{Setpoint response}%
 \end{subfigure}%
-\caption{Closed{-}loop response to no step change in setpoint and a unit step change in disturbance with no cascade control and no autotuning.}%
-\label{fig:no_cascade_step_disturbance}%
-\end{figure}%
-Case 1: Step disturbance with no setpoint change gave and step in disturbance with no setpoint change gave %
-IAE = 449341.5049 in Python and IAE = 453752.63065 in Simulink.%
-The closed{-}loop disturbance response and no cascade loop is shown in %
-Figure~\ref{fig:no_cascade_step_disturbance}%
-.%
+\caption{Problem 1 responses without cascade control.}%
+\label{fig:problem1_no_cascade}%
+\end{figure}
+
+%
+\subsection*{Problem 2: System With Cascade Control}%
+\label{subsec:Problem2SystemWithCascadeControl}%
+For the cascade case, the inner feedback path was connected and the inner P{-}only controller gain was set to %
+$K_{c,2}=0.4$%
+. The outer controller was tuned again because the outer loop sees a different equivalent process.%
 \par%
-The PI controller was then tuned using the autotuning feature in Simulink, %
-\\%
+\[%
+K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000%
+\]%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{ccccc}%
+\hline%
+Case&$K_{c,2}$&$K_{c,1}$&$\tau_{I,1}$&IAE\\%
+\hline%
+Disturbance&0.4000&1&1.0000&9.8851\\%
+\hline%
+Setpoint&0.4000&1&1.0000&31.0631\\%
+\hline%
+\end{tabular}%
+\caption{Problem 2 results with cascade control.}%
+\label{tab:problem2_cascade}%
+\end{table}%
 \begin{figure}[H]%
 \centering%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_autotuning_simulink.png}%
-\subcaption{Simulink}%
+\includegraphics[width=\linewidth]{HW5_plots/P2_cascade_disturbance.png}%
+\subcaption{Disturbance response}%
 \end{subfigure}%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_autotuning.png}%
-\subcaption{Python}%
+\includegraphics[width=\linewidth]{HW5_plots/P2_cascade_setpoint.png}%
+\subcaption{Setpoint response}%
 \end{subfigure}%
-\caption{Closed{-}loop response to no step change in setpoint and a unit step change in disturbance with no cascade control and PI autotuning.}%
-\label{fig:no_cascade_autotuning_step_disturbance}%
-\end{figure}%
-Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = 13.3102 in Python and IAE = 13.0463 in Simulink. The response is shown in %
-Figure~\ref{fig:no_cascade_autotuning_step_disturbance}%
-.%
-$\ $%
-Proportional gain P = 0.1837 and integral gain I = 0.0816.%
-\par%
+\caption{Problem 2 responses with cascade control.}%
+\label{fig:problem2_cascade}%
+\end{figure}
+
+%
+\subsection*{Problem 3: Comparison of Cascade and No{-}Cascade Results}%
+\label{subsec:Problem3ComparisonofCascadeandNo{-}CascadeResults}%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{cccc}%
+\hline%
+Test&No Cascade IAE&Cascade IAE&Change\\%
+\hline%
+Disturbance&450862.8604&9.8851&{-}450852.9753\\%
+\hline%
+Setpoint&1233339.1635&31.0631&{-}1233308.1004\\%
+\hline%
+\end{tabular}%
+\caption{Comparison of no{-}cascade and cascade{-}control performance.}%
+\label{tab:problem3_comparison}%
+\end{table}%
+Cascade control is expected to make the largest difference for disturbance rejection. The disturbance enters at the intermediate process variable, so the inner loop can react before the effect fully propagates to the final output. For setpoint tracking, cascade control may still change the response, but the benefit is usually less direct because the setpoint must pass through both the outer and inner loops.%
+\par
+
+%
+\section*{Problem 4: Relative Gain Array for the 4 by 4 Process}%
+\label{sec:Problem4RelativeGainArrayforthe4by4Process}%
+\[%
+\Lambda = K \circ \left(K^{-1}\right)^T%
+\]%
+\[%
+K = \begin{bmatrix} 0.4300 & 0.4300 & 0.2300 & 0.2200 \\ -0.3300 & 0.3200 & -0.2000 & 0.2000 \\ 0.2200 & 0.2300 & 0.4200 & 0.4100 \\ -0.2200 & 0.2200 & -0.3200 & 0.3200 \end{bmatrix}%
+\]%
+\[%
+\Lambda = \begin{bmatrix} 0.6795 & 0.7167 & -0.1958 & -0.2004 \\ 0.8768 & 0.8566 & -0.3548 & -0.3786 \\ -0.1885 & -0.2078 & 0.6999 & 0.6964 \\ -0.3678 & -0.3654 & 0.8507 & 0.8826 \end{bmatrix}%
+\]%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{ccccc}%
+\hline%
+$y_i$&$u_1$&$u_2$&$u_3$&$u_4$\\%
+\hline%
+y1&0.6795&0.7167&{-}0.1958&{-}0.2004\\%
+\hline%
+y2&0.8768&0.8566&{-}0.3548&{-}0.3786\\%
+\hline%
+y3&{-}0.1885&{-}0.2078&0.6999&0.6964\\%
+\hline%
+y4&{-}0.3678&{-}0.3654&0.8507&0.8826\\%
+\hline%
+\end{tabular}%
+\caption{Relative gain array for Problem 4.}%
+\label{tab:problem4_rga}%
+\end{table}%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{ccc}%
+\hline%
+Output&Manipulated Variable&$\lambda_{ij}$\\%
+\hline%
+y1&u2&0.7167\\%
+\hline%
+y2&u4&{-}0.3786\\%
+\hline%
+y3&u1&{-}0.1885\\%
+\hline%
+y4&u3&0.8507\\%
+\hline%
+\end{tabular}%
+\caption{Suggested pairings for Problem 4.}%
+\label{tab:problem4_pairings}%
+\end{table}%
+The suggested pairings are chosen from positive RGA values that are relatively close to one while avoiding negative pairings. Negative relative gains are avoided because they indicate that closing other loops can reverse the apparent gain direction.%
+\par
+
+%
+\section*{Problem 5: Relative Gain Array for the 2 by 2 Process}%
+\label{sec:Problem5RelativeGainArrayforthe2by2Process}%
+\[%
+K = \begin{bmatrix} 5 & 2 \\ 3 & 6 \end{bmatrix}%
+\]%
+\[%
+\Lambda = \begin{bmatrix} 1.2500 & -0.2500 \\ -0.2500 & 1.2500 \end{bmatrix}%
+\]%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{ccc}%
+\hline%
+$y_i$&$u_1$&$u_2$\\%
+\hline%
+y1&1.2500&{-}0.2500\\%
+\hline%
+y2&{-}0.2500&1.2500\\%
+\hline%
+\end{tabular}%
+\caption{Relative gain array for Problem 5.}%
+\label{tab:problem5_rga}%
+\end{table}%
+The diagonal pairings are preferred because the diagonal RGA values are positive and greater than one, while the off{-}diagonal values are negative. Therefore, the best pairing is y1 with u1 and y2 with u2.%
+\par
+
+%
+\section*{Problems 6{-}{-}10: MIMO Control, Cross Terms, and Decoupling}%
+\label{sec:Problems6{-}{-}10MIMOControl,CrossTerms,andDecoupling}%
+\subsection*{Problem 6: Two Single{-}Loop Controllers with Cross Terms Neglected}%
+\label{subsec:Problem6TwoSingle{-}LoopControllerswithCrossTermsNeglected}%
+\[%
+K_c = \frac{\tau_p}{K_p(\lambda + \theta)}, \qquad \tau_I = \tau_p%
+\]%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{ccccccc}%
+\hline%
+Loop&$K_p$&$\tau_p$&$\theta$&$\lambda$&$K_c$&$\tau_I$\\%
+\hline%
+G11&5.0000&4.0000&5.0000&5.0000&0.0800&4.0000\\%
+\hline%
+G22&6.0000&10.0000&3.0000&5.0000&0.2083&10.0000\\%
+\hline%
+\end{tabular}%
+\caption{PI tuning values for the two diagonal loops.}%
+\label{tab:problem6_tuning}%
+\end{table}%
 \begin{figure}[H]%
 \centering%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_lambda_tuning_simulink.png}%
-\subcaption{Simulink}%
+\includegraphics[width=\linewidth]{HW5_plots/P6_no_cross_r1.png}%
+\subcaption{Step in r1}%
 \end{subfigure}%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_lambda_tuning.png}%
-\subcaption{Python}%
+\includegraphics[width=\linewidth]{HW5_plots/P6_no_cross_r2.png}%
+\subcaption{Step in r2}%
 \end{subfigure}%
-\caption{Closed{-}loop response to no step change in setpoint and a unit step change in disturbance with no cascade control and lambda tuning.}%
-\label{fig:no_cascade_lambda_tuning_step_disturbance}%
-\end{figure}%
-Case 3: No step change in setpoint and step disturbance change with%
-$\ \lambda \ $%
- tuning gave IAE = 8.5365 in Python and IAE = 8.5578 in Simulink. The disturbance response is shown in %
-Figure~\ref{fig:no_cascade_lambda_tuning_step_disturbance}%
-.%
-$\ $%
- Proportional gain P = 0.7031, integral gain I = 0.2308, derivative gain D = 0.0000, and lambda = 1.6667.%
-\par%
+\caption{Problem 6 responses with cross terms neglected.}%
+\label{fig:problem6_no_cross}%
+\end{figure}
+
+%
+\subsection*{Problem 7: Cross Terms Included}%
+\label{subsec:Problem7CrossTermsIncluded}%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{ccc}%
+\hline%
+Test&Controlled{-}output IAE&Interaction area\\%
+\hline%
+Step in r1&12.4987&6.0371\\%
+\hline%
+Step in r2&9.9989&4.3096\\%
+\hline%
+\end{tabular}%
+\caption{Problem 7 performance with cross terms included.}%
+\label{tab:problem7_cross_terms}%
+\end{table}%
 \begin{figure}[H]%
 \centering%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_optimized_simulink.png}%
-\subcaption{Simulink}%
+\includegraphics[width=\linewidth]{HW5_plots/P7_cross_r1.png}%
+\subcaption{Step in r1}%
 \end{subfigure}%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_optimized.png}%
-\subcaption{Python}%
+\includegraphics[width=\linewidth]{HW5_plots/P7_cross_r2.png}%
+\subcaption{Step in r2}%
 \end{subfigure}%
-\caption{Closed{-}loop response to unit step disturbance with optimized PI parameters.}%
-\label{fig:no_cascade_optimized_step_disturbance}%
-\end{figure}%
-Case 4: Step disturbance with no setpoint change and optimized PI parameters gave IAE = 0.2084 in Python and IAE = 0.2192. The response is shown in %
-Figure~\ref{fig:no_cascade_optimized_step_disturbance}%
-.%
-$\ $%
-Optimized proportional gain P = 123.2445 and integral gain I = 0.0180.%
-$\ $%
-Note: The optimized parameters were found by minimizing the IAE to the disturbance%
-\par%
+\caption{Problem 7 responses with cross terms included.}%
+\label{fig:problem7_cross_terms}%
+\end{figure}
+
+%
+\subsection*{Problem 8: Static Decouplers}%
+\label{subsec:Problem8StaticDecouplers}%
+\[%
+D_{12} = -\frac{K_{12}}{K_{11}} = -\frac{2}{5}, \qquad D_{21} = -\frac{K_{21}}{K_{22}} = -\frac{3}{6}%
+\]%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{ccc}%
+\hline%
+Test&Controlled{-}output IAE&Interaction area\\%
+\hline%
+Step in r1&12.4998&0.7781\\%
+\hline%
+Step in r2&9.9998&1.7950\\%
+\hline%
+\end{tabular}%
+\caption{Problem 8 performance with static decouplers.}%
+\label{tab:problem8_static_decouplers}%
+\end{table}%
 \begin{figure}[H]%
 \centering%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_setpoint_simulink.png}%
-\subcaption{Simulink}%
+\includegraphics[width=\linewidth]{HW5_plots/P8_static_r1.png}%
+\subcaption{Step in r1}%
 \end{subfigure}%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_setpoint.png}%
-\subcaption{Python}%
+\includegraphics[width=\linewidth]{HW5_plots/P8_static_r2.png}%
+\subcaption{Step in r2}%
 \end{subfigure}%
-\caption{Closed{-}loop response to setpoint change with no step disturbance and no cascade control.}%
-\label{fig:no_cascade_setpoint_change}%
-\end{figure}%
-Case 5: No step change in disturbance and step change in setpoint with no cascade control gave IAE = 1230474.8042 in Python and IAE = 1241005.8219 in Simulink. The response is shown in %
-Figure~\ref{fig:no_cascade_setpoint_change}%
-.%
-$\ $%
+\caption{Problem 8 responses with static decouplers.}%
+\label{fig:problem8_static_decouplers}%
+\end{figure}
+
+%
+\subsection*{Problem 9: Dynamic Decouplers}%
+\label{subsec:Problem9DynamicDecouplers}%
+\begin{align*}%
+D_{12}(s) = -\frac{G_{12}}{G_{11}} = -\frac{2}{5}\frac{4s+1}{8s+1}e^{s} \\%
+D_{21}(s) = -\frac{G_{21}}{G_{22}} = -\frac{3}{6}\frac{10s+1}{12s+1}%
+\end{align*}%
+The term e\^{}\{s\} in D12 is noncausal because it is equivalent to a negative delay. Therefore, the realizable dynamic decoupler uses only the rational part of D12.%
 \par%
+\[%
+D_{12,realizable}(s) = -\frac{2}{5}\frac{4s+1}{8s+1}%
+\]%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{ccc}%
+\hline%
+Test&Controlled{-}output IAE&Interaction area\\%
+\hline%
+Step in r1&12.4998&0.0000\\%
+\hline%
+Step in r2&9.9998&0.5159\\%
+\hline%
+\end{tabular}%
+\caption{Problem 9 performance with dynamic decouplers.}%
+\label{tab:problem9_dynamic_decouplers}%
+\end{table}%
 \begin{figure}[H]%
 \centering%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_setpoint_autotuning_simulink.png}%
-\subcaption{Simulink}%
+\includegraphics[width=\linewidth]{HW5_plots/P9_dynamic_r1.png}%
+\subcaption{Step in r1}%
 \end{subfigure}%
-\begin{subfigure}{0.45\textwidth}%
+\begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_setpoint_autotuning.png}%
-\subcaption{Python}%
+\includegraphics[width=\linewidth]{HW5_plots/P9_dynamic_r2.png}%
+\subcaption{Step in r2}%
 \end{subfigure}%
-\caption{Closed{-}loop response to setpoint change with no step disturbance and no cascade control with PI autotuning.}%
-\label{fig:no_cascade_setpoint_change_autotuning}%
-\end{figure}%
-Case 6: No step change in disturbance and step change in setpoint with no cascade control and PI autotuning gave IAE = 8.2141 in Python and IAE = 8.2136 in Simulink. The response is shown in %
-Figure~\ref{fig:no_cascade_setpoint_change_autotuning}%
-.%
-$\ $%
-Proportional gain P = 0.1837 and integral gain I = 0.0816.%
-\par%
-\begin{figure}[H]%
+\caption{Problem 9 responses with dynamic decouplers.}%
+\label{fig:problem9_dynamic_decouplers}%
+\end{figure}
+
+%
+\subsection*{Problem 10: Comments on MIMO Results}%
+\label{subsec:Problem10CommentsonMIMOResults}%
+\begin{table}[H]%
 \centering%
-\begin{subfigure}{0.45\textwidth}%
-\centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_setpoint_lambda_tuning_simulink.png}%
-\subcaption{Simulink}%
-\end{subfigure}%
-\begin{subfigure}{0.45\textwidth}%
-\centering%
-\includegraphics[width=\linewidth]{closed_loop_no_cascade_setpoint_lambda_tuning.png}%
-\subcaption{Python}%
-\end{subfigure}%
-\caption{Closed{-}loop response to setpoint change with no step disturbance and no cascade control with lambda tuning.}%
-\label{fig:no_cascade_setpoint_change_lambda_tuning}%
-\end{figure}%
-Case 7: No step change in disturbance and step change in setpoint with no cascade control and lambda tuning gave IAE = 16.6815 in Python and IAE = 16.6484 in Simulink. The response is shown in %
-Figure~\ref{fig:no_cascade_setpoint_change_lambda_tuning}%
-$\ $%
-.%
-$\ $%
-Proportional gain P = 0.7031, integral gain I = 0.2308, derivative gain D = 0.0000, and lambda = 1.6667.%
+\begin{tabular}{ccccc}%
+\hline%
+Case&Step in r1: IAE y1&Step in r1: y2 area&Step in r2: y1 area&Step in r2: IAE y2\\%
+\hline%
+No cross terms&10.7171&0.0000&0.0000&8.0037\\%
+\hline%
+Cross terms&12.4987&6.0371&4.3096&9.9989\\%
+\hline%
+Static decoupler&12.4998&0.7781&1.7950&9.9998\\%
+\hline%
+Dynamic decoupler&12.4998&0.0000&0.5159&9.9998\\%
+\hline%
+\end{tabular}%
+\caption{Summary of MIMO response metrics for Problems 6{-}{-}10.}%
+\label{tab:problem10_summary}%
+\end{table}%
+When the cross terms are added, a change in one loop causes movement in the other output, showing loop interaction. Static decouplers reduce the steady{-}state interaction because they cancel the cross{-}gains at zero frequency. However, static decoupling cannot remove all transient interaction because the cross terms have different delays and time constants. Dynamic decouplers account for those dynamics and should reduce interaction further, but any noncausal negative{-}delay terms must be removed or approximated with a realizable transfer function.%
 \par
 
 %

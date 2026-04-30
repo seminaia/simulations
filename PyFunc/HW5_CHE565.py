@@ -565,10 +565,10 @@ def run_problems_1_to_3():
     )
     
     subfiglog(
-        [(str(f1_cas), "Disturbance response"), (str(f2_cas), "Disturbance response"), (str(f3_cas), "Disturbance response"), (str(f4_cas), "Disturbance response")],
-        caption="Problem 2 responses with cascade control and unit step disturbance.",
+        [(str(f5_cas), "Setpoint response"), (str(f6_cas), "Setpoint response"), (str(f7_cas), "Setpoint response"), (str(f8_cas), "Setpoint response")],
+        caption="Problem 2 responses with cascade control and unit step setpoint changes.",
         label="fig:problem2_cascade",
-        width=r"0.48\textwidth",
+        width=r"0.25\textwidth",
     )
     
     table(

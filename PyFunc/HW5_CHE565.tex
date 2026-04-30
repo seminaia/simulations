@@ -86,7 +86,7 @@ Case&$K_{c,1}$&$\tau_{I,1}$&IAE\\%
 \hline%
 Disturbance&1&1&450862.8604\\%
 \hline%
-Autotune&0.1837&12.2474&0.0000\\%
+Autotune&0.1837&12.2474&13.3271\\%
 \hline%
 Lambda&0.6094&4.3333&9.0895\\%
 \hline%
@@ -162,7 +162,7 @@ IAE optimized&243.3753&32.1514&4.7511\\%
 \subcaption{Setpoint response (IAE optimized)}%
 \end{subfigure}%
 \caption{Problem 1 responses without cascade control.}%
-\label{fig:problem1_no_cascade}%
+\label{fig:problem1_no_cascade_setpoint}%
 \end{figure}
 
 %
@@ -185,13 +185,13 @@ K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000%
 \hline%
 Case&$K_{c,2}$&$K_{c,1}$&$\tau_{I,1}$&IAE\\%
 \hline%
-Disturbance&0.4000&1&1.0000&3.9540\\%
+Disturbance&0.4000&1&1.0000&9.8851\\%
 \hline%
-Autotune&0.4000&0.7508&4.5461&1.6631\\%
+Autotune&0.4000&0.7508&4.5461&4.1578\\%
 \hline%
-Lambda&0.4000&0.6094&4.3333&1.9394\\%
+Lambda&0.4000&0.6094&4.3333&4.8484\\%
 \hline%
-IAE optimized&0.4000&783.6315&351.5674&0.0371\\%
+IAE optimized&0.4000&2337.2940&953.8600&0.0441\\%
 \hline%
 \end{tabular}%
 \caption{Problem 2 results with cascade control and unit step disturbance.}%
@@ -201,7 +201,7 @@ IAE optimized&0.4000&783.6315&351.5674&0.0371\\%
 \centering%
 \begin{subfigure}{0.25\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{closed_loop_cascade.png}%
+\includegraphics[width=\linewidth]{closed_loop_cascade_setpoint.png}%
 \subcaption{Setpoint response}%
 \end{subfigure}%
 \begin{subfigure}{0.25\textwidth}%
@@ -234,7 +234,7 @@ Autotune&0.4000&0.7508&4.5461&8.7692\\%
 \hline%
 Lambda&0.4000&0.6094&4.3333&9.7764\\%
 \hline%
-IAE optimized&0.4000&783.6315&351.5674&1.8554\\%
+IAE optimized&0.4000&2337.2940&953.8600&1.8478\\%
 \hline%
 \end{tabular}%
 \caption{Problem 2 results with cascade control and unit step setpoint changes.}%
@@ -250,9 +250,9 @@ IAE optimized&0.4000&783.6315&351.5674&1.8554\\%
 \hline%
 Test&No Cascade IAE&Cascade IAE&Change\\%
 \hline%
-Disturbance&450862.8604&3.9540&{-}450858.9063\\%
+Disturbance&450862.8604&9.8851&{-}450852.9753\\%
 \hline%
-Setpoint&0.0000&1.6631&1.6631\\%
+Setpoint&13.3271&4.1578&{-}9.1692\\%
 \hline%
 \end{tabular}%
 \caption{Comparison of no{-}cascade and cascade{-}control performance.}%
@@ -467,9 +467,9 @@ D_{12,realizable}(s) = -\frac{2}{5}\frac{4s+1}{8s+1}%
 \hline%
 Test&Controlled{-}output IAE&Interaction area\\%
 \hline%
-Step in r1&31649358413968752209035264.0000&793766214108046331740160.0000\\%
+Step in r1&12.4998&0.0000\\%
 \hline%
-Step in r2&522605447123091545128960.0000&2907989053.9235\\%
+Step in r2&7.4998&0.6073\\%
 \hline%
 \end{tabular}%
 \caption{Problem 9 performance with dynamic decouplers.}%
@@ -506,7 +506,7 @@ Cross terms&12.4992&4.5391&4.3600&7.4995\\%
 \hline%
 Static decoupler&12.4998&0.6320&2.1539&7.4998\\%
 \hline%
-Dynamic decoupler&31649358413968752209035264.0000&793766214108046331740160.0000&2907989053.9235&522605447123091545128960.0000\\%
+Dynamic decoupler&12.4998&0.0000&0.6073&7.4998\\%
 \hline%
 \end{tabular}%
 \caption{Summary of MIMO response metrics for Problems 6{-}{-}10.}%

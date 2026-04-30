@@ -35,7 +35,7 @@ For the no-cascade case, the inner feedback path was disconnected and the P-only
 [TABLE]
 Case | $K_{c,1}$ | $\tau_{I,1}$ | IAE
 Disturbance | 1 | 1 | 450862.8604
-Autotune | 0.1837 | 12.2474 | 0.0000
+Autotune | 0.1837 | 12.2474 | 13.3271
 Lambda | 0.6094 | 4.3333 | 9.0895
 IAE optimized | 243.3753 | 32.1514 | 0.1404
 Caption: Problem 1 results without cascade control.
@@ -61,10 +61,10 @@ For the cascade case, the inner feedback path was connected and the inner P-only
 [MATH] K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000
 [TABLE]
 Case | $K_{c,2}$ | $K_{c,1}$ | $\tau_{I,1}$ | IAE
-Disturbance | 0.4000 | 1 | 1.0000 | 3.9540
-Autotune | 0.4000 | 0.7508 | 4.5461 | 1.6631
-Lambda | 0.4000 | 0.6094 | 4.3333 | 1.9394
-IAE optimized | 0.4000 | 783.6315 | 351.5674 | 0.0371
+Disturbance | 0.4000 | 1 | 1.0000 | 9.8851
+Autotune | 0.4000 | 0.7508 | 4.5461 | 4.1578
+Lambda | 0.4000 | 0.6094 | 4.3333 | 4.8484
+IAE optimized | 0.4000 | 2337.2940 | 953.8600 | 0.0441
 Caption: Problem 2 results with cascade control and unit step disturbance.
 Label: tab:problem2_cascade_disturbance
 
@@ -73,7 +73,7 @@ Case | $K_{c,2}$ | $K_{c,1}$ | $\tau_{I,1}$ | IAE
 Setpoint | 0.4000 | 1 | 1.0000 | 31.0631
 Autotune | 0.4000 | 0.7508 | 4.5461 | 8.7692
 Lambda | 0.4000 | 0.6094 | 4.3333 | 9.7764
-IAE optimized | 0.4000 | 783.6315 | 351.5674 | 1.8554
+IAE optimized | 0.4000 | 2337.2940 | 953.8600 | 1.8478
 Caption: Problem 2 results with cascade control and unit step setpoint changes.
 Label: tab:problem2_cascade_setpoint
 
@@ -82,8 +82,8 @@ Problem 3: Comparison of Cascade and No-Cascade Results
 -------------------------------------------------------
 [TABLE]
 Test | No Cascade IAE | Cascade IAE | Change
-Disturbance | 450862.8604 | 3.9540 | -450858.9063
-Setpoint | 0.0000 | 1.6631 | 1.6631
+Disturbance | 450862.8604 | 9.8851 | -450852.9753
+Setpoint | 13.3271 | 4.1578 | -9.1692
 Caption: Comparison of no-cascade and cascade-control performance.
 Label: tab:problem3_comparison
 
@@ -177,8 +177,8 @@ The term e^{s} in D12 is noncausal because it is equivalent to a negative delay.
 [MATH] D_{12,realizable}(s) = -\frac{2}{5}\frac{4s+1}{8s+1}
 [TABLE]
 Test | Controlled-output IAE | Interaction area
-Step in r1 | 31649358413968752209035264.0000 | 793766214108046331740160.0000
-Step in r2 | 522605447123091545128960.0000 | 2907989053.9235
+Step in r1 | 12.4998 | 0.0000
+Step in r2 | 7.4998 | 0.6073
 Caption: Problem 9 performance with dynamic decouplers.
 Label: tab:problem9_dynamic_decouplers
 
@@ -190,7 +190,7 @@ Case | Step in r1: IAE y1 | Step in r1: y2 area | Step in r2: y1 area | Step in 
 No cross terms | 10.7171 | 0.0000 | 0.0000 | 6.4302
 Cross terms | 12.4992 | 4.5391 | 4.3600 | 7.4995
 Static decoupler | 12.4998 | 0.6320 | 2.1539 | 7.4998
-Dynamic decoupler | 31649358413968752209035264.0000 | 793766214108046331740160.0000 | 2907989053.9235 | 522605447123091545128960.0000
+Dynamic decoupler | 12.4998 | 0.0000 | 0.6073 | 7.4998
 Caption: Summary of MIMO response metrics for Problems 6--10.
 Label: tab:problem10_summary
 

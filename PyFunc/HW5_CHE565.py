@@ -87,6 +87,7 @@ def save_plot(filename, t, y, title, ysp=None, d=None, ylabel="Response"):
     plt.legend()
     plt.tight_layout()
     plt.savefig(filename, dpi=170)
+    plt.close()
 
 
 def save_mimo_plot(filename, t, y1, y2, title):
@@ -194,7 +195,7 @@ def build_closed_loop(Kc1, Kc2, tauI1, cascade=False):
     Gc2 = ct.tf([Kc2],[1], name="Gc2", inputs="E2", outputs="Yc2")  # 
     Gp1 = Kp1 / (taup1 * s + 1)
     Gp2 = Kp2 / (taup2 * s + 1)
-    Gd = ct.tf([Kc2], [1])
+    Gd = ct.tf([1], [1])
 
     Gc1_blk = ct.ss(Gc1, name="Gc1", inputs="E1", outputs="Yc1")
     Gc2_blk = ct.ss(Gc2, name="Gc2", inputs="E2", outputs="Yc2")
@@ -318,10 +319,10 @@ def build_two_loop_closed_system(Kc1, tauI1, Kc2, tauI2, include_cross_terms=Tru
         none, static, dynamic
     """
     s = ct.tf("s")
-    G11 = fopdt(5, 4, 5, pade_order=1)
-    G12 = fopdt(2, 8, 4, pade_order=1)
-    G21 = fopdt(3, 12, 3, pade_order=1)
-    G22 = fopdt(6, 10, 3, pade_order=1)
+    G11 = fopdt(5, 4, 5, pade_order=0)
+    G12 = fopdt(2, 8, 4, pade_order=0)
+    G21 = fopdt(3, 12, 3, pade_order=0)
+    G22 = fopdt(6, 10, 3, pade_order=0)
 
     blocks = [
         ct.ss(ct.tf([Kc1, Kc1 / tauI1], [1, 0]), name="C1", inputs="e1", outputs="v1"),
@@ -421,7 +422,7 @@ def run_problems_1_to_3():
     save_plot(f1, t1, y1, "No cascade: unit step disturbance", ysp=step_off, d=step_on)
     
     sys_auto = build_closed_loop(P_auto, Kc2_no, tauI_auto, cascade=False)
-    t2, y2, _, _ = simulate_case(sys_auto, tvals, step_off, step_off)
+    t2, y2, _, _ = simulate_case(sys_auto, tvals, step_off, step_on)
     iae2 = calculate_IAE(t2, y2, step_off)
     f2 = "closed_loop_no_cascade_autotuned.png"
     save_plot(f2, t2, y2, "No cascade: unit step disturbance autotuned", ysp=step_off)
@@ -443,7 +444,7 @@ def run_problems_1_to_3():
     t5, y5, _, _ = simulate_case(sys_no, tvals, step_on, step_off)
     iae5 = calculate_IAE(t5, y5, step_on)
     f5 = "closed_loop_no_cascade_setpoint.png"
-    save_plot(f5, t5, y5, "No cascade: unit step setpoint", ysp=step_on, d=step_on)
+    save_plot(f5, t5, y5, "No cascade: unit step setpoint", ysp=step_on, d=step_off)
     
     t6, y6, _, _ = simulate_case(sys_auto, tvals, step_on, step_off)
     iae6 = calculate_IAE(t6, y6, step_on)
@@ -499,7 +500,7 @@ def run_problems_1_to_3():
     subfiglog(
         [(str(f5), "Setpoint response"), (str(f6), "Setpoint response (auto-tuned)"), (str(f7), "Setpoint response (lambda tuning)"), (str(f8), "Setpoint response (IAE optimized)")],
         caption="Problem 1 responses without cascade control.",
-        label="fig:problem1_no_cascade",
+        label="fig:problem1_no_cascade_setpoint",
         width=r"0.25\textwidth",
     )
 
@@ -520,21 +521,21 @@ def run_problems_1_to_3():
     sys_auto_cas = build_closed_loop(P_auto_cas, Kc2_cas, tauI_auto_cas, cascade=True)
     t2_cas, y2_cas, _, _ = simulate_case(sys_auto_cas, tvals, step_off, step_on)
     iae2_cas = calculate_IAE(t2_cas, y2_cas, step_off)
-    f2_cas = "closed_loop_cascade_autotuned_setpoint.png"
+    f2_cas = "closed_loop_cascade_autotuned.png"
     save_plot(f2_cas, t2_cas, y2_cas, "Cascade: unit step disturbance (auto-tuned)", ysp=step_off, d=step_on)
     
     P_lambda_cas, tauI_lambda_cas, lam_cas, _ = lambda_tuning(taup1, thetad, Kp1, PI=True)
     sys_lambda_cas = build_closed_loop(P_lambda_cas, Kc2_cas, tauI_lambda_cas, cascade=True)
     t3_cas, y3_cas, _, _ = simulate_case(sys_lambda_cas, tvals, step_off, step_on)
     iae3_cas = calculate_IAE(t3_cas, y3_cas, step_off)
-    f3_cas = "closed_loop_cascade_lambda_setpoint.png"
+    f3_cas = "closed_loop_cascade_lambda.png"
     save_plot(f3_cas, t3_cas, y3_cas, "Cascade: unit step disturbance (lambda tuning)", ysp=step_off, d=step_on)
     
     P_opt_cas, tauI_opt_cas, iae_opt_cas = optimize_PI(cascade=True, Kc2=Kc2_cas, t=tvals, ysp_input=step_off, d_input=step_on, params=[P_cas, tauI_cas])
     sys_opt_cas = build_closed_loop(P_opt_cas, Kc2_cas, tauI_opt_cas, cascade=True)
     t4_cas, y4_cas, _, _ = simulate_case(sys_opt_cas, tvals, step_off, step_on)
     iae4_cas = calculate_IAE(t4_cas, y4_cas, step_off)
-    f4_cas = "closed_loop_cascade_optimized_setpoint.png"
+    f4_cas = "closed_loop_cascade_optimized.png"
     save_plot(f4_cas, t4_cas, y4_cas, "Cascade: unit step disturbance (IAE optimized)", ysp=step_off, d=step_on)
     
         
@@ -546,7 +547,7 @@ def run_problems_1_to_3():
     
     t5_cas, y5_cas, _, _ = simulate_case(sys_cas, tvals, step_on, step_off)
     iae5_cas = calculate_IAE(t5_cas, y5_cas, step_on)
-    f5_cas ="closed_loop_cascade.png"
+    f5_cas ="closed_loop_cascade_setpoint.png"
     save_plot(f5_cas, t5_cas, y5_cas, "Cascade: unit step response", ysp=step_off, d=step_on)
     
 
@@ -696,10 +697,6 @@ def run_problems_6_to_10():
     G22 = fopdt(6, 10, 3, pade_order=1)
     G12 = fopdt(2, 8, 4, pade_order=1)
     G21 = fopdt(3, 12, 3, pade_order=1)
-    print("G11:", G11)
-    print("G12:", G12)
-    print("G21:", G21)
-    print("G22:", G22)
     eq(r"K_c = \frac{\tau_p}{K' (\lambda + \theta)}, \qquad \tau_I = \tau_p")
     table(
         headers=["Loop", NoEscape(r"$K_p$"), NoEscape(r"$\tau_p$"), NoEscape(r"$\theta$"), NoEscape(r"$\lambda$"), NoEscape(r"$K_c$"), NoEscape(r"$\tau_I$")],

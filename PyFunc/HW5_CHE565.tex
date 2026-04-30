@@ -76,7 +76,7 @@ $K_{c,2}=1$%
 . The outer PI controller was then tuned by minimizing the IAE.%
 \par%
 \[%
-K_{c,1} = 3604932548414123070440737630846976.0000, \qquad \tau_{I,1} = 207034715.1867, \qquad I_1 = 0.0000%
+K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000%
 \]%
 \begin{table}[H]%
 \centering%
@@ -84,9 +84,9 @@ K_{c,1} = 3604932548414123070440737630846976.0000, \qquad \tau_{I,1} = 207034715
 \hline%
 Case&$K_{c,1}$&$\tau_{I,1}$&IAE\\%
 \hline%
-Disturbance&3604932548414123070440737630846976.0000&207034715.1867&0.0000\\%
+Disturbance&1.0000&1.0000&450862.8604\\%
 \hline%
-Setpoint&3604932548414123070440737630846976.0000&207034715.1867&154.8202\\%
+Setpoint&1.0000&1.0000&1233339.1635\\%
 \hline%
 \end{tabular}%
 \caption{Problem 1 results without cascade control.}%
@@ -116,7 +116,7 @@ $K_{c,2}=0.4$%
 . The outer controller was tuned again because the outer loop sees a different equivalent process.%
 \par%
 \[%
-K_{c,1} = 50365186339204098824734525882368.0000, \qquad \tau_{I,1} = 1883000003466100998144.0000, \qquad I_1 = 0.0000%
+K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000%
 \]%
 \begin{table}[H]%
 \centering%
@@ -124,9 +124,9 @@ K_{c,1} = 50365186339204098824734525882368.0000, \qquad \tau_{I,1} = 18830000034
 \hline%
 Case&$K_{c,2}$&$K_{c,1}$&$\tau_{I,1}$&IAE\\%
 \hline%
-Disturbance&0.4000&50365186339204098824734525882368.0000&1883000003466100998144.0000&0.0000\\%
+Disturbance&0.4000&1.0000&1.0000&9.8851\\%
 \hline%
-Setpoint&0.4000&50365186339204098824734525882368.0000&1883000003466100998144.0000&11.7938\\%
+Setpoint&0.4000&1.0000&1.0000&31.0631\\%
 \hline%
 \end{tabular}%
 \caption{Problem 2 results with cascade control.}%
@@ -157,9 +157,9 @@ Setpoint&0.4000&50365186339204098824734525882368.0000&1883000003466100998144.000
 \hline%
 Test&No Cascade IAE&Cascade IAE&Change\\%
 \hline%
-Disturbance&0.0000&0.0000&0.0000\\%
+Disturbance&450862.8604&9.8851&{-}450852.9753\\%
 \hline%
-Setpoint&154.8202&11.7938&{-}143.0264\\%
+Setpoint&1233339.1635&31.0631&{-}1233308.1004\\%
 \hline%
 \end{tabular}%
 \caption{Comparison of no{-}cascade and cascade{-}control performance.}%

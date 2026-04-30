@@ -387,6 +387,7 @@ subfiglog(
     )
 
 
+<<<<<<< Updated upstream
 px(
     f"Case 2: Step disturbance with no setpoint change and PI autotuning gave ",
     f"IAE = {iae2:.4f} in Python and IAE = 13.0463 in Simulink.",
@@ -394,6 +395,111 @@ px(
     doc.figref("fig:no_cascade_autotuning_step_disturbance"),
     "."
 )
+=======
+def run_problems_1_to_3():
+    tvals = np.linspace(0, 100, 1001)
+    step_on = np.ones_like(tvals)
+    step_off = np.zeros_like(tvals)
+
+    doc.section("Problems 1--3: Cascade Control")
+
+    # Problem 1: no cascade, inner gain 1
+    doc.subsection("Problem 1: System Without Cascade Control")
+    Kc2_no = 1.0
+    P_no = 1.0
+    tauI_no = 1.0
+    I_no = 1 / tauI_no
+
+    sys_no = build_closed_loop(P_no, Kc2_no, tauI_no, cascade=False)
+
+    t1, y1, _, _ = simulate_case(sys_no, tvals, step_off, step_on)
+    iae1 = calculate_IAE(t1, y1, step_off)
+    f1 = PLOT_DIR / "P1_no_cascade_disturbance.png"
+    save_plot(f1, t1, y1, "No cascade: unit step disturbance", ysp=step_off, d=step_on)
+
+    t2, y2, _, _ = simulate_case(sys_no, tvals, step_on, step_off)
+    iae2 = calculate_IAE(t2, y2, step_on)
+    f2 = PLOT_DIR / "P1_no_cascade_setpoint.png"
+    save_plot(f2, t2, y2, "No cascade: unit step setpoint change", ysp=step_on, d=step_off)
+
+    px(
+        "For the no-cascade case, the inner feedback path was disconnected and the P-only inner controller gain was set to ",
+        im(r"K_{c,2}=1"), ". The outer PI controller was then tuned by minimizing the IAE."
+    )
+    eq(rf"K_{{c,1}} = {P_no:.4f}, \qquad \tau_{{I,1}} = {tauI_no:.4f}, \qquad I_1 = {I_no:.4f}")
+    table(
+        headers=["Case", NoEscape(r"$K_{c,1}$"), NoEscape(r"$\tau_{I,1}$"), "IAE"],
+        rows=[
+            ["Disturbance", P_no, tauI_no, iae1],
+            ["Setpoint", P_no, tauI_no, iae2],
+        ],
+        caption="Problem 1 results without cascade control.",
+        label="tab:problem1_no_cascade",
+    )
+    subfiglog(
+        [(str(f1), "Disturbance response"), (str(f2), "Setpoint response")],
+        caption="Problem 1 responses without cascade control.",
+        label="fig:problem1_no_cascade",
+        width=r"0.48\textwidth",
+    )
+
+    # Problem 2: cascade, inner gain 0.4
+    doc.subsection("Problem 2: System With Cascade Control")
+    Kc2_cas = 0.4
+    P_cas = 1.0
+    tauI_cas = 1.0
+    I_cas = 1 / tauI_cas
+
+    sys_cas = build_closed_loop(P_cas, Kc2_cas, tauI_cas, cascade=True)
+
+    t3, y3, _, _ = simulate_case(sys_cas, tvals, step_off, step_on)
+    iae3 = calculate_IAE(t3, y3, step_off)
+    f3 = PLOT_DIR / "P2_cascade_disturbance.png"
+    save_plot(f3, t3, y3, "Cascade: unit step disturbance", ysp=step_off, d=step_on)
+
+    t4, y4, _, _ = simulate_case(sys_cas, tvals, step_on, step_off)
+    iae4 = calculate_IAE(t4, y4, step_on)
+    f4 = PLOT_DIR / "P2_cascade_setpoint.png"
+    save_plot(f4, t4, y4, "Cascade: unit step setpoint change", ysp=step_on, d=step_off)
+
+    px(
+        "For the cascade case, the inner feedback path was connected and the inner P-only controller gain was set to ",
+        im(r"K_{c,2}=0.4"), ". The outer controller was tuned again because the outer loop sees a different equivalent process."
+    )
+    eq(rf"K_{{c,1}} = {P_cas:.4f}, \qquad \tau_{{I,1}} = {tauI_cas:.4f}, \qquad I_1 = {I_cas:.4f}")
+    table(
+        headers=["Case", NoEscape(r"$K_{c,2}$"), NoEscape(r"$K_{c,1}$"), NoEscape(r"$\tau_{I,1}$"), "IAE"],
+        rows=[
+            ["Disturbance", Kc2_cas, P_cas, tauI_cas, iae3],
+            ["Setpoint", Kc2_cas, P_cas, tauI_cas, iae4],
+        ],
+        caption="Problem 2 results with cascade control.",
+        label="tab:problem2_cascade",
+    )
+    subfiglog(
+        [(str(f3), "Disturbance response"), (str(f4), "Setpoint response")],
+        caption="Problem 2 responses with cascade control.",
+        label="fig:problem2_cascade",
+        width=r"0.48\textwidth",
+    )
+
+    # Problem 3 comments
+    doc.subsection("Problem 3: Comparison of Cascade and No-Cascade Results")
+    table(
+        headers=["Test", "No Cascade IAE", "Cascade IAE", "Change"],
+        rows=[
+            ["Disturbance", iae1, iae3, iae3 - iae1],
+            ["Setpoint", iae2, iae4, iae4 - iae2],
+        ],
+        caption="Comparison of no-cascade and cascade-control performance.",
+        label="tab:problem3_comparison",
+    )
+    p(
+        "Cascade control is expected to make the largest difference for disturbance rejection. "
+        "The disturbance enters at the intermediate process variable, so the inner loop can react before the effect fully propagates to the final output. "
+        "For setpoint tracking, cascade control may still change the response, but the benefit is usually less direct because the setpoint must pass through both the outer and inner loops."
+    )
+>>>>>>> Stashed changes
 
 
 

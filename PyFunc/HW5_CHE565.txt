@@ -31,11 +31,11 @@ Problem 1: System Without Cascade Control
 -----------------------------------------
 For the no-cascade case, the inner feedback path was disconnected and the P-only inner controller gain was set to $K_{c,2}=1$. The outer PI controller was then tuned by minimizing the IAE.
 
-[MATH] K_{c,1} = 3604932548414123070440737630846976.0000, \qquad \tau_{I,1} = 207034715.1867, \qquad I_1 = 0.0000
+[MATH] K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000
 [TABLE]
 Case | $K_{c,1}$ | $\tau_{I,1}$ | IAE
-Disturbance | 3604932548414123070440737630846976.0000 | 207034715.1867 | 0.0000
-Setpoint | 3604932548414123070440737630846976.0000 | 207034715.1867 | 154.8202
+Disturbance | 1.0000 | 1.0000 | 450862.8604
+Setpoint | 1.0000 | 1.0000 | 1233339.1635
 Caption: Problem 1 results without cascade control.
 Label: tab:problem1_no_cascade
 
@@ -44,11 +44,11 @@ Problem 2: System With Cascade Control
 --------------------------------------
 For the cascade case, the inner feedback path was connected and the inner P-only controller gain was set to $K_{c,2}=0.4$. The outer controller was tuned again because the outer loop sees a different equivalent process.
 
-[MATH] K_{c,1} = 50365186339204098824734525882368.0000, \qquad \tau_{I,1} = 1883000003466100998144.0000, \qquad I_1 = 0.0000
+[MATH] K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000
 [TABLE]
 Case | $K_{c,2}$ | $K_{c,1}$ | $\tau_{I,1}$ | IAE
-Disturbance | 0.4000 | 50365186339204098824734525882368.0000 | 1883000003466100998144.0000 | 0.0000
-Setpoint | 0.4000 | 50365186339204098824734525882368.0000 | 1883000003466100998144.0000 | 11.7938
+Disturbance | 0.4000 | 1.0000 | 1.0000 | 9.8851
+Setpoint | 0.4000 | 1.0000 | 1.0000 | 31.0631
 Caption: Problem 2 results with cascade control.
 Label: tab:problem2_cascade
 
@@ -57,8 +57,8 @@ Problem 3: Comparison of Cascade and No-Cascade Results
 -------------------------------------------------------
 [TABLE]
 Test | No Cascade IAE | Cascade IAE | Change
-Disturbance | 0.0000 | 0.0000 | 0.0000
-Setpoint | 154.8202 | 11.7938 | -143.0264
+Disturbance | 450862.8604 | 9.8851 | -450852.9753
+Setpoint | 1233339.1635 | 31.0631 | -1233308.1004
 Caption: Comparison of no-cascade and cascade-control performance.
 Label: tab:problem3_comparison
 

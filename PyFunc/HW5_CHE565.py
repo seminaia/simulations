@@ -1,800 +1,538 @@
-from pathlib import Path
-
-code = r'''"""
-HW5_CHE565_full.py
-==================
+"""
+HW5_CHE565.py
+=============
 CHE 565 – Homework 5
-Cascade Control, RGA, MIMO control, and decoupling.
-
-This script is written to generate the main numerical results and plots for
-Problems 1–10 of Homework 5.
-
-It uses python-control to reproduce the Simulink-style block diagrams.
-
-Outputs:
-    - PNG plots for cascade-control and MIMO cases
-    - HW5_results.txt summary file
-
-Notes:
-    - Inner cascade controller is P-only and represented as ct.tf([Kc2], [1])
-      so it can be converted cleanly with ct.ss().
-    - Outer controller is ideal PI: Kc * (1 + 1/(tauI*s)).
-    - Delay terms for Problems 5–10 are approximated using Pade approximation.
+Cascade Control and Disturbance Rejection
+Results are written to HW5_CHE565.txt, HW5_CHE565.tex, and HW5_CHE565.pdf
 """
 
-from __future__ import annotations
+from math import tau
 
 import numpy as np
-import matplotlib.pyplot as plt
-import control as ct
+import matplotlib
+import scipy as sc
 from scipy.optimize import minimize
+from scipy.signal import step
+import sympy as sp
+import matplotlib.pyplot as plt
+from doc_builder import DocumentBuilder
+import control as ct
+import control.optimal as ct_opt
+OUTPUT_FILE = "HW5_CHE565"
+PLOT_FILE = "HW5_CHE565_plot.png"
+report_lines = []
+xdot = sp.MatrixSymbol('xdot', 6, 1)
+x = sp.MatrixSymbol('x', 6, 1)
+y = sp.MatrixSymbol('y', 1, 1)
+u = sp.MatrixSymbol('u', 2, 1)
+A = sp.MatrixSymbol('A', 6, 6)
+B = sp.MatrixSymbol('B', 6, 2)
+C = sp.MatrixSymbol('C', 1, 6)
+D = sp.MatrixSymbol('D', 1, 2)
 
-
-# =============================================================================
-# General utilities
-# =============================================================================
-
-OUT_TXT = "HW5_results.txt"
-
-
-def iae(t: np.ndarray, y: np.ndarray, r: np.ndarray | float) -> float:
-    """Integral absolute error."""
-    if np.isscalar(r):
-        r_vec = np.ones_like(t) * float(r)
-    else:
-        r_vec = np.asarray(r)
-    return float(np.trapezoid(np.abs(r_vec - y), t))
-
-
-def save_response_plot(
-    filename: str,
-    t: np.ndarray,
-    y: np.ndarray,
-    title: str,
-    setpoint: np.ndarray | float | None = None,
-    disturbance: np.ndarray | float | None = None,
-    ylabel: str = "Response",
-):
-    """Save a single response plot."""
-    plt.figure(figsize=(8, 4.8))
-    plt.plot(t, y, linewidth=2, label="output")
-
-    if setpoint is not None:
-        if np.isscalar(setpoint):
-            sp = np.ones_like(t) * float(setpoint)
-        else:
-            sp = np.asarray(setpoint)
-        plt.plot(t, sp, "--", linewidth=1.5, label="setpoint")
-
-    if disturbance is not None:
-        if np.isscalar(disturbance):
-            d = np.ones_like(t) * float(disturbance)
-        else:
-            d = np.asarray(disturbance)
-        plt.plot(t, d, ":", linewidth=1.5, label="disturbance")
-
-    plt.xlabel("Time")
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(filename, dpi=180)
-    plt.close()
-
-
-def safe_forced_response(sys, t, u):
-    """Return time, output, state for a forced response."""
-    resp = ct.forced_response(sys, T=t, U=u, return_states=True, squeeze=True)
-    return resp.time, np.asarray(resp.outputs), np.asarray(resp.states)
-
+doc = DocumentBuilder(
+    OUTPUT_FILE,
+    title="CHE 565 -- Homework 5",
+    author="Soki Sem",
+)
+# convenience aliases
+p = doc.p
+line = doc.line
+eq = doc.eq
+a = doc.align
+table = doc.table
+figlog = doc.figure
+subfiglog = doc.subfigures
+px = doc.px
+im = doc.im
+lst = doc.listings
+doc.maketitle(True)
+doc.toc(False)
 
 # =============================================================================
-# Problems 1–3: Cascade control system
+# Problem data
 # =============================================================================
-
 Kp1 = 5.0
 taup1 = 5.0
 Kp2 = 2.0
 taup2 = 10.0
+Kc1 = 1.0
+Kc2 = 1.0
+theta = 1.0
+pade_order = 1
+tauI1 = 1.0
+tauI2 = 1.0
+xdot_eq = sp.Eq(xdot,A*x + B*u)
+y_eq = sp.Eq(y, C*x + D*u)
+sp.pprint(xdot_eq)
+sp.pprint(y_eq)
+# Time vector
+tvals = np.linspace(0, 100, 100)
+step_on = np.ones_like(tvals)
+step_off = np.zeros_like(tvals)
 
 
-def ideal_pi(Kc: float, tauI: float):
-    """Ideal PI controller Gc = Kc * (1 + 1/(tauI*s))."""
-    s = ct.tf("s")
-    return Kc * (1 + 1 / (tauI * s))
+def build_closed_loop(Kc1, Kc2, tauI1, tauI2, cascade=False):
+    
+    s = ct.tf('s')
+    t = sp.symbols('t', real=True)
+    I1 = 1.0 / tauI1
+    I2 = 0
+    numD,denD = ct.delay.pade(theta, pade_order)
 
-
-def p_controller(Kc: float):
-    """P-only controller as transfer function, so ct.ss() works cleanly."""
-    return ct.tf([Kc], [1])
-
-
-def build_cascade_system(
-    Kc_outer: float,
-    tauI_outer: float,
-    Kc_inner: float = 1.0,
-    cascade: bool = False,
-):
-    """
-    Build the homework cascade system.
-
-    External inputs:
-        Ysp = setpoint
-        D   = disturbance added after Gp1 and before Gp2
-
-    Output:
-        Y
-
-    Without cascade:
-        E2 = Yc1, so the inner feedback is removed.
-        If Kc_inner = 1, the inner controller is a pass-through.
-
-    With cascade:
-        E2 = Yc1 - P, where P is the measured intermediate variable.
-    """
-    s = ct.tf("s")
-
-    Gc1 = ideal_pi(Kc_outer, tauI_outer)
-    Gc2 = p_controller(Kc_inner)
-
+    Gc1 = Kc1 * (1 + I1 / s)
+    Gc2 = ct.tf([Kc2], [1], name='Gc2', inputs='E2', outputs='Yc2')  # P controller for the second controller
     Gp1 = Kp1 / (taup1 * s + 1)
     Gp2 = Kp2 / (taup2 * s + 1)
-    Gd = ct.tf([1], [1])
-
-    Gc1_blk = ct.ss(Gc1, name="Gc1", inputs="E1", outputs="Yc1")
-    Gc2_blk = ct.ss(Gc2, name="Gc2", inputs="E2", outputs="Yc2")
-    Gp1_blk = ct.ss(Gp1, name="Gp1", inputs="Yc2", outputs="Yp1")
-    Gp2_blk = ct.ss(Gp2, name="Gp2", inputs="P", outputs="Y")
-    Gd_blk = ct.ss(Gd, name="Gd", inputs="D", outputs="Yd")
-
-    sum1 = ct.summing_junction(inputs=["Ysp", "-Y"], output="E1", name="Sum1")
-
+    Gd = ct.tf([1], [1])    # direct disturbance addition
+    GD1= ct.tf(numD, denD, name='GD1', inputs='Yp1', outputs='YD')
+    GD2= ct.tf(numD, denD, name='GD2', inputs='Yp2', outputs='Y')
+    # State Space Representation of the blocks for interconnection
+    # Note: the control library's interconnect function works better with state-space models, so we convert the transfer functions to state-space form.
+    # xdot = Ax + Bu
+    # y = Cx + Du
+    
+    Gc1_blk = ct.ss(Gc1, name='Gc1', inputs='E1', outputs='Yc1')
+    Gc2_blk = ct.ss(Gc2, name='Gc2', inputs='E2', outputs='Yc2')
+    Gp1_blk = ct.ss(Gp1, name='Gp1', inputs='Yc2', outputs='Yp1')
+    Gp2_blk = ct.ss(Gp2, name='Gp2', inputs='P', outputs='Y')
+    Gd_blk = ct.ss(Gd, name='Gd', inputs='D', outputs='Yd')     # direct disturbance addition
+    #GD1_blk = ct.ss(GD1, name='GD1', inputs='Yp1', outputs='YD')
+    #GD2_blk = ct.ss(GD2, name='GD2', inputs='Yp2', outputs='Y')
+    sum1 = ct.summing_junction(inputs=['Ysp', '-Y'], output='E1', name='Sum1')
     if cascade:
-        sum2 = ct.summing_junction(inputs=["Yc1", "-P"], output="E2", name="Sum2")
+         sum2 = ct.summing_junction(inputs=['Yc1', '-P'], output='E2', name='Sum2')
     else:
-        # Inner feedback is disconnected. With Kc_inner = 1, this is pass-through.
-        sum2 = ct.summing_junction(inputs=["Yc1"], output="E2", name="Sum2")
-
-    sum3 = ct.summing_junction(inputs=["Yp1", "Yd"], output="P", name="Sum3")
-
-    sys = ct.interconnect(
-        [Gc1_blk, Gc2_blk, Gp1_blk, Gp2_blk, Gd_blk, sum1, sum2, sum3],
-        inputs=["Ysp", "D"],
-        outputs=["Y"],
-    )
-    return sys
-
-
-def simulate_hw5_cascade(sys, t, ysp, d):
-    U = np.vstack([ysp, d])
-    tout, y, x = safe_forced_response(sys, t, U)
-    y = np.ravel(y)
-    return tout, y, x
-
-
-def optimize_outer_pi(
-    cascade: bool,
-    Kc_inner: float,
-    t: np.ndarray,
-    ysp: np.ndarray,
-    d: np.ndarray,
-    initial=(1.0, 1.0),
-):
-    """
-    Tune outer PI controller by minimizing IAE.
-
-    Parameters are optimized in log-space so Kc and tauI remain positive.
-    """
-    ysp = np.asarray(ysp)
-    d = np.asarray(d)
-
-    def objective(log_params):
-        Kc = np.exp(log_params[0])
-        tauI = np.exp(log_params[1])
-        try:
-            sys = build_cascade_system(Kc, tauI, Kc_inner=Kc_inner, cascade=cascade)
-            tout, y, _ = simulate_hw5_cascade(sys, t, ysp, d)
-            if np.any(~np.isfinite(y)) or np.max(np.abs(y)) > 1e8:
-                return 1e12
-            return iae(tout, y, ysp)
-        except Exception:
-            return 1e12
-
-    result = minimize(
-        objective,
-        np.log(np.asarray(initial, dtype=float)),
-        method="Nelder-Mead",
-        options={"maxiter": 1000, "xatol": 1e-8, "fatol": 1e-8},
-    )
-
-    Kc_opt = float(np.exp(result.x[0]))
-    tauI_opt = float(np.exp(result.x[1]))
-    return Kc_opt, tauI_opt, result.fun
-
-
-def run_problems_1_to_3(report):
-    report.append("\n" + "=" * 80)
-    report.append("Problems 1–3: Cascade control")
-    report.append("=" * 80)
-
-    t = np.linspace(0, 100, 1001)
-    step_on = np.ones_like(t)
-    step_off = np.zeros_like(t)
-
-    # Problem 1: without cascade, inner controller gain = 1.
-    Kc_inner_no_cascade = 1.0
-
-    # Tune outer PI for disturbance case.
-    Kc_nc_d, tauI_nc_d, _ = optimize_outer_pi(
-        cascade=False,
-        Kc_inner=Kc_inner_no_cascade,
-        t=t,
-        ysp=step_off,
-        d=step_on,
-        initial=(0.2, 10.0),
-    )
-
-    sys_nc_d = build_cascade_system(
-        Kc_nc_d, tauI_nc_d, Kc_inner=Kc_inner_no_cascade, cascade=False
-    )
-    t_nc_d, y_nc_d, _ = simulate_hw5_cascade(sys_nc_d, t, step_off, step_on)
-    iae_nc_d = iae(t_nc_d, y_nc_d, step_off)
-
-    save_response_plot(
-        "P1_no_cascade_disturbance.png",
-        t_nc_d,
-        y_nc_d,
-        "Problem 1: No cascade, unit step disturbance",
-        setpoint=step_off,
-        disturbance=step_on,
-    )
-
-    # Use the same no-cascade tuned outer controller for setpoint test.
-    sys_nc_sp = build_cascade_system(
-        Kc_nc_d, tauI_nc_d, Kc_inner=Kc_inner_no_cascade, cascade=False
-    )
-    t_nc_sp, y_nc_sp, _ = simulate_hw5_cascade(sys_nc_sp, t, step_on, step_off)
-    iae_nc_sp = iae(t_nc_sp, y_nc_sp, step_on)
-
-    save_response_plot(
-        "P1_no_cascade_setpoint.png",
-        t_nc_sp,
-        y_nc_sp,
-        "Problem 1: No cascade, unit step setpoint change",
-        setpoint=step_on,
-        disturbance=step_off,
-    )
-
-    report.append("Problem 1: Without cascade")
-    report.append(f"  Inner P gain = {Kc_inner_no_cascade:.4g}")
-    report.append(f"  Tuned outer PI: Kc = {Kc_nc_d:.6g}, tauI = {tauI_nc_d:.6g}")
-    report.append(f"  Disturbance IAE = {iae_nc_d:.6g}")
-    report.append(f"  Setpoint IAE    = {iae_nc_sp:.6g}")
-
-    # Problem 2: with cascade, inner controller gain = 0.4.
-    Kc_inner_cascade = 0.4
-
-    # Tune outer PI again because the outer loop sees a different equivalent process.
-    Kc_c_d, tauI_c_d, _ = optimize_outer_pi(
-        cascade=True,
-        Kc_inner=Kc_inner_cascade,
-        t=t,
-        ysp=step_off,
-        d=step_on,
-        initial=(0.2, 10.0),
-    )
-
-    sys_c_d = build_cascade_system(
-        Kc_c_d, tauI_c_d, Kc_inner=Kc_inner_cascade, cascade=True
-    )
-    t_c_d, y_c_d, _ = simulate_hw5_cascade(sys_c_d, t, step_off, step_on)
-    iae_c_d = iae(t_c_d, y_c_d, step_off)
-
-    save_response_plot(
-        "P2_cascade_disturbance.png",
-        t_c_d,
-        y_c_d,
-        "Problem 2: Cascade control, unit step disturbance",
-        setpoint=step_off,
-        disturbance=step_on,
-    )
-
-    # Use same cascade-tuned controller for setpoint test.
-    sys_c_sp = build_cascade_system(
-        Kc_c_d, tauI_c_d, Kc_inner=Kc_inner_cascade, cascade=True
-    )
-    t_c_sp, y_c_sp, _ = simulate_hw5_cascade(sys_c_sp, t, step_on, step_off)
-    iae_c_sp = iae(t_c_sp, y_c_sp, step_on)
-
-    save_response_plot(
-        "P2_cascade_setpoint.png",
-        t_c_sp,
-        y_c_sp,
-        "Problem 2: Cascade control, unit step setpoint change",
-        setpoint=step_on,
-        disturbance=step_off,
-    )
-
-    report.append("\nProblem 2: With cascade")
-    report.append(f"  Inner P gain = {Kc_inner_cascade:.4g}")
-    report.append(f"  Tuned outer PI: Kc = {Kc_c_d:.6g}, tauI = {tauI_c_d:.6g}")
-    report.append(f"  Disturbance IAE = {iae_c_d:.6g}")
-    report.append(f"  Setpoint IAE    = {iae_c_sp:.6g}")
-
-    report.append("\nProblem 3: Comment")
-    report.append(
-        "  Cascade control should mainly improve disturbance rejection because the "
-        "inner loop measures the intermediate variable P and reacts before the "
-        "disturbance fully propagates through Gp2. The setpoint response may change, "
-        "but the largest improvement is usually expected for disturbances entering "
-        "inside the cascade structure."
-    )
-
-    return {
-        "no_cascade_disturbance_iae": iae_nc_d,
-        "no_cascade_setpoint_iae": iae_nc_sp,
-        "cascade_disturbance_iae": iae_c_d,
-        "cascade_setpoint_iae": iae_c_sp,
-    }
-
-
-# =============================================================================
-# Problems 4–5: Relative Gain Array
-# =============================================================================
-
-def rga(K: np.ndarray) -> np.ndarray:
-    """
-    Relative gain array:
-        Lambda = K .* (K^{-1})^T
-    where .* is element-by-element multiplication.
-    """
-    K = np.asarray(K, dtype=float)
-    return K * np.linalg.inv(K).T
-
-
-def best_pairing_from_rga(Lambda: np.ndarray):
-    """
-    Simple greedy pairing using largest positive RGA value in each row/column.
-
-    For homework explanation, also inspect signs and values close to 1.
-    """
-    L = np.asarray(Lambda)
-    n_rows, n_cols = L.shape
-    unused_rows = set(range(n_rows))
-    unused_cols = set(range(n_cols))
-    pairs = []
-
-    while unused_rows and unused_cols:
-        best = None
-        best_score = -np.inf
-        for i in unused_rows:
-            for j in unused_cols:
-                # Prefer values close to +1 and positive.
-                if L[i, j] > 0:
-                    score = -abs(L[i, j] - 1)
-                else:
-                    score = -1e6 - abs(L[i, j])
-                if score > best_score:
-                    best_score = score
-                    best = (i, j)
-        i, j = best
-        pairs.append((i, j, L[i, j]))
-        unused_rows.remove(i)
-        unused_cols.remove(j)
-
-    return pairs
-
-
-def run_problems_4_and_5(report):
-    report.append("\n" + "=" * 80)
-    report.append("Problems 4–5: Relative Gain Array")
-    report.append("=" * 80)
-
-    K4 = np.array(
-        [
-            [0.43, 0.43, 0.23, 0.22],
-            [-0.33, 0.32, -0.20, 0.20],
-            [0.22, 0.23, 0.42, 0.41],
-            [-0.22, 0.22, -0.32, 0.32],
-        ],
-        dtype=float,
-    )
-
-    Lambda4 = rga(K4)
-    pairs4 = best_pairing_from_rga(Lambda4)
-
-    report.append("Problem 4 gain matrix K:")
-    report.append(str(K4))
-    report.append("\nProblem 4 RGA:")
-    report.append(np.array2string(Lambda4, precision=4, suppress_small=True))
-    report.append("Suggested pairing, using row/output i with column/input j:")
-    for i, j, val in pairs4:
-        report.append(f"  y{i+1} with u{j+1}, lambda = {val:.4f}")
-
-    # Problem 5 uses steady-state gains from the transfer functions.
-    K5 = np.array(
-        [
-            [5.0, 2.0],
-            [3.0, 6.0],
-        ],
-        dtype=float,
-    )
-    Lambda5 = rga(K5)
-    pairs5 = best_pairing_from_rga(Lambda5)
-
-    report.append("\nProblem 5 steady-state gain matrix K:")
-    report.append(str(K5))
-    report.append("\nProblem 5 RGA:")
-    report.append(np.array2string(Lambda5, precision=4, suppress_small=True))
-    report.append("Suggested pairing:")
-    for i, j, val in pairs5:
-        report.append(f"  y{i+1} with u{j+1}, lambda = {val:.4f}")
-
-    return Lambda4, Lambda5
-
-
-# =============================================================================
-# Problems 6–10: 2x2 MIMO system with cross terms and decouplers
-# =============================================================================
-
-def fopdt(K: float, tau: float, theta: float, pade_order: int = 1):
-    """First-order-plus-dead-time transfer function using Pade delay."""
-    s = ct.tf("s")
-    num_delay, den_delay = ct.pade(theta, pade_order)
-    delay_tf = ct.tf(num_delay, den_delay)
-    return K * delay_tf / (tau * s + 1)
-
-
-def build_mimo_process(include_cross_terms=True, pade_order=1):
-    """
-    2x2 process:
-        G11 = 5 e^-5s / (4s + 1)
-        G12 = 2 e^-4s / (8s + 1)
-        G21 = 3 e^-3s / (12s + 1)
-        G22 = 6 e^-3s / (10s + 1)
-    """
-    G11 = fopdt(5, 4, 5, pade_order)
-    G12 = fopdt(2, 8, 4, pade_order) if include_cross_terms else ct.tf([0], [1])
-    G21 = fopdt(3, 12, 3, pade_order) if include_cross_terms else ct.tf([0], [1])
-    G22 = fopdt(6, 10, 3, pade_order)
-
-    # Use named I/O systems and summing junctions to avoid MIMO tf conversion issues.
-    G11_blk = ct.ss(G11, name="G11", inputs="u1p", outputs="y11")
-    G12_blk = ct.ss(G12, name="G12", inputs="u2p", outputs="y12")
-    G21_blk = ct.ss(G21, name="G21", inputs="u1p", outputs="y21")
-    G22_blk = ct.ss(G22, name="G22", inputs="u2p", outputs="y22")
-
-    sum_y1 = ct.summing_junction(inputs=["y11", "y12"], output="y1", name="sum_y1")
-    sum_y2 = ct.summing_junction(inputs=["y21", "y22"], output="y2", name="sum_y2")
-
-    P = ct.interconnect(
-        [G11_blk, G12_blk, G21_blk, G22_blk, sum_y1, sum_y2],
-        inputs=["u1p", "u2p"],
-        outputs=["y1", "y2"],
-        name="P",
-    )
-    return P
-
-
-def build_two_loop_closed_system(
-    Kc1: float,
-    tauI1: float,
-    Kc2: float,
-    tauI2: float,
-    include_cross_terms=True,
-    decoupler="none",
-    pade_order=1,
-):
-    """
-    Build a closed-loop 2x2 system with two PI controllers.
-
-    Inputs:
-        r1, r2
-
-    Outputs:
-        y1, y2
-
-    decoupler:
-        "none"
-        "static"
-        "dynamic"
-    """
-    s = ct.tf("s")
-
-    C1 = ideal_pi(Kc1, tauI1)
-    C2 = ideal_pi(Kc2, tauI2)
-
-    C1_blk = ct.ss(C1, name="C1", inputs="e1", outputs="v1")
-    C2_blk = ct.ss(C2, name="C2", inputs="e2", outputs="v2")
-
-    sum_e1 = ct.summing_junction(inputs=["r1", "-y1"], output="e1", name="sum_e1")
-    sum_e2 = ct.summing_junction(inputs=["r2", "-y2"], output="e2", name="sum_e2")
-
-    blocks = [C1_blk, C2_blk, sum_e1, sum_e2]
-
-    if decoupler == "none":
-        # Controller outputs go directly to process inputs.
-        pass1 = ct.ss(ct.tf([1], [1]), name="D11", inputs="v1", outputs="u1p")
-        pass2 = ct.ss(ct.tf([1], [1]), name="D22", inputs="v2", outputs="u2p")
-        blocks += [pass1, pass2]
-
-    elif decoupler == "static":
-        # For diagonal pairing, static decoupler:
-        # u1p = v1 - (K12/K11) v2
-        # u2p = v2 - (K21/K22) v1
-        D11 = ct.tf([1], [1])
-        D12 = ct.tf([-2 / 5], [1])
-        D21 = ct.tf([-3 / 6], [1])
-        D22 = ct.tf([1], [1])
-
-        blocks += [
-            ct.ss(D11, name="D11", inputs="v1", outputs="u11"),
-            ct.ss(D12, name="D12", inputs="v2", outputs="u12"),
-            ct.ss(D21, name="D21", inputs="v1", outputs="u21"),
-            ct.ss(D22, name="D22", inputs="v2", outputs="u22"),
-            ct.summing_junction(inputs=["u11", "u12"], output="u1p", name="sum_u1"),
-            ct.summing_junction(inputs=["u21", "u22"], output="u2p", name="sum_u2"),
-        ]
-
-    elif decoupler == "dynamic":
-        # Dynamic decouplers for diagonal pairing:
-        # D12 = -G12/G11
-        # D21 = -G21/G22
-        #
-        # G12/G11 = (2/5)*((4s+1)/(8s+1))*exp(+s)
-        # This contains exp(+s), which is noncausal, so remove the positive delay
-        # and use the realizable part:
-        # D12 = -(2/5)*((4s+1)/(8s+1))
-        #
-        # G21/G22 = (3/6)*((10s+1)/(12s+1))*exp(0s)
-        D11 = ct.tf([1], [1])
-        D22 = ct.tf([1], [1])
-        D12 = -(2 / 5) * (4 * s + 1) / (8 * s + 1)
-        D21 = -(3 / 6) * (10 * s + 1) / (12 * s + 1)
-
-        blocks += [
-            ct.ss(D11, name="D11", inputs="v1", outputs="u11"),
-            ct.ss(D12, name="D12", inputs="v2", outputs="u12"),
-            ct.ss(D21, name="D21", inputs="v1", outputs="u21"),
-            ct.ss(D22, name="D22", inputs="v2", outputs="u22"),
-            ct.summing_junction(inputs=["u11", "u12"], output="u1p", name="sum_u1"),
-            ct.summing_junction(inputs=["u21", "u22"], output="u2p", name="sum_u2"),
-        ]
-
-    else:
-        raise ValueError("decoupler must be 'none', 'static', or 'dynamic'")
-
-    P = build_mimo_process(include_cross_terms=include_cross_terms, pade_order=pade_order)
-    blocks.append(P)
-
+        sum2 = ct.summing_junction(inputs=['Yc1'], output='E2', name='Sum2')
+    sum3 = ct.summing_junction(inputs=['Yp1', 'Yd'], output='P', name='Sum3')
+    control_blks = [Gc1_blk, Gc2_blk]
+    plant_blks = [Gp1_blk, Gp2_blk]
+    disturbance_blks = [Gd_blk]
+    #delay_blks = [GD1_blk, GD2_blk]
+    sum_blks = [sum1, sum2, sum3]
+    blocks = control_blks + plant_blks + disturbance_blks + sum_blks
     sys = ct.interconnect(
         blocks,
-        inputs=["r1", "r2"],
-        outputs=["y1", "y2"],
-        name=f"closed_{decoupler}",
+        input=['Ysp', 'D'],
+        output=['Y'],
+        input_prefix = ["Ysp", "D"],
+        output_prefix = ["Y"],
     )
     return sys
 
+    
+def calculate_IAE(t, y, ysp):
+    error = ysp - y
+    iae = np.trapezoid(np.abs(error), t)
+    return iae
+def simulate_case(sys, t, ysp_input, d_input):
+    U = np.vstack([ysp_input, d_input])
+    resp = ct.forced_response(sys, T=t, U=U, squeeze=True,return_states=True)
+    return resp.time, resp.outputs, resp.inputs, resp.states
+def lambda_tuning(taup, thetad, Kp, PI=True, PID=False):
+    # Lambda tuning rules for FOPDT processes
+    # Lambda choice rules: 
+    # Self-Regulating Process: lam > 0.8*thetad & lambda > 0.1*taup: lambda =thetad
+    # Integrating Process: thetad < lambda < taup: lambda = max(taup/3,thetad)
+    if not PI and not PID:
+        raise ValueError("Must specify either PI or PID control.")
+    if PI and PID:
+        raise ValueError("Cannot specify both PI and PID control.")
+    
+    if taup < 4*thetad:
+        # Self-Regulating process FOPDT
+        lam = thetad
+        tauI = max(thetad/4, taup)
+        P = taup / (Kp * (lam + thetad))
+        if PI:
+            tauD = 0
+        elif PID:
+            tauD = min(taup/4, thetad/2)
+        else:
+            raise ValueError("Must specify either PI or PID control.")
+    else:
+        # Integrating process FOPDT
+        lam = max(taup/3, thetad)
+        tauI = max(4*thetad,2*lam+thetad)
+        Kprime = Kp/taup
+        P = taup / (Kprime * (lam + thetad)**2)
+        if PI:
+            tauD = 0
+        elif PID:
+            tauD = min(taup/4, thetad/2)
+        else:
+            raise ValueError("Must specify either PI or PID control.")
+    return P, tauI, tauD, lam
+def tuning_lqr(sys, Q, R):
+    # Convert to state-space if not already
+    if not isinstance(sys, ct.StateSpace):
+        sys = ct.ss(sys)
+    
+    # Get A, B, C, D matrices
+    A, B, C, D = sys.A, sys.B, sys.C, sys.D
+    
+    # Solve the continuous-time algebraic Riccati equation
+    K, S, E = ct.lqr(A, B, Q, R,)
+    
+    return K, S, E
 
-def optimize_single_loop_pi(G, t, initial=(0.3, 10.0)):
-    """
-    Tune PI for a SISO process by minimizing setpoint IAE.
-    """
-    r = np.ones_like(t)
-
-    def objective(log_params):
-        Kc = np.exp(log_params[0])
-        tauI = np.exp(log_params[1])
-        C = ideal_pi(Kc, tauI)
-        sys_cl = ct.feedback(C * G, 1)
-        try:
-            resp = ct.forced_response(sys_cl, T=t, U=r, squeeze=True)
-            y = np.ravel(resp.outputs)
-            if np.any(~np.isfinite(y)) or np.max(np.abs(y)) > 1e8:
-                return 1e12
-            return iae(resp.time, y, r)
-        except Exception:
-            return 1e12
-
-    result = minimize(
-        objective,
-        np.log(np.asarray(initial, dtype=float)),
-        method="Nelder-Mead",
-        options={"maxiter": 1000},
-    )
-    return float(np.exp(result.x[0])), float(np.exp(result.x[1]))
-
-
-def save_mimo_plot(filename, t, y1, y2, title):
+def optimize_PI(sys, t, ysp_input, d_input, initial_guess):
+    def objective(params):
+        Kc, tauI = params
+        tuned_sys = build_closed_loop(Kc, Kc2, tauI, tauI2)
+        t_sim, y_sim, _, _ = simulate_case(tuned_sys, t, ysp_input, d_input)
+        iae = calculate_IAE(t_sim, y_sim, ysp_input)
+        return iae
+    result = minimize(objective,initial_guess, )
+    return result.x  # returns the optimal Kc and tauI
+def save_plot(filename, t, y, title, ysp=None, d=None):
     plt.figure(figsize=(8, 4.8))
-    plt.plot(t, y1, linewidth=2, label="y1")
-    plt.plot(t, y2, linewidth=2, label="y2")
+    plt.plot(t, y, label='Output y_p2(t)', linewidth=2)
+    if ysp is not None:
+        plt.plot(t, ysp, '--', label='Setpoint', linewidth=1.5)
+
+    if d is not None:
+        plt.plot(t, d, ':', label='Disturbance', linewidth=1.5)
+
     plt.xlabel("Time")
-    plt.ylabel("Outputs")
+    plt.ylabel("Response")
     plt.title(title)
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(filename, dpi=180)
+    plt.savefig(filename, dpi=150)
     plt.close()
 
-
-def run_problems_6_to_10(report):
-    report.append("\n" + "=" * 80)
-    report.append("Problems 6–10: MIMO loops and decoupling")
-    report.append("=" * 80)
-
-    t = np.linspace(0, 150, 1501)
-
-    # Problem 6: neglect cross terms and tune two independent loops.
-    G11 = fopdt(5, 4, 5, pade_order=1)
-    G22 = fopdt(6, 10, 3, pade_order=1)
-
-    Kc1, tauI1 = optimize_single_loop_pi(G11, t, initial=(0.2, 8.0))
-    Kc2, tauI2 = optimize_single_loop_pi(G22, t, initial=(0.2, 10.0))
-
-    report.append("Problem 6: PI tuning with cross terms neglected")
-    report.append(f"  Loop 1 controller: Kc1 = {Kc1:.6g}, tauI1 = {tauI1:.6g}")
-    report.append(f"  Loop 2 controller: Kc2 = {Kc2:.6g}, tauI2 = {tauI2:.6g}")
-
-    sys_no_cross = build_two_loop_closed_system(
-        Kc1, tauI1, Kc2, tauI2, include_cross_terms=False, decoupler="none"
-    )
-
-    r1_step = np.vstack([np.ones_like(t), np.zeros_like(t)])
-    r2_step = np.vstack([np.zeros_like(t), np.ones_like(t)])
-
-    resp = ct.forced_response(sys_no_cross, T=t, U=r1_step, squeeze=True)
-    y = np.asarray(resp.outputs)
-    save_mimo_plot(
-        "P6_no_cross_r1_step.png",
-        resp.time,
-        y[0],
-        y[1],
-        "Problem 6: No cross terms, step in r1",
-    )
-
-    resp = ct.forced_response(sys_no_cross, T=t, U=r2_step, squeeze=True)
-    y = np.asarray(resp.outputs)
-    save_mimo_plot(
-        "P6_no_cross_r2_step.png",
-        resp.time,
-        y[0],
-        y[1],
-        "Problem 6: No cross terms, step in r2",
-    )
-
-    # Problem 7: add cross terms.
-    sys_cross = build_two_loop_closed_system(
-        Kc1, tauI1, Kc2, tauI2, include_cross_terms=True, decoupler="none"
-    )
-
-    resp = ct.forced_response(sys_cross, T=t, U=r1_step, squeeze=True)
-    y = np.asarray(resp.outputs)
-    save_mimo_plot(
-        "P7_cross_terms_r1_step.png",
-        resp.time,
-        y[0],
-        y[1],
-        "Problem 7: Cross terms included, step in r1",
-    )
-
-    report.append("\nProblem 7: Cross terms included")
-    report.append(f"  Step in r1: IAE y1 = {iae(resp.time, y[0], 1.0):.6g}, "
-                  f"interaction area y2 = {np.trapezoid(np.abs(y[1]), resp.time):.6g}")
-
-    resp = ct.forced_response(sys_cross, T=t, U=r2_step, squeeze=True)
-    y = np.asarray(resp.outputs)
-    save_mimo_plot(
-        "P7_cross_terms_r2_step.png",
-        resp.time,
-        y[0],
-        y[1],
-        "Problem 7: Cross terms included, step in r2",
-    )
-
-    report.append(f"  Step in r2: interaction area y1 = {np.trapezoid(np.abs(y[0]), resp.time):.6g}, "
-                  f"IAE y2 = {iae(resp.time, y[1], 1.0):.6g}")
-
-    # Problem 8: static decouplers.
-    sys_static = build_two_loop_closed_system(
-        Kc1, tauI1, Kc2, tauI2, include_cross_terms=True, decoupler="static"
-    )
-
-    resp = ct.forced_response(sys_static, T=t, U=r1_step, squeeze=True)
-    y = np.asarray(resp.outputs)
-    save_mimo_plot(
-        "P8_static_decoupler_r1_step.png",
-        resp.time,
-        y[0],
-        y[1],
-        "Problem 8: Static decoupler, step in r1",
-    )
-
-    report.append("\nProblem 8: Static decouplers")
-    report.append(f"  Step in r1: IAE y1 = {iae(resp.time, y[0], 1.0):.6g}, "
-                  f"interaction area y2 = {np.trapezoid(np.abs(y[1]), resp.time):.6g}")
-
-    resp = ct.forced_response(sys_static, T=t, U=r2_step, squeeze=True)
-    y = np.asarray(resp.outputs)
-    save_mimo_plot(
-        "P8_static_decoupler_r2_step.png",
-        resp.time,
-        y[0],
-        y[1],
-        "Problem 8: Static decoupler, step in r2",
-    )
-
-    report.append(f"  Step in r2: interaction area y1 = {np.trapezoid(np.abs(y[0]), resp.time):.6g}, "
-                  f"IAE y2 = {iae(resp.time, y[1], 1.0):.6g}")
-
-    # Problem 9: dynamic decouplers.
-    sys_dynamic = build_two_loop_closed_system(
-        Kc1, tauI1, Kc2, tauI2, include_cross_terms=True, decoupler="dynamic"
-    )
-
-    resp = ct.forced_response(sys_dynamic, T=t, U=r1_step, squeeze=True)
-    y = np.asarray(resp.outputs)
-    save_mimo_plot(
-        "P9_dynamic_decoupler_r1_step.png",
-        resp.time,
-        y[0],
-        y[1],
-        "Problem 9: Dynamic decoupler, step in r1",
-    )
-
-    report.append("\nProblem 9: Dynamic decouplers")
-    report.append(f"  Step in r1: IAE y1 = {iae(resp.time, y[0], 1.0):.6g}, "
-                  f"interaction area y2 = {np.trapezoid(np.abs(y[1]), resp.time):.6g}")
-
-    resp = ct.forced_response(sys_dynamic, T=t, U=r2_step, squeeze=True)
-    y = np.asarray(resp.outputs)
-    save_mimo_plot(
-        "P9_dynamic_decoupler_r2_step.png",
-        resp.time,
-        y[0],
-        y[1],
-        "Problem 9: Dynamic decoupler, step in r2",
-    )
-
-    report.append(f"  Step in r2: interaction area y1 = {np.trapezoid(np.abs(y[0]), resp.time):.6g}, "
-                  f"IAE y2 = {iae(resp.time, y[1], 1.0):.6g}")
-
-    report.append("\nProblem 10: Comment")
-    report.append(
-        "  Adding cross terms produces loop interaction: a step in one setpoint also "
-        "moves the other output. Static decouplers reduce steady-state interaction, "
-        "but they do not fully correct dynamic mismatch because each transfer function "
-        "has a different time constant and delay. Dynamic decouplers should reduce the "
-        "interaction more effectively, but any noncausal positive-delay term must be "
-        "removed or approximated by a realizable transfer function."
-    )
-
-
 # =============================================================================
-# Main
+# Simulate Response to Step Disturbance with No Cascade Control and No Setpoint Change
 # =============================================================================
 
-def main():
-    report = []
-    run_problems_1_to_3(report)
-    run_problems_4_and_5(report)
-    run_problems_6_to_10(report)
+sys1 = build_closed_loop(Kc1, Kc2, tauI1, tauI2)
+print(sys1)
+A1, B1, C1, D1 = sys1.A, sys1.B, sys1.C, sys1.D
+n = A1.shape[0]
 
-    text = "\n".join(report)
-    print(text)
+t1, y1, u1, x1 = simulate_case(sys1, tvals, step_off, step_on)
+iae1 = calculate_IAE(t1, y1, step_off)
+save_plot(
+    "closed_loop_no_cascade.png",
+    t1,
+    y1,
+    "Closed-loop response to unit step disturbance with no cascade control and no autotuning",
+    ysp=step_off,
+    d=step_on,
+)
 
-    with open(OUT_TXT, "w", encoding="utf-8") as f:
-        f.write(text)
+Gc_x1 = x1[0, :]
+Gp1_x1 = x1[1, :]
+Gp2_x1 = x1[2, :]
+A1_sp = sp.Matrix(A1)
+B1_sp = sp.Matrix(B1)
+C1_sp = sp.Matrix(C1)
+D1_sp = sp.Matrix(D1)
 
-    print(f"\nWrote {OUT_TXT}")
+# =============================================================================
+# Simulate Response to Step Disturbance with No Cascade Control and No Setpoint Change using Simulink autotuned values
+# =============================================================================
+P1 = 0.183711730708738
+I1 = 0.0816496580927727
+sys2 = build_closed_loop(P1, Kc2, 1 / I1, tauI2)
+t2, y2, u2, x2 = simulate_case(sys2, tvals, step_off, step_on)
+iae2 = calculate_IAE(t2, y2, step_off)
+save_plot(
+    "closed_loop_no_cascade_autotuning.png",
+    t2,
+    y2,
+    "Closed-loop response to unit step disturbance with PI autotuning",
+    ysp=step_off,
+    d=step_on,
+)
 
+P2, tauI_2, D2, lam2 = lambda_tuning(taup1, theta, Kp1)
+I2 = 1.0 / tauI_2
+sys3 = build_closed_loop(P2, Kc2, tauI_2, tauI2)
+t3, y3, u3, x3 = simulate_case(sys3, tvals, step_off, step_on)
+iae3 = calculate_IAE(t3, y3, step_off)
+save_plot(
+    "closed_loop_no_cascade_lambda_tuning.png",
+    t3,
+    y3,
+    "Closed-loop response to unit step disturbance with lambda tuning",
+    ysp=step_off,
+    d=step_on,
+)
 
-if __name__ == "__main__":
-    main()
-'''
+[P_opt1, tauI_opt1] = optimize_PI(sys1, tvals, step_off, step_on, initial_guess=[Kc1, tauI1])
+sys_opt = build_closed_loop(P_opt1, Kc2, tauI_opt1, tauI2)
+t_opt1, y_opt1, u_opt1, x_opt1 = simulate_case(sys_opt, tvals, step_off, step_on)
+I_opt1 = 1.0 / tauI_opt1
+iae_opt1 = calculate_IAE(t_opt1, y_opt1, step_off)
+save_plot(
+    "closed_loop_no_cascade_optimized.png",
+    t_opt1,
+    y_opt1,
+    "Closed-loop response to unit step disturbance with optimized PI parameters",
+    ysp=step_off,
+    d=step_on,
+)
+print(f"Optimized Kc: {P_opt1:.4f}, Optimized I: {I_opt1:.4f}, IAE: {iae_opt1:.4f}")
+sys4 = build_closed_loop(Kc1, Kc2, tauI1, tauI2)
+t4, y4, u4, x4 = simulate_case(sys4, tvals, step_on, step_off)
+iae4 = calculate_IAE(t4, y4, step_on)
+save_plot(
+    "closed_loop_no_cascade_setpoint.png",
+    t4,
+    y4,
+    "Closed-loop response to no step disturbance with no cascade control and setpoint change",
+    ysp=step_on,
+    d=step_off,
+)
+P3 = P1
+I3 = I1
+sys5 = build_closed_loop(P3, Kc2, 1 / I3, tauI2)
+t5, y5, u5, x5 = simulate_case(sys5, tvals, step_on, step_off)
+iae5 = calculate_IAE(t5, y5, step_on)
+save_plot(
+    "closed_loop_no_cascade_setpoint_autotuning.png",
+    t5,
+    y5,
+    "Closed-loop response to no step disturbance with no cascade control and setpoint change with autotuning",
+    ysp=step_on,
+    d=step_off,
+)
+P4, tauI_4, D4, lam4 = lambda_tuning(taup1, theta, Kp1)
+I4 = 1.0 / tauI_4
+sys6 = build_closed_loop(P4, Kc2, tauI_4, tauI2)
+t6, y6, u6, x6 = simulate_case(sys6, tvals, step_on, step_off)
+iae6 = calculate_IAE(t6, y6, step_on)
+save_plot(
+    "closed_loop_no_cascade_setpoint_lambda_tuning.png",
+    t6,
+    y6,
+    "Closed-loop response to no step disturbance with no cascade control and setpoint change with lambda tuning",
+    ysp=step_on,
+    d=step_off,
+)
+print(f"Setpoint change with lambda tuning: P = {P4:.4f}, I = {I4:.4f}, D = {D4:.4f}, lambda = {lam4:.4f}, IAE = {iae6:.4f}")
+[P_opt2, tauI_opt2] = optimize_PI(sys1, tvals, step_on, step_off, initial_guess=[Kc1, tauI1])
+sys_opt = build_closed_loop(P_opt2, Kc2, tauI_opt2, tauI2)
+t_opt2, y_opt2, u_opt2, x_opt2 = simulate_case(sys_opt, tvals, step_on, step_off)
+I_opt2 = 1.0 / tauI_opt2
+iae_opt2 = calculate_IAE(t_opt2, y_opt2, step_on)
+save_plot(
+    "closed_loop_no_cascade_optimized_setpoint.png",
+    t_opt2,
+    y_opt2,
+    "Closed-loop response to setpoint change with optimized PI parameters",
+    ysp=step_on,
+    d=step_off,
+)
+print(f"Optimized Kc: {P_opt2:.4f}, Optimized I: {I_opt2:.4f}, IAE: {iae_opt2:.4f}")
+images = [
+    [("closed_loop_no_cascade_simulink.png","Simulink"), ("closed_loop_no_cascade.png", "Python")],
+    [("closed_loop_no_cascade_autotuning_simulink.png", "Simulink"), ("closed_loop_no_cascade_autotuning.png", "Python")],
+    [("closed_loop_no_cascade_lambda_tuning_simulink.png", "Simulink"), ("closed_loop_no_cascade_lambda_tuning.png", "Python")],
+    [("closed_loop_no_cascade_optimized_simulink.png", "Simulink"), ("closed_loop_no_cascade_optimized.png", "Python")],
+    [("closed_loop_no_cascade_setpoint_simulink.png", "Simulink"), ("closed_loop_no_cascade_setpoint.png", "Python")],
+    [("closed_loop_no_cascade_setpoint_autotuning_simulink.png", "Simulink"), ("closed_loop_no_cascade_setpoint_autotuning.png", "Python")],
+    [("closed_loop_no_cascade_setpoint_lambda_tuning_simulink.png", "Simulink"), ("closed_loop_no_cascade_setpoint_lambda_tuning.png", "Python")],
+]
+# =============================================================================
+# Document writeup
+# =============================================================================
+doc.section("Introduction")
+px(
+f" The following homework was done with Simulink and the Control Systems Library in Python. The block diagram of the system is shown in ", doc.figref("fig:block_diagram"),
+". ",
+"The block diagram was created in simulink and then I built the same diagram as a python function using the control library. Simulink was mainly used as a sanity check for the response of the system in the python code. ")
+p(
+"Note: sum2 in the block diagram is the summing junction that takes the first controller output and subtract the P stream in order to form the inner loop. But, first in order to simulate without the inner loop, so I set cascade=False. This just converts the controller output (Yc1) to the error signal (E2) for the second controller. The disturbance D is added directly to the output of Gp1 (Yp1) " 
+)
+px(
+"The transport delay transfer function is approximated using a Pade approximation of order ", 
+pade_order,"." ," Although it should be relatively straightforward to simulate with delay in simulink and in python, I commented through the delay blocks in simulink and in python. The assignment didn't specifiy the delay time. Also, the control library has the delay function, but it only uses the Pade approximation.",)
+line(
+" Which gives the following transfer function approximation: ")
+num_approx_sym = 1 - (sp.symbols('theta_d'))/2 * sp.symbols('s')
+den_approx_sym = 1 + (sp.symbols('theta_d'))/2 * sp.symbols('s')
+eq(
+sp.latex(
+            sp.Eq(
+            sp.exp(-sp.Symbol("theta_d") *sp.symbols('s')),
+            num_approx_sym / den_approx_sym
+            )
+         )
+)
 
-path = Path("/mnt/data/HW5_CHE565_full.py")
-path.write_text(code, encoding="utf-8")
-print(f"Created {path}")
+lst(["""
+import control as ct
+
+def build_closed_loop(Kc1, Kc2, tauI1, tauI2, cascade=False):
+    
+    s = ct.tf('s')
+    t = sp.symbols('t', real=True)
+    I1 = 1.0 / tauI1
+    I2 = 0
+    numD,denD = ct.delay.pade(theta, pade_order)
+
+    Gc1 = Kc1 * (1 + I1 / s)
+    Gc2 = Kc2 * (1 + I2 / s)
+    Gp1 = Kp1 / (taup1 * s + 1)
+    Gp2 = Kp2 / (taup2 * s + 1)
+    Gd = ct.tf([1], [1])    # direct disturbance addition
+    GD1= ct.tf(numD, denD, name='GD1', inputs='Yp1', outputs='YD')
+    GD2= ct.tf(numD, denD, name='GD2', inputs='Yp2', outputs='Y')
+    # State Space Representation of the blocks for interconnection
+    # Note: the control library's interconnect function works better with state-space models, so we convert the transfer functions to state-space form.
+    # xdot = Ax + Bu
+    # y = Cx + Du
+    
+    Gc1_blk = ct.ss(Gc1, name='Gc1', inputs='E1', outputs='Yc1')
+    Gc2_blk = ct.ss(Gc2, name='Gc2', inputs='E2', outputs='Yc2')
+    Gp1_blk = ct.ss(Gp1, name='Gp1', inputs='Yc2', outputs='Yp1')
+    Gp2_blk = ct.ss(Gp2, name='Gp2', inputs='P', outputs='Y')
+    Gd_blk = ct.ss(Gd, name='Gd', inputs='D', outputs='Yd')     # direct disturbance addition
+    #GD1_blk = ct.ss(GD1, name='GD1', inputs='Yp1', outputs='YD')
+    #GD2_blk = ct.ss(GD2, name='GD2', inputs='Yp2', outputs='Y')
+    sum1 = ct.summing_junction(inputs=['Ysp', '-Y'], output='E1', name='Sum1')
+    if cascade:
+         sum2 = ct.summing_junction(inputs=['Yc1', '-P'], output='E2', name='Sum2')
+    else:
+        sum2 = ct.summing_junction(inputs=['Yc1'], output='E2', name='Sum2')
+    sum3 = ct.summing_junction(inputs=['Yp1', 'Yd'], output='P', name='Sum3')
+    control_blks = [Gc1_blk, Gc2_blk]
+    plant_blks = [Gp1_blk, Gp2_blk]
+    disturbance_blks = [Gd_blk]
+    #delay_blks = [GD1_blk, GD2_blk]
+    sum_blks = [sum1, sum2, sum3]
+    blocks = control_blks + plant_blks + disturbance_blks + sum_blks
+    sys = ct.interconnect(
+        blocks,
+        input=['Ysp', 'D'],
+        output=['Y'],
+        input_prefix = ["Ysp", "D"],
+        output_prefix = ["Y"],
+    )
+    return sys
+
+    
+def calculate_IAE(t, y, ysp):
+    error = ysp - y
+    iae = np.trapezoid(np.abs(error), t)
+    return iae
+def simulate_case(sys, t, ysp_input, d_input):
+    U = np.vstack([ysp_input, d_input])
+    resp = ct.forced_response(sys, T=t, U=U, squeeze=True,return_states=True)
+    return resp.time, resp.outputs, resp.inputs, resp.states
+"""])
+doc.section("Problem 1")
+doc.subsection("Closed-loop Response to Step Disturbance")
+
+figlog(
+    "HW5_CHE565_block_diagram.png",
+    caption="Block diagram of the closed-loop system without cascade control and with a unit step disturbance from Simulink.",
+    label="fig:block_diagram",
+    width=r"0.8\textwidth",
+    position="H",
+)
+
+px("The Simulink block diagram is shown in ", doc.figref("fig:block_diagram"), ".")
+
+subfiglog(
+    images[0],
+    caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance with no cascade control and no autotuning.",
+    label="fig:no_cascade_step_disturbance",
+    width=r"0.45\textwidth",
+)
+
+px(
+    f"Case 1: Step disturbance with no setpoint change gave and step in disturbance with no setpoint change gave ",
+    f"IAE = {iae1:.4f} in Python and IAE = 453752.63065 in Simulink.",
+     "The closed-loop disturbance response and no cascade loop is shown in ",
+    doc.figref("fig:no_cascade_step_disturbance"),
+    "."
+)
+
+line(
+    f"The PI controller was then tuned using the autotuning feature in Simulink, "
+)
+
+subfiglog(
+    images[1],
+    caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance with no cascade control and PI autotuning.",
+    label="fig:no_cascade_autotuning_step_disturbance",
+    width=r"0.45\textwidth",
+)
+px(
+    f"Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = {iae2:.4f} in Python and IAE = 13.0463 in Simulink. The response is shown in ",
+    doc.figref("fig:no_cascade_autotuning_step_disturbance"),
+    ".",im(r"\ "), f"Proportional gain P = {P1:.4f} and integral gain I = {I1:.4f}.",
+)
+
+subfiglog(
+    images[2],
+    caption="Closed-loop response to no step change in setpoint and a unit step change in disturbance with no cascade control and lambda tuning.",
+    label="fig:no_cascade_lambda_tuning_step_disturbance",
+    width=r"0.45\textwidth",
+)
+
+px(
+    f"Case 3: No step change in setpoint and step disturbance change with",im(r"\ \lambda \ ") ,f" tuning gave IAE = {iae3:.4f} in Python and IAE = 8.5578 in Simulink. The disturbance response is shown in ",
+    doc.figref(label="fig:no_cascade_lambda_tuning_step_disturbance"),
+    ".",im(r"\ "), f" Proportional gain P = {P2:.4f}, integral gain I = {I2:.4f}, derivative gain D = {D2:.4f}, and lambda = {lam2:.4f}."
+)
+
+subfiglog(
+    images[3],
+    caption="Closed-loop response to unit step disturbance with optimized PI parameters.",
+    label="fig:no_cascade_optimized_step_disturbance",
+    width=r"0.45\textwidth",
+)
+
+px(
+    f"Case 4: Step disturbance with no setpoint change and optimized PI parameters gave IAE = {iae_opt1:.4f} in Python and IAE = 0.2192. The response is shown in ",
+    doc.figref("fig:no_cascade_optimized_step_disturbance"), 
+    ".",im(r"\ "),
+    f"Optimized proportional gain P = {P_opt:.4f} and integral gain I = {I_opt:.4f}.",
+    im(r"\ "), f"Note: The optimized parameters were found by minimizing the IAE to the disturbance"
+)
+
+subfiglog(
+    images[4],
+    caption="Closed-loop response to setpoint change with no step disturbance and no cascade control.",
+    label="fig:no_cascade_setpoint_change",
+    width=r"0.45\textwidth",
+)
+px(
+    f"Case 5: No step change in disturbance and step change in setpoint with no cascade control gave IAE = {iae4:.4f} in Python and IAE = 1241005.8219 in Simulink. The response is shown in ",
+    doc.figref("fig:no_cascade_setpoint_change"),
+    ".",im(r"\ "),
+)
+subfiglog(
+    images[5],
+    caption="Closed-loop response to setpoint change with no step disturbance and no cascade control with PI autotuning.",
+    label="fig:no_cascade_setpoint_change_autotuning",
+    width=r"0.45\textwidth",
+)
+px(
+    f"Case 6: No step change in disturbance and step change in setpoint with no cascade control and PI autotuning gave IAE = {iae5:.4f} in Python and IAE = 8.2136 in Simulink. The response is shown in ",
+    doc.figref("fig:no_cascade_setpoint_change_autotuning"),
+    ".",im(r"\ "),
+    f"Proportional gain P = {P3:.4f} and integral gain I = {I3:.4f}.",
+)
+subfiglog(
+    images[6],
+    caption="Closed-loop response to setpoint change with no step disturbance and no cascade control with lambda tuning.",
+    label="fig:no_cascade_setpoint_change_lambda_tuning",
+    width=r"0.45\textwidth",
+)
+px(
+    f"Case 7: No step change in disturbance and step change in setpoint with no cascade control and lambda tuning gave IAE = {iae6:.4f} in Python and IAE = 16.6484 in Simulink. The response is shown in ",
+    doc.figref("fig:no_cascade_setpoint_change_lambda_tuning"),im(r"\ "),
+    ".",im(r"\ "),
+    f"Proportional gain P = {P4:.4f}, integral gain I = {I4:.4f}, derivative gain D = {D4:.4f}, and lambda = {lam4:.4f}.",
+)
+txt_file, tex_file, pdf_file = doc.save_all(runs=2)
+print(f"Wrote text log: {txt_file}")
+print(f"Wrote LaTeX file: {tex_file}")
+print(f"Wrote PDF report: {pdf_file}")

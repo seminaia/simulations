@@ -314,20 +314,20 @@ save_plot(
     d=step_off,
 )
 print(f"Setpoint change with lambda tuning: P = {P4:.4f}, I = {I4:.4f}, D = {D4:.4f}, lambda = {lam4:.4f}, IAE = {iae6:.4f}")
-[P_opt2, tauI_opt2] = optimize_PI(sys1, tvals, step_on, step_off, initial_guess=[Kc1, tauI1])
-sys_opt = build_closed_loop(P_opt2, Kc2, tauI_opt2, tauI2)
-t_opt2, y_opt2, u_opt2, x_opt2 = simulate_case(sys_opt, tvals, step_on, step_off)
-I_opt2 = 1.0 / tauI_opt2
-iae_opt2 = calculate_IAE(t_opt2, y_opt2, step_on)
-save_plot(
-    "closed_loop_no_cascade_optimized_setpoint.png",
-    t_opt2,
-    y_opt2,
-    "Closed-loop response to setpoint change with optimized PI parameters",
-    ysp=step_on,
-    d=step_off,
-)
-print(f"Optimized Kc: {P_opt2:.4f}, Optimized I: {I_opt2:.4f}, IAE: {iae_opt2:.4f}")
+# [P_opt2, tauI_opt2] = optimize_PI(sys1, tvals, step_on, step_off, initial_guess=[Kc1, tauI1])
+# sys_opt = build_closed_loop(P_opt2, Kc2, tauI_opt2, tauI2)
+# t_opt2, y_opt2, u_opt2, x_opt2 = simulate_case(sys_opt, tvals, step_on, step_off)
+# I_opt2 = 1.0 / tauI_opt2
+# iae_opt2 = calculate_IAE(t_opt2, y_opt2, step_on)
+# save_plot(
+    # "closed_loop_no_cascade_optimized_setpoint.png",
+    # t_opt2,
+    # y_opt2,
+    # "Closed-loop response to setpoint change with optimized PI parameters",
+    # ysp=step_on,
+    # d=step_off,
+# )
+# print(f"Optimized Kc: {P_opt2:.4f}, Optimized I: {I_opt2:.4f}, IAE: {iae_opt2:.4f}")
 images = [
     [("closed_loop_no_cascade_simulink.png","Simulink"), ("closed_loop_no_cascade.png", "Python")],
     [("closed_loop_no_cascade_autotuning_simulink.png", "Simulink"), ("closed_loop_no_cascade_autotuning.png", "Python")],
@@ -493,7 +493,7 @@ px(
     f"Case 4: Step disturbance with no setpoint change and optimized PI parameters gave IAE = {iae_opt1:.4f} in Python and IAE = 0.2192. The response is shown in ",
     doc.figref("fig:no_cascade_optimized_step_disturbance"), 
     ".",im(r"\ "),
-    f"Optimized proportional gain P = {P_opt:.4f} and integral gain I = {I_opt:.4f}.",
+    f"Optimized proportional gain P = {P_opt1:.4f} and integral gain I = {I_opt1:.4f}.",
     im(r"\ "), f"Note: The optimized parameters were found by minimizing the IAE to the disturbance"
 )
 

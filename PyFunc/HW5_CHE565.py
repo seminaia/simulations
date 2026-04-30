@@ -410,12 +410,16 @@ eq(sp.latex(sp.Matrix(Lambda4).evalf(4)))
 # Pairing by diagonal dominance / values near +1
 pairs4 = [(1, 1, Lambda4[0, 0]), (2, 2, Lambda4[1, 1]), (3, 3, Lambda4[2, 2]), (4, 4, Lambda4[3, 3])]
 p("The diagonal elements are positive and closest to the desired pairing values, so a reasonable pairing is")
-table(
-    [["Output", "Manipulated variable", r"$\lambda_{ij}$"]] +
-    [[f"$y_{i}$", f"$u_{j}$", f"{val:.4f}"] for i, j, val in pairs4],
-    caption="Suggested pairings for Problem 4.",
-    label="tab:p4_pairing",
-)
+p4_pair_rows = r"""
+\begin{array}{c c c}
+\text{Output} & \text{Manipulated variable} & \lambda_{ij} \\
+\hline
+"""
+for i, j, val in pairs4:
+    p4_pair_rows += rf"y_{{{i}}} & u_{{{j}}} & {val:.4f} \\" + "\n"
+p4_pair_rows += r"\end{array}"
+eq(p4_pair_rows)
+
 
 # Problem 5
 K5 = np.array([
@@ -433,6 +437,13 @@ p(
     "Because the diagonal RGA values are positive and closer to one than the off-diagonal values, "
     "the preferred pairing is " + r"$y_1$ with $u_1$ and $y_2$ with $u_2$."
 )
+p("The selected pairings are")
+p5_pair_rows = r"""
+\begin{array}{c c c}
+\text{Output} & \text{Manipulated variable} & \lambda_{ij} \\
+\hline
+""" + rf"y_{{1}} & u_{{1}} & {Lambda5[0, 0]:.4f} \\" + "\n" + rf"y_{{2}} & u_{{2}} & {Lambda5[1, 1]:.4f} \\" + "\n" + r"\end{array}"
+eq(p5_pair_rows)
 
 
 # =============================================================================

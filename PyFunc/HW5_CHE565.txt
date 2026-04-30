@@ -105,11 +105,11 @@ Caption: Relative gain array for Problem 4.
 Label: tab:problem4_rga
 
 [TABLE]
-Output | Manipulated Variable | $\lambda_{ij}$
-y1 | u2 | 0.7167
-y2 | u4 | -0.3786
-y3 | u1 | -0.1885
-y4 | u3 | 0.8507
+Output | Manipulated Variable | $\lambda_{ij}$ | $|\lambda_{ij}-1|$
+y1 | u2 | 0.7167 | 0.2833
+y2 | u1 | 0.8768 | 0.1232
+y3 | u3 | 0.6999 | 0.3001
+y4 | u4 | 0.8826 | 0.1174
 Caption: Suggested pairings for Problem 4.
 Label: tab:problem4_pairings
 
@@ -121,9 +121,9 @@ Problem 5: Relative Gain Array for the 2 by 2 Process
 [MATH] K = \begin{bmatrix} 5 & 2 \\ 3 & 6 \end{bmatrix}
 [MATH] \Lambda = \begin{bmatrix} 1.2500 & -0.2500 \\ -0.2500 & 1.2500 \end{bmatrix}
 [TABLE]
-$y_i$ | $u_1$ | $u_2$
-y1 | 1.2500 | -0.2500
-y2 | -0.2500 | 1.2500
+$y_1$ | $u_1$ | $y_2$ | $u_2$
+y1 | u1 | 1.2500 | 0.2500
+y2 | u2 | 1.2500 | 0.2500
 Caption: Relative gain array for Problem 5.
 Label: tab:problem5_rga
 
@@ -135,10 +135,12 @@ Problems 6--10: MIMO Control, Cross Terms, and Decoupling
 
 Problem 6: Two Single-Loop Controllers with Cross Terms Neglected
 -----------------------------------------------------------------
-[MATH] K_c = \frac{\tau_p}{K_p(\lambda + \theta)}, \qquad \tau_I = \tau_p
+[MATH] K_c = \frac{\tau_p}{K' (\lambda + \theta)}, \qquad \tau_I = \tau_p
 [TABLE]
 Loop | $K_p$ | $\tau_p$ | $\theta$ | $\lambda$ | $K_c$ | $\tau_I$
 G11 | 5.0000 | 4.0000 | 5.0000 | 5.0000 | 0.0800 | 4.0000
+G12 | 2.0000 | 8.0000 | 4.0000 | 4.0000 | 0.5000 | 8.0000
+G21 | 3.0000 | 12.0000 | 3.0000 | 4.0000 | 0.9796 | 12.0000
 G22 | 6.0000 | 10.0000 | 3.0000 | 3.0000 | 0.2778 | 10.0000
 Caption: PI tuning values for the two diagonal loops.
 Label: tab:problem6_tuning
@@ -175,8 +177,8 @@ The term e^{s} in D12 is noncausal because it is equivalent to a negative delay.
 [MATH] D_{12,realizable}(s) = -\frac{2}{5}\frac{4s+1}{8s+1}
 [TABLE]
 Test | Controlled-output IAE | Interaction area
-Step in r1 | 12.4998 | 0.0000
-Step in r2 | 7.4998 | 0.6073
+Step in r1 | 32150315634236860510765056.0000 | 1515590525301261078626304.0000
+Step in r2 | 49484763879757709122460408872960.0000 | 184791476049607596800344256937984.0000
 Caption: Problem 9 performance with dynamic decouplers.
 Label: tab:problem9_dynamic_decouplers
 
@@ -188,7 +190,7 @@ Case | Step in r1: IAE y1 | Step in r1: y2 area | Step in r2: y1 area | Step in 
 No cross terms | 10.7171 | 0.0000 | 0.0000 | 6.4302
 Cross terms | 12.4992 | 4.5391 | 4.3600 | 7.4995
 Static decoupler | 12.4998 | 0.6320 | 2.1539 | 7.4998
-Dynamic decoupler | 12.4998 | 0.0000 | 0.6073 | 7.4998
+Dynamic decoupler | 32150315634236860510765056.0000 | 1515590525301261078626304.0000 | 184791476049607596800344256937984.0000 | 49484763879757709122460408872960.0000
 Caption: Summary of MIMO response metrics for Problems 6--10.
 Label: tab:problem10_summary
 

@@ -54,6 +54,19 @@ subfigs = doc.subfigures
 im = doc.im
 lst = doc.listings
 
+
+def deq(latex):
+    """Display equation helper.
+
+    This wraps math explicitly in $$...$$ before passing it to DocumentBuilder.
+    That avoids missing display-math delimiters in the generated LaTeX/text output.
+    """
+    latex = str(latex).strip()
+    if latex.startswith("$$") and latex.endswith("$$"):
+        deq(latex)
+    else:
+        deq(r"$$" + latex + r"$$")
+
 doc.maketitle(True)
 doc.toc(False)
 
@@ -241,18 +254,18 @@ p(
 
 s = sp.symbols("s")
 K_c, tau_I, K_2 = sp.symbols("K_c tau_I K_2")
-eq(sp.latex(sp.Eq(sp.Symbol("G_{c,outer}"), K_c * (1 + 1 / (tau_I * s)))))
-eq(sp.latex(sp.Eq(sp.Symbol("G_{c,inner}"), K_2)))
+deq(sp.latex(sp.Eq(sp.Symbol("G_{c,outer}"), K_c * (1 + 1 / (tau_I * s)))))
+deq(sp.latex(sp.Eq(sp.Symbol("G_{c,inner}"), K_2)))
 
-eq(sp.latex(sp.Eq(sp.Symbol("G_{p1}"), sp.Rational(5, 1) / (5 * s + 1)))))
-eq(sp.latex(sp.Eq(sp.Symbol("G_{p2}"), sp.Rational(2, 1) / (10 * s + 1)))))
+deq(sp.latex(sp.Eq(sp.Symbol("G_{p1}"), sp.Rational(5, 1) / (5 * s + 1))))
+deq(sp.latex(sp.Eq(sp.Symbol("G_{p2}"), sp.Rational(2, 1) / (10 * s + 1))))
 
 p(
     "The performance index used for comparison is the integral absolute error:"
 )
 t_sym = sp.symbols("t")
 e_t = sp.Function("e")(t_sym)
-eq(sp.latex(sp.Eq(sp.Symbol("IAE"), sp.Integral(sp.Abs(e_t), (t_sym, 0, sp.oo)))))
+deq(sp.latex(sp.Eq(sp.Symbol("IAE"), sp.Integral(sp.Abs(e_t), (t_sym, 0, sp.oo)))))
 
 
 t = np.linspace(0, 100, 1001)
@@ -297,11 +310,11 @@ p(
     "For the no-cascade case, the inner feedback path is removed and the inner P-only controller gain is set to one. "
     "The outer PI controller is then tuned by minimizing the IAE."
 )
-eq(sp.latex(sp.Eq(sp.Symbol("K_{c,inner}"), Kc_inner_no)))
-eq(sp.latex(sp.Eq(sp.Symbol("K_{c,outer}"), round(Kc_no, 6))))
-eq(sp.latex(sp.Eq(sp.Symbol(r"\tau_{I,outer}"), round(tauI_no, 6))))
-eq(sp.latex(sp.Eq(sp.Symbol("IAE_{disturbance}"), round(IAE_no_d, 6))))
-eq(sp.latex(sp.Eq(sp.Symbol("IAE_{setpoint}"), round(IAE_no_sp, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("K_{c,inner}"), Kc_inner_no)))
+deq(sp.latex(sp.Eq(sp.Symbol("K_{c,outer}"), round(Kc_no, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol(r"\tau_{I,outer}"), round(tauI_no, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("IAE_{disturbance}"), round(IAE_no_d, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("IAE_{setpoint}"), round(IAE_no_sp, 6))))
 
 add_figure_if_exists(
     "P1_no_cascade_disturbance.png",
@@ -352,11 +365,11 @@ p(
     "For the cascade case, the inner loop is reconnected and the inner P-only gain is set to 0.4. "
     "The outer PI controller is tuned again because the primary controller sees a different equivalent process."
 )
-eq(sp.latex(sp.Eq(sp.Symbol("K_{c,inner}"), Kc_inner_cas)))
-eq(sp.latex(sp.Eq(sp.Symbol("K_{c,outer}"), round(Kc_cas, 6))))
-eq(sp.latex(sp.Eq(sp.Symbol(r"\tau_{I,outer}"), round(tauI_cas, 6))))
-eq(sp.latex(sp.Eq(sp.Symbol("IAE_{disturbance}"), round(IAE_cas_d, 6))))
-eq(sp.latex(sp.Eq(sp.Symbol("IAE_{setpoint}"), round(IAE_cas_sp, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("K_{c,inner}"), Kc_inner_cas)))
+deq(sp.latex(sp.Eq(sp.Symbol("K_{c,outer}"), round(Kc_cas, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol(r"\tau_{I,outer}"), round(tauI_cas, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("IAE_{disturbance}"), round(IAE_cas_d, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("IAE_{setpoint}"), round(IAE_cas_sp, 6))))
 
 add_figure_if_exists(
     "P2_cascade_disturbance.png",
@@ -389,7 +402,7 @@ def rga(K):
 doc.section("Problems 4--5: Relative Gain Array")
 p("The relative gain array is calculated from the steady-state gain matrix using")
 Kmat_sym = sp.MatrixSymbol("K", 2, 2)
-eq(r"\Lambda = K \circ \left(K^{-1}\right)^T")
+deq(r"\Lambda = K \circ \left(K^{-1}\right)^T")
 p("where the symbol " + r"$\circ$" + " denotes element-by-element multiplication.")
 
 # Problem 4
@@ -403,9 +416,9 @@ Lambda4 = rga(K4)
 
 doc.subsection("Problem 4")
 p("The gain matrix is")
-eq(sp.latex(sp.Matrix(K4).evalf(4)))
+deq(sp.latex(sp.Matrix(K4).evalf(4)))
 p("The relative gain array is")
-eq(sp.latex(sp.Matrix(Lambda4).evalf(4)))
+deq(sp.latex(sp.Matrix(Lambda4).evalf(4)))
 
 # Pairing by diagonal dominance / values near +1
 pairs4 = [(1, 1, Lambda4[0, 0]), (2, 2, Lambda4[1, 1]), (3, 3, Lambda4[2, 2]), (4, 4, Lambda4[3, 3])]
@@ -418,7 +431,7 @@ p4_pair_rows = r"""
 for i, j, val in pairs4:
     p4_pair_rows += rf"y_{{{i}}} & u_{{{j}}} & {val:.4f} \\" + "\n"
 p4_pair_rows += r"\end{array}"
-eq(p4_pair_rows)
+deq(p4_pair_rows)
 
 
 # Problem 5
@@ -430,9 +443,9 @@ Lambda5 = rga(K5)
 
 doc.subsection("Problem 5")
 p("For the two-input/two-output system, the steady-state gain matrix is obtained by evaluating each transfer function at " + r"$s=0$" + ".")
-eq(sp.latex(sp.Eq(sp.Symbol("K"), sp.Matrix(K5))))
+deq(sp.latex(sp.Eq(sp.Symbol("K"), sp.Matrix(K5))))
 p("The RGA is")
-eq(sp.latex(sp.Matrix(Lambda5).evalf(4)))
+deq(sp.latex(sp.Matrix(Lambda5).evalf(4)))
 p(
     "Because the diagonal RGA values are positive and closer to one than the off-diagonal values, "
     "the preferred pairing is " + r"$y_1$ with $u_1$ and $y_2$ with $u_2$."
@@ -443,7 +456,7 @@ p5_pair_rows = r"""
 \text{Output} & \text{Manipulated variable} & \lambda_{ij} \\
 \hline
 """ + rf"y_{{1}} & u_{{1}} & {Lambda5[0, 0]:.4f} \\" + "\n" + rf"y_{{2}} & u_{{2}} & {Lambda5[1, 1]:.4f} \\" + "\n" + r"\end{array}"
-eq(p5_pair_rows)
+deq(p5_pair_rows)
 
 
 # =============================================================================
@@ -559,7 +572,7 @@ def simulate_mimo_case(sys, t, r1, r2):
 
 doc.section("Problems 6--10: MIMO Control and Decoupling")
 p("The transfer-function matrix is")
-eq(r"""
+deq(r"""
 G(s)=
 \begin{bmatrix}
 \dfrac{5e^{-5s}}{4s+1} & \dfrac{2e^{-4s}}{8s+1}\\[6pt]
@@ -576,12 +589,12 @@ Kc_2, tauI_2, _ = tune_single_loop(G22, t_mimo, initial=(0.2, 10.0))
 
 doc.subsection("Problem 6: Independent Loop Tuning")
 p("Neglecting the cross terms, the diagonal loops are tuned independently with PI controllers.")
-eq(sp.latex(sp.Eq(sp.Symbol("G_{11}"), sp.Symbol(r"\frac{5e^{-5s}}{4s+1}"))))
-eq(sp.latex(sp.Eq(sp.Symbol("G_{22}"), sp.Symbol(r"\frac{6e^{-3s}}{10s+1}"))))
-eq(sp.latex(sp.Eq(sp.Symbol("K_{c1}"), round(Kc_1, 6))))
-eq(sp.latex(sp.Eq(sp.Symbol(r"\tau_{I1}"), round(tauI_1, 6))))
-eq(sp.latex(sp.Eq(sp.Symbol("K_{c2}"), round(Kc_2, 6))))
-eq(sp.latex(sp.Eq(sp.Symbol(r"\tau_{I2}"), round(tauI_2, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("G_{11}"), sp.Symbol(r"\frac{5e^{-5s}}{4s+1}"))))
+deq(sp.latex(sp.Eq(sp.Symbol("G_{22}"), sp.Symbol(r"\frac{6e^{-3s}}{10s+1}"))))
+deq(sp.latex(sp.Eq(sp.Symbol("K_{c1}"), round(Kc_1, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol(r"\tau_{I1}"), round(tauI_1, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("K_{c2}"), round(Kc_2, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol(r"\tau_{I2}"), round(tauI_2, 6))))
 
 r1_step = np.ones_like(t_mimo)
 r2_zero = np.zeros_like(t_mimo)
@@ -606,22 +619,22 @@ tout, y = simulate_mimo_case(sys_cross, t_mimo, r1_step, r2_zero)
 IAE_cross_y1 = iae(tout, y[0], 1)
 INT_cross_y2 = float(np.trapezoid(np.abs(y[1]), tout))
 save_plot("P7_cross_r1.png", tout, y, "Problem 7: cross terms, step in r1", ylabels=[r"$y_1$", r"$y_2$"])
-eq(sp.latex(sp.Eq(sp.Symbol("IAE_{y1,r1}"), round(IAE_cross_y1, 6))))
-eq(sp.latex(sp.Eq(sp.Symbol("Interaction_{y2,r1}"), round(INT_cross_y2, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("IAE_{y1,r1}"), round(IAE_cross_y1, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("Interaction_{y2,r1}"), round(INT_cross_y2, 6))))
 add_figure_if_exists("P7_cross_r1.png", "Cross terms included with a unit step in " + r"$r_1$" + ".", "fig:p7_r1")
 
 tout, y = simulate_mimo_case(sys_cross, t_mimo, r1_zero, r2_step)
 INT_cross_y1 = float(np.trapezoid(np.abs(y[0]), tout))
 IAE_cross_y2 = iae(tout, y[1], 1)
 save_plot("P7_cross_r2.png", tout, y, "Problem 7: cross terms, step in r2", ylabels=[r"$y_1$", r"$y_2$"])
-eq(sp.latex(sp.Eq(sp.Symbol("Interaction_{y1,r2}"), round(INT_cross_y1, 6))))
-eq(sp.latex(sp.Eq(sp.Symbol("IAE_{y2,r2}"), round(IAE_cross_y2, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("Interaction_{y1,r2}"), round(INT_cross_y1, 6))))
+deq(sp.latex(sp.Eq(sp.Symbol("IAE_{y2,r2}"), round(IAE_cross_y2, 6))))
 add_figure_if_exists("P7_cross_r2.png", "Cross terms included with a unit step in " + r"$r_2$" + ".", "fig:p7_r2")
 
 
 doc.subsection("Problem 8: Static Decoupling")
 p("For diagonal pairing, the static decoupler is")
-eq(r"""
+deq(r"""
 D_s =
 \begin{bmatrix}
 1 & -K_{12}/K_{11}\\
@@ -647,12 +660,12 @@ add_figure_if_exists("P8_static_r2.png", "Static decoupling with a unit step in 
 
 doc.subsection("Problem 9: Dynamic Decoupling")
 p("For diagonal pairing, the ideal dynamic decouplers are")
-eq(r"""
+deq(r"""
 D_{12}(s)=-\frac{G_{12}}{G_{11}}
 =
 -\frac{2}{5}\frac{4s+1}{8s+1}e^{s}
 """)
-eq(r"""
+deq(r"""
 D_{21}(s)=-\frac{G_{21}}{G_{22}}
 =
 -\frac{3}{6}\frac{10s+1}{12s+1}
@@ -661,7 +674,7 @@ p(
     "The term " + r"$e^{s}$" + " is noncausal because it corresponds to a negative delay. "
     "Therefore, the realizable dynamic decoupler uses the proper transfer-function part without the noncausal delay."
 )
-eq(r"""
+deq(r"""
 D_{12,realizable}(s)=
 -\frac{2}{5}\frac{4s+1}{8s+1}
 """)

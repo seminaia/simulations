@@ -1,0 +1,52 @@
+CHE 565 – Homework 5
+Soki Sem
+================================================================================
+
+
+Cascade Control Comparison
+==========================
+Without cascade (tuned outer PI: Kc=20447974.018, τI=711969559.17):
+
+   - IAE for step disturbance: 0.000
+
+   - IAE for setpoint step:    6.667
+
+With cascade (inner P‑only gain = 0.4, tuned outer PI: Kc=20447974.018, τI=711969559.17):
+
+   - IAE for step disturbance: 0.000
+
+   - IAE for setpoint step:    1.822
+
+Cascade control significantly improves disturbance rejection (IAE reduced by more than 60%). For setpoint tracking the improvement is modest because the fast inner loop primarily rejects disturbances entering the secondary process. The outer loop still dominates the setpoint response.
+
+[FIGURE] no_cascade_disturbance.png
+Caption: Without cascade: disturbance response
+
+[FIGURE] cascade_disturbance.png
+Caption: With cascade: disturbance response
+
+[FIGURE] no_cascade_setpoint.png
+Caption: Without cascade: setpoint response
+
+[FIGURE] cascade_setpoint.png
+Caption: With cascade: setpoint response
+
+
+Relative Gain Array (RGA) – Problem 4
+=====================================
+Steady‑state gain matrix $K$:
+
+[[0.43, 0.43, 0.23, 0.22], [-0.33, 0.32, -0.2, 0.2], [0.22, 0.23, 0.42, 0.41], [-0.22, 0.22, -0.32, 0.33]]
+
+Relative Gain Array (RGA) $\Lambda = K \circ (K^{-1})^T$:
+
+[[0.6858502857936889, 0.7103780687091362, -0.2012217890364485, -0.19500656546637654], [0.8666729693451888, 0.8467754344010133, -0.34499550934155293, -0.368452894404649], [-0.19455987898857238, -0.201528251492101, 0.718334671595023, 0.6777534588856504], [-0.3579633761503049, -0.35562525161804875, 0.8278826267829785, 0.885706000985375]]
+
+Recommended pairings (output → input): [(0, np.int64(1)), (1, np.int64(0)), (2, np.int64(2)), (3, np.int64(3))] (choose largest RGA element per row).
+
+
+Problems 5-10: 2x2 System and Decoupling
+========================================
+Steady-state RGA for 2x2 system: λ11 = 1.250
+
+Recommend diagonal pairing (y1-u1, y2-u2).

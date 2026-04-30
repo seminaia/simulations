@@ -1,5 +1,5 @@
 """
-HW5_CHE565_soki_fixed.py
+HW5_CHE565.py
 ========================
 CHE 565 – Homework 5
 Cascade Control, RGA, MIMO control, and decoupling.
@@ -65,8 +65,19 @@ lst = doc.listings
 # These calls are kept for consistency with your original script.
 doc.maketitle(True)
 doc.toc(False)
-
-
+s = sp.symbols("s")
+G11_sym = sp.Function("G11")(s) 
+G12_sym = sp.Function("G12")(s)
+G21_sym = sp.Function("G21")(s)
+G22_sym = sp.Function("G22")(s)
+D12_sym = sp.Function("D12")(s)
+D21_sym = sp.Function("D21")(s)
+G11_sp = sp.Eq(G11_sym, 5 / (4 * s + 1) * sp.exp(-5 * s))
+G12_sp = sp.Eq(G12_sym, 2 / (8 * s + 1) * sp.exp(-4 * s))
+G21_sp = sp.Eq(G21_sym, 3 / (12 * s + 1) * sp.exp(-3 * s))
+G22_sp = sp.Eq(G22_sym, 6 / (10 * s + 1) * sp.exp(-3 * s))
+D12_sp = sp.Eq(D12_sym, G12_sp.rhs / G11_sp.rhs)
+D21_sp = sp.Eq(D21_sym, G21_sp.rhs / G22_sp.rhs)
 # =============================================================================
 # General helpers
 # =============================================================================
@@ -256,7 +267,8 @@ def optimize_PI(cascade, Kc2, t, ysp_input, d_input, params):
 def fopdt(K, tau, theta, pade_order=1):
     s = ct.tf("s")
     numD, denD = ct.pade(theta, pade_order)
-    return ct.tf(numD, denD) * K / (tau * s + 1)
+    delay = ct.tf(numD, denD)
+    return delay * K / (tau * s + 1)
 
 
 def build_mimo_process(include_cross_terms=True, pade_order=1):
@@ -548,24 +560,24 @@ def run_problems_1_to_3():
     t5_cas, y5_cas, _, _ = simulate_case(sys_cas, tvals, step_on, step_off)
     iae5_cas = calculate_IAE(t5_cas, y5_cas, step_on)
     f5_cas ="closed_loop_cascade_setpoint.png"
-    save_plot(f5_cas, t5_cas, y5_cas, "Cascade: unit step response", ysp=step_off, d=step_on)
+    save_plot(f5_cas, t5_cas, y5_cas, "Cascade: unit step Setpoint", ysp=step_on, d=step_off)
     
 
     t6_cas, y6_cas, _, _ = simulate_case(sys_auto_cas, tvals, step_on, step_off)
     iae6_cas = calculate_IAE(t6_cas, y6_cas, step_on)
     f6_cas = "closed_loop_cascade_autotuned_setpoint.png"
-    save_plot(f6_cas, t6_cas, y6_cas, "Cascade: unit step disturbance (auto-tuned)", ysp=step_off, d=step_on)
+    save_plot(f6_cas, t6_cas, y6_cas, "Cascade: unit step Setpoint (auto-tuned)", ysp=step_on, d=step_off)
     
     t7_cas, y7_cas, _, _ = simulate_case(sys_lambda_cas, tvals, step_on, step_off)
     iae7_cas = calculate_IAE(t7_cas, y7_cas, step_on)
     f7_cas = "closed_loop_cascade_lambda_setpoint.png"
-    save_plot(f7_cas, t7_cas, y7_cas, "Cascade: unit step disturbance (lambda tuning)", ysp=step_off, d=step_on)
+    save_plot(f7_cas, t7_cas, y7_cas, "Cascade: unit step setpoint (lambda tuning)", ysp=step_on, d=step_off)
     
     
     t8_cas, y8_cas, _, _ = simulate_case(sys_opt_cas, tvals, step_on, step_off)
     iae8_cas = calculate_IAE(t8_cas, y8_cas, step_on)
     f8_cas = "closed_loop_cascade_optimized_setpoint.png"
-    save_plot(f8_cas, t8_cas, y8_cas, "Cascade: unit step disturbance (IAE optimized)", ysp=step_off, d=step_on)
+    save_plot(f8_cas, t8_cas, y8_cas, "Cascade: unit step setpoint (IAE optimized)", ysp=step_on, d=step_off)
 
     px(
         "For the cascade case, the inner feedback path was connected and the inner P-only controller gain was set to ",
@@ -665,7 +677,6 @@ def run_problem_5():
     K = np.array([[5.0, 2.0], [3.0, 6.0]])
     Lam = rga(K)
     pairings = rga_pairings(Lam)
-    print(pairings)
     eq(r"K = \begin{bmatrix} 5 & 2 \\ 3 & 6 \end{bmatrix}")
     eq(r"\Lambda = " + latex_matrix(Lam))
     table(
@@ -693,11 +704,14 @@ def run_problems_6_to_10():
     Kc22, tauI22, lam22, _ = lambda_tuning(10, 3, 6)
     Kc12, tauI12, lam12, _ = lambda_tuning(8, 4, 2)
     Kc21, tauI21, lam21, _ = lambda_tuning(12, 3, 3)
-    G11 = fopdt(5, 4, 5, pade_order=1)
-    G22 = fopdt(6, 10, 3, pade_order=1)
-    G12 = fopdt(2, 8, 4, pade_order=1)
-    G21 = fopdt(3, 12, 3, pade_order=1)
-    eq(r"K_c = \frac{\tau_p}{K' (\lambda + \theta)}, \qquad \tau_I = \tau_p")
+    G11_latex = sp.latex(G11_sp)
+    G22_latex = sp.latex(G22_sp)
+    G12_latex = sp.latex(G12_sp)
+    G21_latex = sp.latex(G21_sp)
+    D12_latex = sp.latex(D12_sp)
+    D21_latex = sp.latex(D21_sp)
+    eq(rf"{G11_latex} \quad {G12_latex} \quad {G21_latex} \quad {G22_latex}")
+    eq(rf"{D12_latex} \quad {D21_latex}")
     table(
         headers=["Loop", NoEscape(r"$K_p$"), NoEscape(r"$\tau_p$"), NoEscape(r"$\theta$"), NoEscape(r"$\lambda$"), NoEscape(r"$K_c$"), NoEscape(r"$\tau_I$")],
         rows=[
@@ -805,8 +819,8 @@ def run_problems_6_to_10():
         r"D_{12}(s) = -\frac{G_{12}}{G_{11}} = -\frac{2}{5}\frac{4s+1}{8s+1}e^{s}",
         r"D_{21}(s) = -\frac{G_{21}}{G_{22}} = -\frac{3}{6}\frac{10s+1}{12s+1}"
     )
-    p(
-        "The term e^{s} in D12 is noncausal because it is equivalent to a negative delay. "
+    px(
+        "The term", im(r"\ e^{s} \ "), "in D12 is noncausal because it is equivalent to a negative delay. ",
         "Therefore, the realizable dynamic decoupler uses only the rational part of D12."
     )
     eq(r"D_{12,realizable}(s) = -\frac{2}{5}\frac{4s+1}{8s+1}")

@@ -87,15 +87,17 @@ Label: fig:block_diagram
 
 The Simulink block diagram is shown in Figure~\ref{fig:block_diagram}.
 
-Case 1: Step disturbance with no setpoint change gave and step in disturbance with no setpoint change gave IAE = 725.7464 in Python and IAE = 725.8109 in Simulink.The closed-loop disturbance response and no cascade loop is shown in Figure~\ref{fig:no_cascade_step_disturbance}.
+Case 1: Step disturbance with no setpoint change gave and step in disturbance with no setpoint change gave IAE = 449341.5049 in Python and IAE = 453752.63065 in Simulink.The closed-loop disturbance response and no cascade loop is shown in Figure~\ref{fig:no_cascade_step_disturbance}.
 
-The PI controller was then tuned using the autotuning feature in Simulink, which gave P = 0.1837 and I = 0.0816.
+The PI controller was then tuned using the autotuning feature in Simulink, 
+Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = 13.3102 in Python and IAE = 13.0463 in Simulink. The response is shown in Figure~\ref{fig:no_cascade_autotuning_step_disturbance}.$\ $Proportional gain P = 0.1837 and integral gain I = 0.0816.
 
-Case 2: Step disturbance with no setpoint change and PI autotuning gave IAE = 13.0420 in Python and IAE = 13.0463 in Simulink.The response to a unit step change in disturbance with no cascade control and PI autotuning is shown in Figure~\ref{fig:no_cascade_autotuning_step_disturbance}.
+Case 3: No step change in setpoint and step disturbance change with$\ \lambda \ $ tuning gave IAE = 8.5365 in Python and IAE = 8.5578 in Simulink. The disturbance response is shown in Figure~\ref{fig:no_cascade_lambda_tuning_step_disturbance}.$\ $ Proportional gain P = 0.7031, integral gain I = 0.2308, derivative gain D = 0.0000, and lambda = 1.6667.
 
+Case 4: Step disturbance with no setpoint change and optimized PI parameters gave IAE = 0.2084 in Python and IAE = 0.2192. The response is shown in Figure~\ref{fig:no_cascade_optimized_step_disturbance}.$\ $Optimized proportional gain P = 123.2445 and integral gain I = 0.0180.$\ $Note: The optimized parameters were found by minimizing the IAE to the disturbance
 
-Closed-loop Response to Step Setpoint Change
---------------------------------------------
-Case 3: Step setpoint change with no disturbance change gave IAE = 2443.4231 in Python and IAE = 2450.8205 in Simulink.The response is shown in Figure~\ref{fig:no_cascade_step_setpoint}.
+Case 5: No step change in disturbance and step change in setpoint with no cascade control gave IAE = 1230474.8042 in Python and IAE = 1241005.8219 in Simulink. The response is shown in Figure~\ref{fig:no_cascade_setpoint_change}.$\ $
 
-Case 4: Step setpoint change with no disturbance change and PI autotuning gave IAE = 8.1947 in Python and IAE = 8.1939 in Simulink. The response is shown in Figure~\ref{fig:no_cascade_autotuning_step_setpoint}.
+Case 6: No step change in disturbance and step change in setpoint with no cascade control and PI autotuning gave IAE = 8.2141 in Python and IAE = 8.2136 in Simulink. The response is shown in Figure~\ref{fig:no_cascade_setpoint_change_autotuning}.$\ $Proportional gain P = 0.1837 and integral gain I = 0.0816.
+
+Case 7: No step change in disturbance and step change in setpoint with no cascade control and lambda tuning gave IAE = 16.6815 in Python and IAE = 16.6484 in Simulink. The response is shown in Figure~\ref{fig:no_cascade_setpoint_change_lambda_tuning}$\ $.$\ $Proportional gain P = 0.7031, integral gain I = 0.2308, derivative gain D = 0.0000, and lambda = 1.6667.

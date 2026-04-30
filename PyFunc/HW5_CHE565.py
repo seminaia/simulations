@@ -118,7 +118,8 @@ def interaction_area(t, y):
 
 def rga(K):
     K = np.asarray(K, dtype=float)
-    return K * np.linalg.inv(K).T
+    
+    return np.multiply(K, np.linalg.inv(K).T)
 
 
 def matrix_rows(M):
@@ -149,16 +150,6 @@ Kp2 = 2.0
 taup2 = 10.0
 
 
-def ideal_pi(Kc, tauI):
-    s = ct.tf("s")
-    return Kc * (1 + 1 / (tauI * s))
-
-
-def p_only_controller(Kc):
-    # Important: P-only, but as a transfer function so ct.ss() works.
-    return ct.tf([Kc], [1])
-
-
 def build_closed_loop(Kc1, Kc2, tauI1, cascade=False):
     """
     Build the cascade-control system from Problems 1–3.
@@ -175,11 +166,11 @@ def build_closed_loop(Kc1, Kc2, tauI1, cascade=False):
     """
     s = ct.tf("s")
 
-    Gc1 = ideal_pi(Kc1, tauI1)
+    Gc1 = ct.tf([Kc1, Kc1 / tauI1], [1, 0], name="Gc1", inputs="E1", outputs="Yc1")
     Gc2 = ct.tf([Kc2],[1], name="Gc2", inputs="E2", outputs="Yc2")  # 
     Gp1 = Kp1 / (taup1 * s + 1)
     Gp2 = Kp2 / (taup2 * s + 1)
-    Gd = ct.tf([1], [1])
+    Gd = ct.tf([Kc2], [1])
 
     Gc1_blk = ct.ss(Gc1, name="Gc1", inputs="E1", outputs="Yc1")
     Gc2_blk = ct.ss(Gc2, name="Gc2", inputs="E2", outputs="Yc2")
@@ -303,9 +294,10 @@ def build_two_loop_closed_system(Kc1, tauI1, Kc2, tauI2, include_cross_terms=Tru
         none, static, dynamic
     """
     s = ct.tf("s")
+    
     blocks = [
-        ct.ss(ideal_pi(Kc1, tauI1), name="C1", inputs="e1", outputs="v1"),
-        ct.ss(ideal_pi(Kc2, tauI2), name="C2", inputs="e2", outputs="v2"),
+        ct.ss(ct.tf([Kc1, Kc1 / tauI1], [1, 0]), name="C1", inputs="e1", outputs="v1"),
+        ct.ss(ct.tf([Kc2, Kc2 / tauI2], [1, 0]), name="C2", inputs="e2", outputs="v2"),
         ct.summing_junction(inputs=["r1", "-y1"], output="e1", name="sum_e1"),
         ct.summing_junction(inputs=["r2", "-y2"], output="e2", name="sum_e2"),
     ]
@@ -613,6 +605,7 @@ def run_problem_4():
         [0.22, 0.23, 0.42, 0.41],
         [-0.22, 0.22, -0.32, 0.32],
     ])
+    Lam = ct
     Lam = rga(K)
 
     eq(r"\Lambda = K \circ \left(K^{-1}\right)^T")

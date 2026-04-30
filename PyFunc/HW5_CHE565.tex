@@ -90,7 +90,7 @@ Autotune&0.1837&12.2474&0.0000\\%
 \hline%
 Lambda&0.6094&4.3333&9.0895\\%
 \hline%
-IAE optimized&874.3338&1213.2216&0.0793\\%
+IAE optimized&243.3753&32.1514&0.1404\\%
 \hline%
 \end{tabular}%
 \caption{Problem 1 results without cascade control.}%
@@ -133,7 +133,7 @@ Autotune&0.1837&12.2474&8.2136\\%
 \hline%
 Lambda&0.6094&4.3333&16.5618\\%
 \hline%
-IAE optimized&874.3338&1213.2216&4.2617\\%
+IAE optimized&243.3753&32.1514&4.7511\\%
 \hline%
 \end{tabular}%
 \caption{Problem 1 setpoint results without cascade control.}%
@@ -185,13 +185,13 @@ K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000%
 \hline%
 Case&$K_{c,2}$&$K_{c,1}$&$\tau_{I,1}$&IAE\\%
 \hline%
-Disturbance&0.4000&1&1.0000&9.8851\\%
+Disturbance&0.4000&1&1.0000&3.9540\\%
 \hline%
-Autotune&0.4000&0.7508&4.5461&4.1578\\%
+Autotune&0.4000&0.7508&4.5461&1.6631\\%
 \hline%
-Lambda&0.4000&0.6094&4.3333&4.8484\\%
+Lambda&0.4000&0.6094&4.3333&1.9394\\%
 \hline%
-IAE optimized&0.4000&1378.2789&563.2547&0.0611\\%
+IAE optimized&0.4000&783.6315&351.5674&0.0371\\%
 \hline%
 \end{tabular}%
 \caption{Problem 2 results with cascade control and unit step disturbance.}%
@@ -234,7 +234,7 @@ Autotune&0.4000&0.7508&4.5461&8.7692\\%
 \hline%
 Lambda&0.4000&0.6094&4.3333&9.7764\\%
 \hline%
-IAE optimized&0.4000&1378.2789&563.2547&1.9419\\%
+IAE optimized&0.4000&783.6315&351.5674&1.8554\\%
 \hline%
 \end{tabular}%
 \caption{Problem 2 results with cascade control and unit step setpoint changes.}%
@@ -250,9 +250,9 @@ IAE optimized&0.4000&1378.2789&563.2547&1.9419\\%
 \hline%
 Test&No Cascade IAE&Cascade IAE&Change\\%
 \hline%
-Disturbance&450862.8604&9.8851&{-}450852.9753\\%
+Disturbance&450862.8604&3.9540&{-}450858.9063\\%
 \hline%
-Setpoint&0.0000&4.1578&4.1578\\%
+Setpoint&0.0000&1.6631&1.6631\\%
 \hline%
 \end{tabular}%
 \caption{Comparison of no{-}cascade and cascade{-}control performance.}%

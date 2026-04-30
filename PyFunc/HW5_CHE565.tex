@@ -73,7 +73,7 @@ Gc2_blk = ct.ss(Gc2, name='Gc2', inputs='E2', outputs='Yc2')%
 \label{subsec:Problem1SystemWithoutCascadeControl}%
 For the no{-}cascade case, the inner feedback path was disconnected and the P{-}only inner controller gain was set to %
 $K_{c,2}=1$%
-. The outer PI controller was then tuned by minimizing the IAE.%
+. The outer PI controller was then tuned using the autotuning from simulink and lambda tuning method and minimizing the IAE%
 \par%
 \[%
 K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000%
@@ -84,9 +84,13 @@ K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000%
 \hline%
 Case&$K_{c,1}$&$\tau_{I,1}$&IAE\\%
 \hline%
-Disturbance&1.0000&1.0000&450862.8604\\%
+Disturbance&1&1&450862.8604\\%
 \hline%
-Setpoint&1.0000&1.0000&1233339.1635\\%
+Autotune&0.1837&12.2474&0.0000\\%
+\hline%
+Lambda&0.6094&4.3333&9.0895\\%
+\hline%
+IAE optimized&874.3338&1213.2216&0.0793\\%
 \hline%
 \end{tabular}%
 \caption{Problem 1 results without cascade control.}%
@@ -94,19 +98,76 @@ Setpoint&1.0000&1.0000&1233339.1635\\%
 \end{table}%
 \begin{figure}[H]%
 \centering%
-\begin{subfigure}{0.48\textwidth}%
+\begin{subfigure}{0.25\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{HW5_plots/P1_no_cascade_disturbance.png}%
+\includegraphics[width=\linewidth]{closed_loop_no_cascade.png}%
 \subcaption{Disturbance response}%
 \end{subfigure}%
-\begin{subfigure}{0.48\textwidth}%
+\begin{subfigure}{0.25\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{HW5_plots/P1_no_cascade_setpoint.png}%
+\includegraphics[width=\linewidth]{closed_loop_no_cascade_autotuned.png}%
+\subcaption{Disturbance response (auto{-}tuned)}%
+\end{subfigure}%
+\begin{subfigure}{0.25\textwidth}%
+\centering%
+\includegraphics[width=\linewidth]{closed_loop_no_cascade_lambda.png}%
+\subcaption{Disturbance response (lambda tuning)}%
+\end{subfigure}%
+\begin{subfigure}{0.25\textwidth}%
+\centering%
+\includegraphics[width=\linewidth]{closed_loop_no_cascade_optimized.png}%
+\subcaption{Disturbance response (IAE optimized)}%
+\end{subfigure}%
+\caption{Problem 1 responses without cascade control.}%
+\label{fig:problem1_no_cascade}%
+\end{figure}%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{cccc}%
+\hline%
+Case&$K_{c,1}$&$\tau_{I,1}$&IAE\\%
+\hline%
+Setpoint&1&1&1233339.1635\\%
+\hline%
+Autotune&0.1837&12.2474&8.2136\\%
+\hline%
+Lambda&0.6094&4.3333&16.5618\\%
+\hline%
+IAE optimized&874.3338&1213.2216&4.2617\\%
+\hline%
+\end{tabular}%
+\caption{Problem 1 setpoint results without cascade control.}%
+\label{tab:problem1_no_cascade_setpoint}%
+\end{table}%
+\begin{figure}[H]%
+\centering%
+\begin{subfigure}{0.25\textwidth}%
+\centering%
+\includegraphics[width=\linewidth]{closed_loop_no_cascade_setpoint.png}%
 \subcaption{Setpoint response}%
+\end{subfigure}%
+\begin{subfigure}{0.25\textwidth}%
+\centering%
+\includegraphics[width=\linewidth]{closed_loop_no_cascade_autotuned_setpoint.png}%
+\subcaption{Setpoint response (auto{-}tuned)}%
+\end{subfigure}%
+\begin{subfigure}{0.25\textwidth}%
+\centering%
+\includegraphics[width=\linewidth]{closed_loop_no_cascade_lambda_setpoint.png}%
+\subcaption{Setpoint response (lambda tuning)}%
+\end{subfigure}%
+\begin{subfigure}{0.25\textwidth}%
+\centering%
+\includegraphics[width=\linewidth]{closed_loop_no_cascade_optimized_setpoint.png}%
+\subcaption{Setpoint response (IAE optimized)}%
 \end{subfigure}%
 \caption{Problem 1 responses without cascade control.}%
 \label{fig:problem1_no_cascade}%
 \end{figure}
+
+%
+\subsection*{Problem 2: System With Cascade Control}%
+\label{subsec:Problem2SystemWithCascadeControl}%
 
 %
 \subsection*{Problem 2: System With Cascade Control}%
@@ -124,29 +185,61 @@ K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000%
 \hline%
 Case&$K_{c,2}$&$K_{c,1}$&$\tau_{I,1}$&IAE\\%
 \hline%
-Disturbance&0.4000&1.0000&1.0000&9.8851\\%
+Disturbance&0.4000&1&1.0000&9.8851\\%
 \hline%
-Setpoint&0.4000&1.0000&1.0000&31.0631\\%
+Autotune&0.4000&0.7508&4.5461&4.1578\\%
+\hline%
+Lambda&0.4000&0.6094&4.3333&4.8484\\%
+\hline%
+IAE optimized&0.4000&1378.2789&563.2547&0.0611\\%
 \hline%
 \end{tabular}%
-\caption{Problem 2 results with cascade control.}%
-\label{tab:problem2_cascade}%
+\caption{Problem 2 results with cascade control and unit step disturbance.}%
+\label{tab:problem2_cascade_disturbance}%
 \end{table}%
 \begin{figure}[H]%
 \centering%
 \begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{HW5_plots/P2_cascade_disturbance.png}%
+\includegraphics[width=\linewidth]{closed_loop_cascade.png}%
 \subcaption{Disturbance response}%
 \end{subfigure}%
 \begin{subfigure}{0.48\textwidth}%
 \centering%
-\includegraphics[width=\linewidth]{HW5_plots/P2_cascade_setpoint.png}%
-\subcaption{Setpoint response}%
+\includegraphics[width=\linewidth]{closed_loop_cascade_autotuned_setpoint.png}%
+\subcaption{Disturbance response}%
 \end{subfigure}%
-\caption{Problem 2 responses with cascade control.}%
+\begin{subfigure}{0.48\textwidth}%
+\centering%
+\includegraphics[width=\linewidth]{closed_loop_cascade_lambda_setpoint.png}%
+\subcaption{Disturbance response}%
+\end{subfigure}%
+\begin{subfigure}{0.48\textwidth}%
+\centering%
+\includegraphics[width=\linewidth]{closed_loop_cascade_optimized_setpoint.png}%
+\subcaption{Disturbance response}%
+\end{subfigure}%
+\caption{Problem 2 responses with cascade control and unit step disturbance.}%
 \label{fig:problem2_cascade}%
-\end{figure}
+\end{figure}%
+\begin{table}[H]%
+\centering%
+\begin{tabular}{ccccc}%
+\hline%
+Case&$K_{c,2}$&$K_{c,1}$&$\tau_{I,1}$&IAE\\%
+\hline%
+Setpoint&0.4000&1&1.0000&31.0631\\%
+\hline%
+Autotune&0.4000&0.7508&4.5461&8.7692\\%
+\hline%
+Lambda&0.4000&0.6094&4.3333&9.7764\\%
+\hline%
+IAE optimized&0.4000&1378.2789&563.2547&1.9419\\%
+\hline%
+\end{tabular}%
+\caption{Problem 2 results with cascade control and unit step setpoint changes.}%
+\label{tab:problem2_cascade_setpoint}%
+\end{table}
 
 %
 \subsection*{Problem 3: Comparison of Cascade and No{-}Cascade Results}%
@@ -159,7 +252,7 @@ Test&No Cascade IAE&Cascade IAE&Change\\%
 \hline%
 Disturbance&450862.8604&9.8851&{-}450852.9753\\%
 \hline%
-Setpoint&1233339.1635&31.0631&{-}1233308.1004\\%
+Setpoint&0.0000&4.1578&4.1578\\%
 \hline%
 \end{tabular}%
 \caption{Comparison of no{-}cascade and cascade{-}control performance.}%
@@ -261,7 +354,7 @@ Loop&$K_p$&$\tau_p$&$\theta$&$\lambda$&$K_c$&$\tau_I$\\%
 \hline%
 G11&5.0000&4.0000&5.0000&5.0000&0.0800&4.0000\\%
 \hline%
-G22&6.0000&10.0000&3.0000&5.0000&0.2083&10.0000\\%
+G22&6.0000&10.0000&3.0000&3.0000&0.2778&10.0000\\%
 \hline%
 \end{tabular}%
 \caption{PI tuning values for the two diagonal loops.}%
@@ -292,9 +385,9 @@ G22&6.0000&10.0000&3.0000&5.0000&0.2083&10.0000\\%
 \hline%
 Test&Controlled{-}output IAE&Interaction area\\%
 \hline%
-Step in r1&12.4987&6.0371\\%
+Step in r1&12.4992&4.5391\\%
 \hline%
-Step in r2&9.9989&4.3096\\%
+Step in r2&7.4995&4.3600\\%
 \hline%
 \end{tabular}%
 \caption{Problem 7 performance with cross terms included.}%
@@ -328,9 +421,9 @@ D_{12} = -\frac{K_{12}}{K_{11}} = -\frac{2}{5}, \qquad D_{21} = -\frac{K_{21}}{K
 \hline%
 Test&Controlled{-}output IAE&Interaction area\\%
 \hline%
-Step in r1&12.4998&0.7781\\%
+Step in r1&12.4998&0.6320\\%
 \hline%
-Step in r2&9.9998&1.7950\\%
+Step in r2&7.4998&2.1539\\%
 \hline%
 \end{tabular}%
 \caption{Problem 8 performance with static decouplers.}%
@@ -372,7 +465,7 @@ Test&Controlled{-}output IAE&Interaction area\\%
 \hline%
 Step in r1&12.4998&0.0000\\%
 \hline%
-Step in r2&9.9998&0.5159\\%
+Step in r2&7.4998&0.6073\\%
 \hline%
 \end{tabular}%
 \caption{Problem 9 performance with dynamic decouplers.}%
@@ -403,13 +496,13 @@ Step in r2&9.9998&0.5159\\%
 \hline%
 Case&Step in r1: IAE y1&Step in r1: y2 area&Step in r2: y1 area&Step in r2: IAE y2\\%
 \hline%
-No cross terms&10.7171&0.0000&0.0000&8.0037\\%
+No cross terms&10.7171&0.0000&0.0000&6.4302\\%
 \hline%
-Cross terms&12.4987&6.0371&4.3096&9.9989\\%
+Cross terms&12.4992&4.5391&4.3600&7.4995\\%
 \hline%
-Static decoupler&12.4998&0.7781&1.7950&9.9998\\%
+Static decoupler&12.4998&0.6320&2.1539&7.4998\\%
 \hline%
-Dynamic decoupler&12.4998&0.0000&0.5159&9.9998\\%
+Dynamic decoupler&12.4998&0.0000&0.6073&7.4998\\%
 \hline%
 \end{tabular}%
 \caption{Summary of MIMO response metrics for Problems 6{-}{-}10.}%

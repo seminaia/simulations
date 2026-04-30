@@ -29,16 +29,30 @@ Problems 1--3: Cascade Control
 
 Problem 1: System Without Cascade Control
 -----------------------------------------
-For the no-cascade case, the inner feedback path was disconnected and the P-only inner controller gain was set to $K_{c,2}=1$. The outer PI controller was then tuned by minimizing the IAE.
+For the no-cascade case, the inner feedback path was disconnected and the P-only inner controller gain was set to $K_{c,2}=1$. The outer PI controller was then tuned using the autotuning from simulink and lambda tuning method and minimizing the IAE
 
 [MATH] K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000
 [TABLE]
 Case | $K_{c,1}$ | $\tau_{I,1}$ | IAE
-Disturbance | 1.0000 | 1.0000 | 450862.8604
-Setpoint | 1.0000 | 1.0000 | 1233339.1635
+Disturbance | 1 | 1 | 450862.8604
+Autotune | 0.1837 | 12.2474 | 0.0000
+Lambda | 0.6094 | 4.3333 | 9.0895
+IAE optimized | 874.3338 | 1213.2216 | 0.0793
 Caption: Problem 1 results without cascade control.
 Label: tab:problem1_no_cascade
 
+[TABLE]
+Case | $K_{c,1}$ | $\tau_{I,1}$ | IAE
+Setpoint | 1 | 1 | 1233339.1635
+Autotune | 0.1837 | 12.2474 | 8.2136
+Lambda | 0.6094 | 4.3333 | 16.5618
+IAE optimized | 874.3338 | 1213.2216 | 4.2617
+Caption: Problem 1 setpoint results without cascade control.
+Label: tab:problem1_no_cascade_setpoint
+
+
+Problem 2: System With Cascade Control
+--------------------------------------
 
 Problem 2: System With Cascade Control
 --------------------------------------
@@ -47,10 +61,21 @@ For the cascade case, the inner feedback path was connected and the inner P-only
 [MATH] K_{c,1} = 1.0000, \qquad \tau_{I,1} = 1.0000, \qquad I_1 = 1.0000
 [TABLE]
 Case | $K_{c,2}$ | $K_{c,1}$ | $\tau_{I,1}$ | IAE
-Disturbance | 0.4000 | 1.0000 | 1.0000 | 9.8851
-Setpoint | 0.4000 | 1.0000 | 1.0000 | 31.0631
-Caption: Problem 2 results with cascade control.
-Label: tab:problem2_cascade
+Disturbance | 0.4000 | 1 | 1.0000 | 9.8851
+Autotune | 0.4000 | 0.7508 | 4.5461 | 4.1578
+Lambda | 0.4000 | 0.6094 | 4.3333 | 4.8484
+IAE optimized | 0.4000 | 1378.2789 | 563.2547 | 0.0611
+Caption: Problem 2 results with cascade control and unit step disturbance.
+Label: tab:problem2_cascade_disturbance
+
+[TABLE]
+Case | $K_{c,2}$ | $K_{c,1}$ | $\tau_{I,1}$ | IAE
+Setpoint | 0.4000 | 1 | 1.0000 | 31.0631
+Autotune | 0.4000 | 0.7508 | 4.5461 | 8.7692
+Lambda | 0.4000 | 0.6094 | 4.3333 | 9.7764
+IAE optimized | 0.4000 | 1378.2789 | 563.2547 | 1.9419
+Caption: Problem 2 results with cascade control and unit step setpoint changes.
+Label: tab:problem2_cascade_setpoint
 
 
 Problem 3: Comparison of Cascade and No-Cascade Results
@@ -58,7 +83,7 @@ Problem 3: Comparison of Cascade and No-Cascade Results
 [TABLE]
 Test | No Cascade IAE | Cascade IAE | Change
 Disturbance | 450862.8604 | 9.8851 | -450852.9753
-Setpoint | 1233339.1635 | 31.0631 | -1233308.1004
+Setpoint | 0.0000 | 4.1578 | 4.1578
 Caption: Comparison of no-cascade and cascade-control performance.
 Label: tab:problem3_comparison
 
@@ -114,7 +139,7 @@ Problem 6: Two Single-Loop Controllers with Cross Terms Neglected
 [TABLE]
 Loop | $K_p$ | $\tau_p$ | $\theta$ | $\lambda$ | $K_c$ | $\tau_I$
 G11 | 5.0000 | 4.0000 | 5.0000 | 5.0000 | 0.0800 | 4.0000
-G22 | 6.0000 | 10.0000 | 3.0000 | 5.0000 | 0.2083 | 10.0000
+G22 | 6.0000 | 10.0000 | 3.0000 | 3.0000 | 0.2778 | 10.0000
 Caption: PI tuning values for the two diagonal loops.
 Label: tab:problem6_tuning
 
@@ -123,8 +148,8 @@ Problem 7: Cross Terms Included
 -------------------------------
 [TABLE]
 Test | Controlled-output IAE | Interaction area
-Step in r1 | 12.4987 | 6.0371
-Step in r2 | 9.9989 | 4.3096
+Step in r1 | 12.4992 | 4.5391
+Step in r2 | 7.4995 | 4.3600
 Caption: Problem 7 performance with cross terms included.
 Label: tab:problem7_cross_terms
 
@@ -134,8 +159,8 @@ Problem 8: Static Decouplers
 [MATH] D_{12} = -\frac{K_{12}}{K_{11}} = -\frac{2}{5}, \qquad D_{21} = -\frac{K_{21}}{K_{22}} = -\frac{3}{6}
 [TABLE]
 Test | Controlled-output IAE | Interaction area
-Step in r1 | 12.4998 | 0.7781
-Step in r2 | 9.9998 | 1.7950
+Step in r1 | 12.4998 | 0.6320
+Step in r2 | 7.4998 | 2.1539
 Caption: Problem 8 performance with static decouplers.
 Label: tab:problem8_static_decouplers
 
@@ -151,7 +176,7 @@ The term e^{s} in D12 is noncausal because it is equivalent to a negative delay.
 [TABLE]
 Test | Controlled-output IAE | Interaction area
 Step in r1 | 12.4998 | 0.0000
-Step in r2 | 9.9998 | 0.5159
+Step in r2 | 7.4998 | 0.6073
 Caption: Problem 9 performance with dynamic decouplers.
 Label: tab:problem9_dynamic_decouplers
 
@@ -160,10 +185,10 @@ Problem 10: Comments on MIMO Results
 ------------------------------------
 [TABLE]
 Case | Step in r1: IAE y1 | Step in r1: y2 area | Step in r2: y1 area | Step in r2: IAE y2
-No cross terms | 10.7171 | 0.0000 | 0.0000 | 8.0037
-Cross terms | 12.4987 | 6.0371 | 4.3096 | 9.9989
-Static decoupler | 12.4998 | 0.7781 | 1.7950 | 9.9998
-Dynamic decoupler | 12.4998 | 0.0000 | 0.5159 | 9.9998
+No cross terms | 10.7171 | 0.0000 | 0.0000 | 6.4302
+Cross terms | 12.4992 | 4.5391 | 4.3600 | 7.4995
+Static decoupler | 12.4998 | 0.6320 | 2.1539 | 7.4998
+Dynamic decoupler | 12.4998 | 0.0000 | 0.6073 | 7.4998
 Caption: Summary of MIMO response metrics for Problems 6--10.
 Label: tab:problem10_summary
 

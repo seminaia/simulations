@@ -343,7 +343,7 @@ def build_two_loop_closed_system(Kc1, tauI1, Kc2, tauI2, include_cross_terms=Tru
             # Diagonal pairing decouplers:
             # D12 = -G12/G11 
             # D21 = -G21/G22
-            D12 = -G11/G12
+            D12 = -G12/G11
             D21 = -G21/G22
         else:
             raise ValueError("decoupler must be 'none', 'static', or 'dynamic'")
@@ -648,7 +648,7 @@ def run_problem_4():
     pair_rows = rga_pairings(Lam)
     
     table(
-        headers=["Output", "Manipulated Variable", NoEscape(r"$\lambda_{ij}$"),NoEscape(r"$|\lambda_{ij}-1|$")],
+        headers=["Output", "Manipulated Variable", NoEscape(r"$\Lambda_{ij}$"),NoEscape(r"$|\Lambda_{ij}-1|$")],
         rows=pair_rows,
         caption="Suggested pairings for Problem 4.",
         label="tab:problem4_pairings",
@@ -668,7 +668,7 @@ def run_problem_5():
     eq(r"K = \begin{bmatrix} 5 & 2 \\ 3 & 6 \end{bmatrix}")
     eq(r"\Lambda = " + latex_matrix(Lam))
     table(
-        headers=[NoEscape(r"$y_1$"), NoEscape(r"$u_1$"),NoEscape(r"$y_2$") ,NoEscape(r"$u_2$")],
+        headers=[NoEscape(r"$y_i$"), NoEscape(r"$u_j$"),NoEscape(r"$\Lambda_{ij}$"), NoEscape(r"$|\Lambda_{ij}-1|$")],
         rows=pairings,
         caption="Relative gain array for Problem 5.",
         label="tab:problem5_rga",

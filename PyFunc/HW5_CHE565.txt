@@ -171,8 +171,8 @@ Label: tab:problem8_static_decouplers
 Problem 9: Dynamic Decouplers
 -----------------------------
 [ALIGN]
-D_{12}(s) = -\frac{G_{12}}{G_{11}} = -\frac{2}{5}\frac{4s+1}{8s+1}e^{s}
-D_{21}(s) = -\frac{G_{21}}{G_{22}} = -\frac{3}{6}\frac{10s+1}{12s+1}
+D_{12}{\left(s \right)} = \frac{2 \left(4 s + 1\right) e^{s}}{5 \left(8 s + 1\right)}
+D_{21}{\left(s \right)} = \frac{10 s + 1}{2 \left(12 s + 1\right)}
 The term$\ e^{s} \ $in D12 is noncausal because it is equivalent to a negative delay. Therefore, the realizable dynamic decoupler uses only the rational part of D12.
 
 [MATH] D_{12,realizable}(s) = -\frac{2}{5}\frac{4s+1}{8s+1}

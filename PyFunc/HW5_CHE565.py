@@ -711,7 +711,6 @@ def run_problems_6_to_10():
     D12_latex = sp.latex(D12_sp)
     D21_latex = sp.latex(D21_sp)
     eq(rf"{G11_latex} \quad {G12_latex} \quad {G21_latex} \quad {G22_latex}")
-    eq(rf"{D12_latex} \quad {D21_latex}")
     table(
         headers=["Loop", NoEscape(r"$K_p$"), NoEscape(r"$\tau_p$"), NoEscape(r"$\theta$"), NoEscape(r"$\lambda$"), NoEscape(r"$K_c$"), NoEscape(r"$\tau_I$")],
         rows=[
@@ -816,8 +815,9 @@ def run_problems_6_to_10():
     # Problem 9: dynamic decoupler
     doc.subsection("Problem 9: Dynamic Decouplers")
     a(
-        r"D_{12}(s) = -\frac{G_{12}}{G_{11}} = -\frac{2}{5}\frac{4s+1}{8s+1}e^{s}",
-        r"D_{21}(s) = -\frac{G_{21}}{G_{22}} = -\frac{3}{6}\frac{10s+1}{12s+1}"
+        D12_latex,
+        D21_latex,
+        
     )
     px(
         "The term", im(r"\ e^{s} \ "), "in D12 is noncausal because it is equivalent to a negative delay. ",

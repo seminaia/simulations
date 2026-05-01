@@ -76,8 +76,14 @@ G11_sp = sp.Eq(G11_sym, 5 / (4 * s + 1) * sp.exp(-5 * s))
 G12_sp = sp.Eq(G12_sym, 2 / (8 * s + 1) * sp.exp(-4 * s))
 G21_sp = sp.Eq(G21_sym, 3 / (12 * s + 1) * sp.exp(-3 * s))
 G22_sp = sp.Eq(G22_sym, 6 / (10 * s + 1) * sp.exp(-3 * s))
-D12_sp = sp.Eq(D12_sym, G12_sp.rhs / G11_sp.rhs)
-D21_sp = sp.Eq(D21_sym, G21_sp.rhs / G22_sp.rhs)
+D12_sp = sp.Eq(D12_sym, -G12_sp.rhs / G11_sp.rhs)
+D21_sp = sp.Eq(D21_sym, -G21_sp.rhs / G22_sp.rhs)
+sp.pprint(G11_sp)
+sp.pprint(G12_sp)
+sp.pprint(G21_sp)
+sp.pprint(G22_sp)
+sp.pprint(D12_sp)
+sp.pprint(D21_sp)
 # =============================================================================
 # General helpers
 # =============================================================================
@@ -330,10 +336,7 @@ def build_two_loop_closed_system(Kc1, tauI1, Kc2, tauI2, include_cross_terms=Tru
     decoupler options:
         none, static, dynamic
     """
-    G11 = fopdt(5, 4, 5, pade_order=0)
-    G12 = fopdt(2, 8, 4, pade_order=0)
-    G21 = fopdt(3, 12, 3, pade_order=0)
-    G22 = fopdt(6, 10, 3, pade_order=0)
+
 
     blocks = [
         ct.ss(ct.tf([Kc1, Kc1 / tauI1], [1, 0]), name="C1", inputs="e1", outputs="v1"),
@@ -349,14 +352,20 @@ def build_two_loop_closed_system(Kc1, tauI1, Kc2, tauI2, include_cross_terms=Tru
         ]
     else:
         if decoupler == "static":
-            D12 = ct.tf([-2 / 5], [1])
-            D21 = ct.tf([-3 / 6], [1])
+            D12 = ct.tf([-2 ], [5])
+            D21 = ct.tf([-3 ], [6])
         elif decoupler == "dynamic":
             # Diagonal pairing decouplers:
             # D12 = -G12/G11 
             # D21 = -G21/G22
+            G11 = fopdt(5, 4, 5, pade_order=0)
+            G12 = fopdt(2, 8, 4, pade_order=0)
+            G21 = fopdt(3, 12, 3, pade_order=0)
+            G22 = fopdt(6, 10, 3, pade_order=0)
             D12 = -G12/G11
             D21 = -G21/G22
+            print("D12 dynamic decoupler:", D12)
+            print("D21 dynamic decoupler:", D21)
         else:
             raise ValueError("decoupler must be 'none', 'static', or 'dynamic'")
 
@@ -369,7 +378,7 @@ def build_two_loop_closed_system(Kc1, tauI1, Kc2, tauI2, include_cross_terms=Tru
             ct.summing_junction(inputs=["u21", "u22"], output="u2", name="sum_u2"),
         ]
 
-    blocks.append(build_mimo_process(include_cross_terms=include_cross_terms))
+    blocks.append(build_mimo_process(include_cross_terms=include_cross_terms,pade_order=1))
     return ct.interconnect(blocks, inputs=["r1", "r2"], outputs=["y1", "y2"])
 
 
@@ -710,9 +719,9 @@ def run_problems_6_to_10():
     D12_latex = sp.latex(D12_sp)
     D21_latex = sp.latex(D21_sp)
     num, den = ct.pade(1,1)
-    num_poly = sp.Poly.from_list(num, sp.symbols("s")).as_expr()
-    den_poly = sp.Poly.from_list(den, sp.symbols("s")).as_expr()
-    delay_approx_sp = den_poly / num_poly
+    num_poly = sp.Poly.from_list(num, s).as_expr()
+    den_poly = sp.Poly.from_list(den, s).as_expr()
+    delay_approx_sp = den_poly/num_poly
     D12_approx_sp = D12_sp.subs(sp.exp(s), delay_approx_sp)
     eq(rf"{G11_latex} \quad {G12_latex} \quad {G21_latex} \quad {G22_latex}")
     table(
@@ -728,19 +737,19 @@ def run_problems_6_to_10():
     )
 
     sys_p6 = build_two_loop_closed_system(Kc11, tauI11, Kc22, tauI22, include_cross_terms=False, decoupler="none")
-    resp = ct.forced_response(sys_p6, T=t, U=r1_step, squeeze=True)
-    y = np.asarray(resp.outputs)
+    resp_6 = ct.forced_response(sys_p6, T=t, U=r1_step, squeeze=True)
+    y_6 = np.asarray(resp_6.outputs)
     f61 = "no_cross_r1.png"
-    save_mimo_plot(f61, resp.time, y[0], y[1], "Problem 6: no cross terms, step in r1")
-    p6_r1_y1 = calculate_IAE(resp.time, y[0], 1.0)
-    p6_r1_y2 = interaction_area(resp.time, y[1])
+    save_mimo_plot(f61, resp_6.time, y_6[0], y_6[1], "Problem 6: no cross terms, step in r1")
+    p6_r1_y1 = calculate_IAE(resp_6.time, y_6[0], 1.0)
+    p6_r1_y2 = interaction_area(resp_6.time, y_6[1])
 
-    resp = ct.forced_response(sys_p6, T=t, U=r2_step, squeeze=True)
-    y = np.asarray(resp.outputs)
+    resp_6_r2 = ct.forced_response(sys_p6, T=t, U=r2_step, squeeze=True)
+    y_6_r2 = np.asarray(resp_6_r2.outputs)
     f62 = "no_cross_r2.png"
-    save_mimo_plot(f62, resp.time, y[0], y[1], "Problem 6: no cross terms, step in r2")
-    p6_r2_y1 = interaction_area(resp.time, y[0])
-    p6_r2_y2 = calculate_IAE(resp.time, y[1], 1.0)
+    save_mimo_plot(f62, resp_6_r2.time, y_6_r2[0], y_6_r2[1], "Problem 6: no cross terms, step in r2")
+    p6_r2_y1 = interaction_area(resp_6_r2.time, y_6_r2[0])
+    p6_r2_y2 = calculate_IAE(resp_6_r2.time, y_6_r2[1], 1.0)
 
     subfiglog(
         [(str(f61), "Step in r1"), (str(f62), "Step in r2")],
@@ -752,19 +761,19 @@ def run_problems_6_to_10():
     # Problem 7: cross terms included
     doc.subsection("Problem 7: Cross Terms Included")
     sys_p7 = build_two_loop_closed_system(Kc11, tauI11, Kc22, tauI22, include_cross_terms=True, decoupler="none")
-    resp = ct.forced_response(sys_p7, T=t, U=r1_step, squeeze=True)
-    y = np.asarray(resp.outputs)
+    resp_7 = ct.forced_response(sys_p7, T=t, U=r1_step, squeeze=True)
+    y_7 = np.asarray(resp_7.outputs)
     f71 = "cross_r1.png"
-    save_mimo_plot(f71, resp.time, y[0], y[1], "Problem 7: cross terms included, step in r1")
-    p7_r1_y1 = calculate_IAE(resp.time, y[0], 1.0)
-    p7_r1_y2 = interaction_area(resp.time, y[1])
+    save_mimo_plot(f71, resp_7.time, y_7[0], y_7[1], "Problem 7: cross terms included, step in r1")
+    p7_r1_y1 = calculate_IAE(resp_7.time, y_7[0], 1.0)
+    p7_r1_y2 = interaction_area(resp_7.time, y_7[1])
 
-    resp = ct.forced_response(sys_p7, T=t, U=r2_step, squeeze=True)
-    y = np.asarray(resp.outputs)
+    resp_7_r2 = ct.forced_response(sys_p7, T=t, U=r2_step, squeeze=True)
+    y_7_r2 = np.asarray(resp_7_r2.outputs)
     f72 = "cross_r2.png"
-    save_mimo_plot(f72, resp.time, y[0], y[1], "Problem 7: cross terms included, step in r2")
-    p7_r2_y1 = interaction_area(resp.time, y[0])
-    p7_r2_y2 = calculate_IAE(resp.time, y[1], 1.0)
+    save_mimo_plot(f72, resp_7_r2.time, y_7_r2[0], y_7_r2[1], "Problem 7: cross terms included, step in r2")
+    p7_r2_y1 = interaction_area(resp_7_r2.time, y_7_r2[0])
+    p7_r2_y2 = calculate_IAE(resp_7_r2.time, y_7_r2[1], 1.0)
 
     table(
         headers=["Test", "Controlled-output IAE", "Interaction area"],
@@ -786,19 +795,19 @@ def run_problems_6_to_10():
     doc.subsection("Problem 8: Static Decouplers")
     eq(r"D_{12} = -\frac{K_{12}}{K_{11}} = -\frac{2}{5}, \qquad D_{21} = -\frac{K_{21}}{K_{22}} = -\frac{3}{6}")
     sys_p8 = build_two_loop_closed_system(Kc11, tauI11, Kc22, tauI22, include_cross_terms=True, decoupler="static")
-    resp = ct.forced_response(sys_p8, T=t, U=r1_step, squeeze=True)
-    y = np.asarray(resp.outputs)
+    resp_8 = ct.forced_response(sys_p8, T=t, U=r1_step, squeeze=True)
+    y_8 = np.asarray(resp_8.outputs)
     f81 = "static_r1.png"
-    save_mimo_plot(f81, resp.time, y[0], y[1], "Problem 8: static decoupler, step in r1")
-    p8_r1_y1 = calculate_IAE(resp.time, y[0], 1.0)
-    p8_r1_y2 = interaction_area(resp.time, y[1])
+    save_mimo_plot(f81, resp_8.time, y_8[0], y_8[1], "Problem 8: static decoupler, step in r1")
+    p8_r1_y1 = calculate_IAE(resp_8.time, y_8[0], 1.0)
+    p8_r1_y2 = interaction_area(resp_8.time, y_8[1])
 
-    resp = ct.forced_response(sys_p8, T=t, U=r2_step, squeeze=True)
-    y = np.asarray(resp.outputs)
+    resp_8_r2 = ct.forced_response(sys_p8, T=t, U=r2_step, squeeze=True)
+    y_8_r2 = np.asarray(resp_8_r2.outputs)
     f82 = "static_r2.png"
-    save_mimo_plot(f82, resp.time, y[0], y[1], "Problem 8: static decoupler, step in r2")
-    p8_r2_y1 = interaction_area(resp.time, y[0])
-    p8_r2_y2 = calculate_IAE(resp.time, y[1], 1.0)
+    save_mimo_plot(f82, resp_8_r2.time, y_8_r2[0], y_8_r2[1], "Problem 8: static decoupler, step in r2")
+    p8_r2_y1 = interaction_area(resp_8_r2.time, y_8_r2[0])
+    p8_r2_y2 = calculate_IAE(resp_8_r2.time, y_8_r2[1], 1.0)
 
     table(
         headers=["Test", "Controlled-output IAE", "Interaction area"],
@@ -823,25 +832,25 @@ def run_problems_6_to_10():
         D21_latex,
     )
     px(
-        "The term", im(r"\ e^{s} \ "), "in D12 is noncausal because it is equivalent to a negative delay. I will treat it as a delay and use a Pade approximation to make it realizable. The resulting approximated D12 is shown below.",
+        "The term", im(r"\ e^{s} \ "), "in D12 is noncausal because it is equivalent to a negative delay. I will set the noncausal term to 0 for the dynamic decoupler.",
     )
     eq(sp.latex(D12_approx_sp))
 
     sys_p9 = build_two_loop_closed_system(Kc11, tauI11, Kc22, tauI22, include_cross_terms=True, decoupler="dynamic")
-    resp = ct.forced_response(sys_p9, T=t, U=r1_step, squeeze=True)
-    y = np.asarray(resp.outputs)
+    resp_9 = ct.forced_response(sys_p9, T=t, U=r1_step, squeeze=True)
+    y_9 = np.asarray(resp_9.outputs)
     f91 = "dynamic_r1.png"
-    save_mimo_plot(f91, resp.time, y[0], y[1], "Problem 9: dynamic decoupler, step in r1")
-    p9_r1_y1 = calculate_IAE(resp.time, y[0], 1.0)
-    p9_r1_y2 = interaction_area(resp.time, y[1])
+    save_mimo_plot(f91, resp_9.time, y_9[0], y_9[1], "Problem 9: dynamic decoupler, step in r1")
+    p9_r1_y1 = calculate_IAE(resp_9.time, y_9[0], 1.0)
+    p9_r1_y2 = interaction_area(resp_9.time, y_9[1])
 
-    resp = ct.forced_response(sys_p9, T=t, U=r2_step, squeeze=True)
-    y = np.asarray(resp.outputs)
+    resp_9_r2 = ct.forced_response(sys_p9, T=t, U=r2_step, squeeze=True)
+    y_9_r2 = np.asarray(resp_9_r2.outputs)
     f92 = "dynamic_r2.png"
-    save_mimo_plot(f92, resp.time, y[0], y[1], "Problem 9: dynamic decoupler, step in r2")
-    p9_r2_y1 = interaction_area(resp.time, y[0])
-    p9_r2_y2 = calculate_IAE(resp.time, y[1], 1.0)
-
+    save_mimo_plot(f92, resp_9_r2.time, y_9_r2[0], y_9_r2[1], "Problem 9: dynamic decoupler, step in r2")
+    p9_r2_y1 = interaction_area(resp_9_r2.time, y_9_r2[0])
+    p9_r2_y2 = calculate_IAE(resp_9_r2.time, y_9_r2[1], 1.0)
+    
     table(
         headers=["Test", "Controlled-output IAE", "Interaction area"],
         rows=[

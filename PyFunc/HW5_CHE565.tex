@@ -453,15 +453,15 @@ Step in r2&7.4998&2.1539\\%
 \subsection*{Problem 9: Dynamic Decouplers}%
 \label{subsec:Problem9DynamicDecouplers}%
 \begin{align*}%
-D_{12}{\left(s \right)} = \frac{2 \left(4 s + 1\right) e^{s}}{5 \left(8 s + 1\right)} \\%
-D_{21}{\left(s \right)} = \frac{10 s + 1}{2 \left(12 s + 1\right)}%
+D_{12}{\left(s \right)} = - \frac{2 \left(4 s + 1\right) e^{s}}{5 \left(8 s + 1\right)} \\%
+D_{21}{\left(s \right)} = - \frac{10 s + 1}{2 \left(12 s + 1\right)}%
 \end{align*}%
 The term%
 $\ e^{s} \ $%
-in D12 is noncausal because it is equivalent to a negative delay. I will treat it as a delay and use a Pade approximation to make it realizable. The resulting approximated D12 is shown below.%
+in D12 is noncausal because it is equivalent to a negative delay. I will set the noncausal term to 0 for the dynamic decoupler.%
 \par%
 \[%
-D_{12}{\left(s \right)} = \frac{2 \left(1.0 s + 2.0\right) \left(4 s + 1\right)}{5 \left(2.0 - 1.0 s\right) \left(8 s + 1\right)}%
+D_{12}{\left(s \right)} = - \frac{2 \left(1.0 s + 2.0\right) \left(4 s + 1\right)}{5 \left(2.0 - 1.0 s\right) \left(8 s + 1\right)}%
 \]%
 \begin{table}[H]%
 \centering%

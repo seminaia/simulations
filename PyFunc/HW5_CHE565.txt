@@ -136,7 +136,6 @@ Problems 6--10: MIMO Control, Cross Terms, and Decoupling
 Problem 6: Two Single-Loop Controllers with Cross Terms Neglected
 -----------------------------------------------------------------
 [MATH] G_{11}{\left(s \right)} = \frac{5 e^{- 5 s}}{4 s + 1} \quad G_{12}{\left(s \right)} = \frac{2 e^{- 4 s}}{8 s + 1} \quad G_{21}{\left(s \right)} = \frac{3 e^{- 3 s}}{12 s + 1} \quad G_{22}{\left(s \right)} = \frac{6 e^{- 3 s}}{10 s + 1}
-[MATH] D_{12}{\left(s \right)} = \frac{2 \left(4 s + 1\right) e^{s}}{5 \left(8 s + 1\right)} \quad D_{21}{\left(s \right)} = \frac{10 s + 1}{2 \left(12 s + 1\right)}
 [TABLE]
 Loop | $K_p$ | $\tau_p$ | $\theta$ | $\lambda$ | $K_c$ | $\tau_I$
 G11 | 5.0000 | 4.0000 | 5.0000 | 5.0000 | 0.0800 | 4.0000
@@ -173,9 +172,9 @@ Problem 9: Dynamic Decouplers
 [ALIGN]
 D_{12}{\left(s \right)} = \frac{2 \left(4 s + 1\right) e^{s}}{5 \left(8 s + 1\right)}
 D_{21}{\left(s \right)} = \frac{10 s + 1}{2 \left(12 s + 1\right)}
-The term$\ e^{s} \ $in D12 is noncausal because it is equivalent to a negative delay. Therefore, the realizable dynamic decoupler uses only the rational part of D12.
+The term$\ e^{s} \ $in D12 is noncausal because it is equivalent to a negative delay. I will treat it as a delay and use a Pade approximation to make it realizable. The resulting approximated D12 is shown below.
 
-[MATH] D_{12,realizable}(s) = -\frac{2}{5}\frac{4s+1}{8s+1}
+[MATH] D_{12}{\left(s \right)} = \frac{2 \left(1.0 s + 2.0\right) \left(4 s + 1\right)}{5 \left(2.0 - 1.0 s\right) \left(8 s + 1\right)}
 [TABLE]
 Test | Controlled-output IAE | Interaction area
 Step in r1 | 12.4998 | 0.0000

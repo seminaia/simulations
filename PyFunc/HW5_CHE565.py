@@ -330,7 +330,6 @@ def build_two_loop_closed_system(Kc1, tauI1, Kc2, tauI2, include_cross_terms=Tru
     decoupler options:
         none, static, dynamic
     """
-    s = ct.tf("s")
     G11 = fopdt(5, 4, 5, pade_order=0)
     G12 = fopdt(2, 8, 4, pade_order=0)
     G21 = fopdt(3, 12, 3, pade_order=0)
@@ -710,6 +709,11 @@ def run_problems_6_to_10():
     G21_latex = sp.latex(G21_sp)
     D12_latex = sp.latex(D12_sp)
     D21_latex = sp.latex(D21_sp)
+    num, den = ct.pade(1,1)
+    num_poly = sp.Poly.from_list(num, sp.symbols("s")).as_expr()
+    den_poly = sp.Poly.from_list(den, sp.symbols("s")).as_expr()
+    delay_approx_sp = den_poly / num_poly
+    D12_approx_sp = D12_sp.subs(sp.exp(s), delay_approx_sp)
     eq(rf"{G11_latex} \quad {G12_latex} \quad {G21_latex} \quad {G22_latex}")
     table(
         headers=["Loop", NoEscape(r"$K_p$"), NoEscape(r"$\tau_p$"), NoEscape(r"$\theta$"), NoEscape(r"$\lambda$"), NoEscape(r"$K_c$"), NoEscape(r"$\tau_I$")],
@@ -817,13 +821,11 @@ def run_problems_6_to_10():
     a(
         D12_latex,
         D21_latex,
-        
     )
     px(
-        "The term", im(r"\ e^{s} \ "), "in D12 is noncausal because it is equivalent to a negative delay. ",
-        "Therefore, the realizable dynamic decoupler uses only the rational part of D12."
+        "The term", im(r"\ e^{s} \ "), "in D12 is noncausal because it is equivalent to a negative delay. I will treat it as a delay and use a Pade approximation to make it realizable. The resulting approximated D12 is shown below.",
     )
-    eq(r"D_{12,realizable}(s) = -\frac{2}{5}\frac{4s+1}{8s+1}")
+    eq(sp.latex(D12_approx_sp))
 
     sys_p9 = build_two_loop_closed_system(Kc11, tauI11, Kc22, tauI22, include_cross_terms=True, decoupler="dynamic")
     resp = ct.forced_response(sys_p9, T=t, U=r1_step, squeeze=True)

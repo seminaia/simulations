@@ -1,0 +1,14 @@
+[x, y, z]= sphere;
+r = 1;
+x = r * x;
+y = r * y;
+z = r * z;
+A = 4 * pi * r^2;
+V = (4/3) * pi * r^3;
+surf(x, y, z);
+title('Sphere');    
+xlabel('X');
+ylabel('Y');
+zlabel('Z');
+text(1.5, 0, 0, ['Surface Area = ', num2str(A)]);
+text(1.5, 0, -0.5, ['Volume = ', num2str(V)]);

@@ -1,0 +1,24 @@
+CHE 565 -- Exam 2
+Soki Sem
+================================================================================
+
+
+Problem 1
+====================
+
+A
+--------
+[ALIGN]
+\text{Process Transfer Function:} \frac{0.8}{s \left(2 s + 1\right) \left(5 s + 1\right)}
+\text{Modeled Process Transfer Function:} \frac{0.75 e^{- 4 s}}{s}
+\text{Disturbance Transfer Function:} \frac{e^{- s}}{s + 1}
+Using lambda tuning for PI control, we find the controller parameters as follows:
+
+[ALIGN]
+K' = \frac{K_p}{\tau_p},Kc = \frac{\tau_p}{K' (\lambda + \theta_d)^2}
+\tau_{I} = \tau_p
+\lambda = 8 \theta_d
+\tau_D = 0
+Where $\tau_p$= 1$\quad$$\theta_d$= 4$\quad$$K_p$= 0.75
+
+$K_c:$= 0.0700 $\tau_I:$= 68.0000 $\lambda:$= 32.0000 $\tau_D:$= 0.0000 $\quad$And an IAE of:$\quad$417965.4725$\quad$for the setpoint change and$\quad$123704.5080$\quad$for the disturbance.

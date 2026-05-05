@@ -100,8 +100,10 @@ def plot_temperature(U, x, y, z, t, time_step, slice_index=None, aspect='auto'):
   X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
 
   if slice_index is None:
+      print(U[:, :, :, time_step].shape)
       # Plot temperature at a specific time step
-      ax.plot_surface(X[:, :, :], Y[:, :, :], U[:, :, :, time_step], rstride=1, cstride=1, cmap=plt.cm.coolwarm)
+      ax.plot_surface(X[:, :, :], Y[:, :, :], U[:, :, :, time_step], rstride=1, cstride=1, 
+                      cmap=plt.cm.coolwarm)
       ax.set_title('Temperature distribution at time {:.2f}'.format(t[time_step]))
   else:
       # Plot temperature slice along the z-axis
@@ -116,5 +118,5 @@ def plot_temperature(U, x, y, z, t, time_step, slice_index=None, aspect='auto'):
   
 if __name__ == "__main__":
     # Example usage with plot function
-    time_step = 50  # Choose a specific time step to plot
+    time_step = 10  # Choose a specific time step to plot
     plot_temperature(U, x, y, z, t, time_step)

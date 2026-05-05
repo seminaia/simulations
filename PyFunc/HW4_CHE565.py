@@ -434,7 +434,7 @@ w("A unit step was applied to the disturbance while the setpoint was held consta
 m(r"Y_{{sp}}(t)=0,\qquad D(t)=1")
 
 figlog(
-    "part3_disturbance_nominal.png",
+    path="part3_disturbance_nominal.png",
     caption="Closed-loop response for a unit step change in disturbance with no setpoint change, using the nominal PI settings.",
     label="fig:fig2",
 )

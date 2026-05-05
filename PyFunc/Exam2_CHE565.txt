@@ -8,15 +8,12 @@ Problem 1
 
 Parts A and B: Basic PI Feedback Control
 ----------------------------------------
-[FIGURE] problem1_basic_feedback_diagram.png
-Caption: Basic feedback control diagram.
-
 The actual boiler liquid-level process is used for the closed-loop simulation, while the integrating-plus-delay model is used only to obtain the controller settings.
 
 [ALIGN]
-G_{actual}(s)=\frac{0.8}{s(2s+1)(5s+1)}
-G_{model}(s)=\frac{0.75}{s}e^{-4s}
-G_d(s)=\frac{1}{s+1}e^{-s}
+G_{\text{actual}}(s)=\frac{0.8}{s(2s+1)(5s+1)}
+G_{\text{model}}(s)=\frac{0.75}{s}e^{-4s}
+G_{\text{d}}(s)=\frac{1}{s+1}e^{-s}
 Using the lambda-tuning rule with an integrating-plus-delay model:
 
 [ALIGN]
@@ -32,8 +29,8 @@ K_c = 0.0700
 The IAE values for the basic PI controller are:
 
 [ALIGN]
-IAE_{setpoint,basic} = 31.9746
-IAE_{disturbance,basic} = 971.9761
+IAE_\text{setpoint,basic} = 31.9746
+IAE_\text{disturbance,basic} = 971.9761
 For the setpoint response, the error is measured relative to a final desired value of 1. For the disturbance-rejection response, the desired value is 0 because the controller should reject the disturbance and return the output to its original operating point.
 
 
@@ -54,19 +51,19 @@ Part D: Cascade Control with Inner Gain of 50
 The IAE values for the cascade controller are:
 
 [ALIGN]
-K_{c,inner} = 50.0000
-IAE_{setpoint,cascade} = 30.2838
-IAE_{disturbance,cascade} = 19.4403
+K_\text{c,inner} = 50.0000
+IAE_\text{setpoint,cascade} = 30.2838
+IAE_\text{disturbance,cascade} = 19.4403
 
 Part E: Discussion
 ------------------
 The effectiveness of the cascade controller can be evaluated by comparing the IAE values for the basic feedback controller and the cascade controller. A lower IAE indicates better overall control performance because the total accumulated error is smaller.
 
 [ALIGN]
-IAE_{setpoint,basic} = 31.9746
-IAE_{setpoint,cascade} = 30.2838
-IAE_{disturbance,basic} = 971.9761
-IAE_{disturbance,cascade} = 19.4403
+IAE_\text{setpoint,basic} = 31.9746
+IAE_\text{setpoint,cascade} = 30.2838
+IAE_\text{disturbance,basic} = 971.9761
+IAE_\text{disturbance,cascade} = 19.4403
 The cascade controller improves disturbance rejection because the inner loop reacts directly to the disturbance before the disturbance fully propagates through the outer liquid-level dynamics.
 
 

@@ -476,9 +476,11 @@ def problem_1():
     # Problem 1A/B
     # -------------------------------------------------------------------------
     doc.subsection("Parts A and B: Basic PI Feedback Control")
-
-    save_basic_feedback_diagram("problem1_basic_feedback_diagram.png")
-    figlog("problem1_basic_feedback_diagram.png", "Basic feedback control diagram.")
+    subfiglog(
+        [
+            ("Exam2_block_diagram_setpoint.png", "Setpoint step response"),
+            ("Exam2_block_diagram_disturbance.png", "Disturbance step response")],
+    )
 
     p(
         "The actual boiler liquid-level process is used for the closed-loop simulation, "
@@ -486,9 +488,9 @@ def problem_1():
     )
 
     a(
-        r"G_{actual}(s)=\frac{0.8}{s(2s+1)(5s+1)}",
-        r"G_{model}(s)=\frac{0.75}{s}e^{-4s}",
-        r"G_d(s)=\frac{1}{s+1}e^{-s}",
+        r"G_{\text{actual}}(s)=\frac{0.8}{s(2s+1)(5s+1)}",
+        r"G_{\text{model}}(s)=\frac{0.75}{s}e^{-4s}",
+        r"G_{\text{d}}(s)=\frac{1}{s+1}e^{-s}",
     )
 
     p("Using the lambda-tuning rule with an integrating-plus-delay model:")
@@ -546,8 +548,8 @@ def problem_1():
     p("The IAE values for the basic PI controller are:")
 
     a(
-        rf"IAE_{{setpoint,basic}} = {iae_sp:.4f}",
-        rf"IAE_{{disturbance,basic}} = {iae_d:.4f}",
+        rf"IAE_\text{{setpoint,basic}} = {iae_sp:.4f}",
+        rf"IAE_\text{{disturbance,basic}} = {iae_d:.4f}",
     )
 
     p(
@@ -623,9 +625,9 @@ def problem_1():
     p("The IAE values for the cascade controller are:")
 
     a(
-        rf"K_{{c,inner}} = {Kc_inner:.4f}",
-        rf"IAE_{{setpoint,cascade}} = {iae_csp:.4f}",
-        rf"IAE_{{disturbance,cascade}} = {iae_cd:.4f}",
+        rf"K_\text{{c,inner}} = {Kc_inner:.4f}",
+        rf"IAE_\text{{setpoint,cascade}} = {iae_csp:.4f}",
+        rf"IAE_\text{{disturbance,cascade}} = {iae_cd:.4f}",
     )
 
     # -------------------------------------------------------------------------
@@ -640,10 +642,10 @@ def problem_1():
     )
 
     a(
-        rf"IAE_{{setpoint,basic}} = {iae_sp:.4f}",
-        rf"IAE_{{setpoint,cascade}} = {iae_csp:.4f}",
-        rf"IAE_{{disturbance,basic}} = {iae_d:.4f}",
-        rf"IAE_{{disturbance,cascade}} = {iae_cd:.4f}",
+        rf"IAE_\text{{setpoint,basic}} = {iae_sp:.4f}",
+        rf"IAE_\text{{setpoint,cascade}} = {iae_csp:.4f}",
+        rf"IAE_\text{{disturbance,basic}} = {iae_d:.4f}",
+        rf"IAE_\text{{disturbance,cascade}} = {iae_cd:.4f}",
     )
 
     if iae_cd < iae_d:

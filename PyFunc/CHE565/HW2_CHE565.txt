@@ -1,0 +1,246 @@
+CHE 565 -- Homework 2
+Soki Sem
+================================================================================
+
+Problem 1
+====================
+
+Setup
+--------
+
+[ALIGN]
+\text{Option A:}\quad C_{0,A} &= \$3{,}800{,}000
+\quad\quad\quad\;\;\; FV_A &= \$1{,}100{,}000/\text{yr}
+\text{Option B:}\quad C_{0,B} &= \$5{,}000{,}000
+\quad\quad\quad\;\;\; FV_B &= \$1{,}410{,}000/\text{yr}
+PV = present value, FV = future value (annual cash flow), r = yearly interest rate, n = number of years
+
+n= 10 years, r = 0.10
+
+a.) Compute Net Present Value for Options A and B
+-------------------------------------------------
+
+[ALIGN]
+\text{Present Value formula:}\ \text{PV} &= \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r}
+\text{Net Present Value formula:}\ \text{NPV} &= C_{0} + \frac{F \cdot \left(r + 1\right)^{- n} \cdot \left(\left(r + 1\right)^{n} - 1\right)}{r}
+[MATH] \text{NPV}_A = \$2,959,023.82,\quad \text{NPV}_B = \$3,663,839.62
+NPV is higher for option B at 10% yearly interest, so B is preferred under these assumptions.
+
+b.) Annual Payment for 10 Year Lifetime, No Salvage Value, 5% Interest Rate
+---------------------------------------------------------------------------
+
+P = annual payment, C0 = initial cost, r = yearly interest rate, n = number of years
+
+[MATH] \text{Annual payment formula:}\ \text{P} = \frac{C_{0} \cdot r \cdot \left(r + 1\right)^{n}}{\left(r + 1\right)^{n} - 1}
+[MATH] \text{Annual payment for option A:}\ \text{P}_A = \$492,117.38/\text{year}
+[MATH] \text{Annual payment for option B:}\ \text{P}_B = \$647,522.87/\text{year}
+
+Problem 2
+====================
+
+Setup
+--------
+
+$0.94/lbs is the price of powdered detergent.
+
+0.1 % of 4,000,000 lbs of detergent per year is carried through the exhaust
+
+Adding a second cyclone separator costs $10,000, with $300/year in maintenance costs will reduce carryover to 0.0%, with an 8% yearly interest rate.
+
+Cost of carryover detergent: $3,760.00/year
+Cost of second separator: $10,000.00 initial + $600.00/year maintenance = $10,600.00 total
+
+Lost detergent value: $3,760.00/year
+
+a.) Find the additional yearly income
+-------------------------------------
+
+Gross additional income (recovered detergent): $3,760.00/year
+
+Net additional income after maintenance: $3,460.00/year
+
+b.) Find the payback period
+---------------------------
+
+[MATH] \text{The NPV equation for the payback period is:\\} -10000 + 43250.0 \cdot {1.08}^{- n} \cdot \left({1.08}^{n} - 1\right)
+Discounted payback period (NPV = 0): 3.42 years
+
+
+Problem 3
+====================
+
+Setup
+--------
+
+Determine if each function is convex
+
+[ALIGN]
+\text{A}: f(x) &= (x_1-x_2)^2 + x_2^2
+\text{B}: f(x) &= x_1^2 + x_2^2+x_3^2
+\text{C}: f(x) &= e^{x_1}+e^{x_2}
+Results
+--------
+
+Function                                                              | Hessian                                                                                                 | Eigenvalues                                                                                        | Convex? | Reason                      
+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------+---------+-----------------------------
+InlineMathToken(latex='x_{2}^{2} + \\left(x_{1} - x_{2}\\right)^{2}') | InlineMathToken(latex='\\left[\\begin{matrix}2 & -2\\\\-2 & 4\\end{matrix}\\right]')                    | InlineMathToken(latex='\\left[\\begin{matrix}3 - \\sqrt{5}\\\\\\sqrt{5} + 3\\end{matrix}\\right]') | Yes     | Eigenvalues are non-negative
+InlineMathToken(latex='x_{1}^{2} + x_{2}^{2} + x_{3}^{2}')            | InlineMathToken(latex='\\left[\\begin{matrix}2 & 0 & 0\\\\0 & 2 & 0\\\\0 & 0 & 2\\end{matrix}\\right]') | InlineMathToken(latex='\\left[\\begin{matrix}2\\end{matrix}\\right]')                              | Yes     | Eigenvalues are non-negative
+InlineMathToken(latex='e^{x_{1}} + e^{x_{2}}')                        | InlineMathToken(latex='\\left[\\begin{matrix}e^{x_{1}} & 0\\\\0 & e^{x_{2}}\\end{matrix}\\right]')      | InlineMathToken(latex='\\left[\\begin{matrix}e^{x_{1}}\\\\e^{x_{2}}\\end{matrix}\\right]')         | Yes     | Eigenvalues are non-negative
+
+
+Problem 4
+====================
+
+Is the region defined by the constraints convex?
+
+The feasible region is defined by the following constraints: x_{2} \geq 0 \wedge x_{2} \geq 1 - x_{1} \wedge x_{1} \leq 2 \wedge x_{2} \leq \frac{x_{1}}{2} + 1
+
+[FIGURE] HW2_CHE565_plot.png
+Caption: Feasible Region
+
+The feasible region is convex because it is defined by a set of linear inequalities, which form a convex set.
+
+
+Problem 5
+====================
+
+Setup
+--------
+
+Maximize the objective function:
+
+[MATH] f(x) = - \frac{x^{6}}{6} + \frac{4 x^{5}}{5} - \frac{x^{4}}{4} - \frac{10 x^{3}}{3} + 2 x^{2} + 8 x + 1
+Given that:
+
+[MATH] \frac{df}{dx}= \left(2 - x\right)^{3} \left(x + 1\right)^{2}
+[MATH] \frac{d^2f}{dx^2}= \left(2 - x\right)^{3} \left(2 x + 2\right) - 3 \left(2 - x\right)^{2} \left(x + 1\right)^{2}
+a.) Analytical Solution
+-----------------------
+
+Expanded form:
+
+[MATH] \frac{df}{dx} = x^{5} - 4 x^{4} + x^{3} + 10 x^{2} - 4 x - 8
+[MATH] \frac{d^2f}{dx^2} = 5 x^{4} - 16 x^{3} + 3 x^{2} + 20 x - 4
+The roots to df/dx are x* = -1, 2
+
+The corresponding function values are f(x*) = -2.88, 9.27
+
+The Hessian evaluated at the critical points are\frac{d^2f}{dx^2}|_{x^*} = 0, 0, inconclusive 2nd derivative test
+
+The maximum value of the function is f(x*) = 9.27 at x* = 2
+
+b.) Excel Solution
+------------------
+
+The Excel data was used to perform root-finding using the Newton-Raphson method:
+
+[MATH] x_{n+1} = x_n - \frac{f'(x_n)}{f''(x_n)}
+Iteration | x_n    | f(x_n)    | f'(x_n)   | f''(x_n)   | x_n+1 
+----------+--------+-----------+-----------+------------+-------
+0.0000    | 5.0000 | -586.0833 | -972.0000 | -1296.0000 | 4.2500
+1.0000    | 4.2500 | -139.2208 | -313.9541 | -538.2070  | 3.6667
+2.0000    | 3.6667 | -27.0988  | -100.8230 | -224.6914  | 3.2179
+3.0000    | 3.2179 | 0.5555    | -32.1432  | -94.4150   | 2.8775
+4.0000    | 2.8775 | 7.2322    | -10.1590  | -39.9713   | 2.6233
+5.0000    | 2.6233 | 8.8043    | -3.1799   | -17.0590   | 2.4369
+6.0000    | 2.4369 | 9.1644    | -0.9854   | -7.3392    | 2.3027
+7.0000    | 2.3027 | 9.2446    | -0.3025   | -3.1810    | 2.2076
+8.0000    | 2.2076 | 9.2620    | -0.0920   | -1.3876    | 2.1413
+9.0000    | 2.1413 | 9.2657    | -0.0278   | -0.6084    | 2.0955
+10.0000   | 2.0955 | 9.2665    | -0.0084   | -0.2678    | 2.0643
+11.0000   | 2.0643 | 9.2666    | -0.0025   | -0.1182    | 2.0432
+12.0000   | 2.0432 | 9.2667    | -0.0007   | -0.0523    | 2.0289
+13.0000   | 2.0289 | 9.2667    | -0.0002   | -0.0232    | 2.0193
+14.0000   | 2.0193 | 9.2667    | -0.0001   | -0.0103    | 2.0129
+15.0000   | 2.0129 | 9.2667    | -0.0000   | -0.0046    | 2.0086
+16.0000   | 2.0086 | 9.2667    | -0.0000   | -0.0020    | 2.0058
+17.0000   | 2.0058 | 9.2667    | -0.0000   | -0.0009    | 2.0038
+18.0000   | 2.0038 | 9.2667    | -0.0000   | -0.0004    | 2.0026
+19.0000   | 2.0026 | 9.2667    | -0.0000   | -0.0002    | 2.0017
+20.0000   | 2.0017 | 9.2667    | -0.0000   | -0.0001    | 2.0011
+Caption: Optimization Results from Excel starting at x0=5
+
+Iteration | x_n     | f(x_n)     | f'(x_n)   | f''(x_n)   | x_n+1  
+----------+---------+------------+-----------+------------+--------
+0.0000    | -5.0000 | -4832.7500 | 5488.0000 | -5096.0000 | -3.9231
+1.0000    | -3.9231 | -1208.5512 | 1775.5079 | -2114.1044 | -3.0832
+2.0000    | -3.0832 | -295.6352  | 570.0315  | -883.6738  | -2.4382
+3.0000    | -2.4382 | -71.0801   | 180.8132  | -373.6709  | -1.9543
+4.0000    | -1.9543 | -17.8527   | 56.3066   | -160.7261  | -1.6040
+5.0000    | -1.6040 | -5.9169    | 17.0747   | -70.7559   | -1.3626
+6.0000    | -1.3626 | -3.4409    | 5.0003    | -32.0380   | -1.2066
+7.0000    | -1.2066 | -2.9756    | 1.4068    | -14.9373   | -1.1124
+8.0000    | -1.1124 | -2.8972    | 0.3808    | -7.1437    | -1.0591
+9.0000    | -1.0591 | -2.8853    | 0.0999    | -3.4805    | -1.0304
+10.0000   | -1.0304 | -2.8836    | 0.0257    | -1.7158    | -1.0154
+11.0000   | -1.0154 | -2.8834    | 0.0065    | -0.8515    | -1.0078
+12.0000   | -1.0078 | -2.8833    | 0.0016    | -0.4242    | -1.0039
+13.0000   | -1.0039 | -2.8833    | 0.0004    | -0.2117    | -1.0020
+14.0000   | -1.0020 | -2.8833    | 0.0001    | -0.1057    | -1.0010
+15.0000   | -1.0010 | -2.8833    | 0.0000    | -0.0528    | -1.0005
+16.0000   | -1.0005 | -2.8833    | 0.0000    | -0.0264    | -1.0002
+17.0000   | -1.0002 | -2.8833    | 0.0000    | -0.0132    | -1.0001
+18.0000   | -1.0001 | -2.8833    | 0.0000    | -0.0066    | -1.0001
+19.0000   | -1.0001 | -2.8833    | 0.0000    | -0.0033    | -1.0000
+20.0000   | -1.0000 | -2.8833    | 0.0000    | -0.0017    | -1.0000
+Caption: Optimization Results from Excel starting at x0=-5
+
+x0      | x*      | f(x*)  
+--------+---------+--------
+5.0000  | 2.0011  | 9.2667 
+-5.0000 | -1.0000 | -2.8833
+Caption: Summary of Optimization Results from Excel
+
+c.) Numerical solution using Nelder-Mead Simplex algorithm which is the same as fminsearch in matlab
+----------------------------------------------------------------------------------------------------
+
+Using Nelder-Mead Simplex algorithm with initial guesses x0 = 5: 
+
+One of the roots of df/dx are found to be x* = 1.9999
+
+The corresponding optimum function values are f(x*) = 9.2667
+
+Actual maximum of the function:
+
+[ALIGN]
+x^* &=  1.9999
+f(x^*) &= 9.2667
+\text{iterations} &= 20
+\text{function calls} &= 41
+d.) Numerical solution using Newton Conjugate Gradient Method which is the same as fmincon in matlab except required to give jacobian and hessian information
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Using the Newton Conjugate Gradient method with initial guesses x0 = 5: 
+
+One of the roots of df/dx are found to be x* = 2.0038
+
+The corresponding optimum function values are f(x*) = 9.2667
+
+[ALIGN]
+x^* &= 2.0038
+f(x^*) &= 9.2667
+\text{iterations} &= 19
+\text{function calls} &= 19
+Using the Newton Conjugate Gradient method with initial guesses x0 = -5: 
+
+One of the roots of df/dx are found to be x* = -1.0001
+
+The corresponding optimum function values are f(x*) = -2.8833
+
+[ALIGN]
+x^* &= -1.0001
+f(x^*) &= -2.8833
+\text{iterations} &= 20
+\text{function calls} &= 20
+e.) Compare results from all methods
+------------------------------------
+
+Method      | Initial Guess | x*      | f(x*)   | Iterations                  | Function Calls             
+------------+---------------+---------+---------+-----------------------------+----------------------------
+Nelder-Mead | 5             | 1.9999  | 9.2667  | 20                          | 41                         
+Excel       | -5            | 2.0011  | 9.2667  | InlineMathToken(latex='21') | InlineMathToken(latex='21')
+Excel       | 5             | -1.0000 | -2.8833 | InlineMathToken(latex='21') | InlineMathToken(latex='21')
+Newton-CG   | 5             | 2.0038  | 9.2667  | 19                          | 19                         
+Newton-CG   | -5            | -1.0001 | -2.8833 | 20                          | 20                         
+
+All methods found the same maximum value of the function at x* = 2 and f(x*) = 9.267, which is consistent with the analytical solution. The Nelder-Mead method required 20 iterations and 41 function calls, the Newton-CG method converged in 20 iterations, the Excel solution also converged to the same optimum value, demonstrating consistency across methods. However, Newton-CG and the excel solution are significantly more influenced by the initial guess, and can converge to a local extremum. In the case of this polynomial function, there are two critical points based on the roots of the derivative, one is an optimum at x* = 2 and the other is a saddle point at x* = -1, and the initial guess determines which extremum the algorithm converges to. The Nelder-Mead method is less sensitive to the initial guess and was able to find the global maximum regardless of the starting point.

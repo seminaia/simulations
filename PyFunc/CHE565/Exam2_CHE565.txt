@@ -1,0 +1,140 @@
+CHE 565 -- Exam 2
+Soki Sem
+================================================================================
+
+
+Problem 1
+====================
+
+Parts A and B: Basic PI Feedback Control
+----------------------------------------
+The actual boiler liquid-level process is used for the closed-loop simulation, while the integrating-plus-delay model is used only to obtain the controller settings.
+
+[ALIGN]
+G_{\text{actual}}(s)=\frac{0.8}{s(2s+1)(5s+1)}
+G_{\text{model}}(s)=\frac{0.75}{s}e^{-4s}
+G_{\text{d}}(s)=\frac{1}{s+1}e^{-s}
+Using the lambda-tuning rule with an integrating-plus-delay model:
+
+[ALIGN]
+\lambda = 8\theta
+\tau_I = \max(4\theta,\ 2\lambda+\theta)
+K' = \frac{K_p}{\tau_p}
+K_c = \frac{\tau_I}{K'(\lambda+\theta)^2}
+[ALIGN]
+\theta = 4.0
+\lambda = 32.0000
+\tau_I = 68.0000
+K_c = 0.0700
+The IAE values for the basic PI controller are:
+
+[ALIGN]
+IAE_\text{setpoint,basic} = 31.9746
+IAE_\text{disturbance,basic} = 971.9761
+For the setpoint response, the error is measured relative to a final desired value of 1. For the disturbance-rejection response, the desired value is 0 because the controller should reject the disturbance and return the output to its original operating point.
+
+
+Part C: Cascade Control Structure
+---------------------------------
+[FIGURE] problem1_cascade_diagram.png
+Caption: Cascade control diagram.
+
+A cascade loop is added by splitting the process into an inner process and an outer process. The inner controller is P-only, while the outer controller remains PI. The disturbance is assumed to enter the inner-loop process variable, allowing the inner loop to reject the disturbance before it propagates through the slower boiler-level dynamics.
+
+[ALIGN]
+G_{p1}(s)=\frac{1}{2s+1}
+G_{p2}(s)=\frac{0.8}{s(5s+1)}
+G_{actual}(s)=G_{p1}(s)G_{p2}(s)
+
+Part D: Cascade Control with Inner Gain of 50
+---------------------------------------------
+The IAE values for the cascade controller are:
+
+[ALIGN]
+K_\text{c,inner} = 50.0000
+IAE_\text{setpoint,cascade} = 30.2838
+IAE_\text{disturbance,cascade} = 19.4403
+
+Part E: Discussion
+------------------
+The effectiveness of the cascade controller can be evaluated by comparing the IAE values for the basic feedback controller and the cascade controller. A lower IAE indicates better overall control performance because the total accumulated error is smaller.
+
+[ALIGN]
+IAE_\text{setpoint,basic} = 31.9746
+IAE_\text{setpoint,cascade} = 30.2838
+IAE_\text{disturbance,basic} = 971.9761
+IAE_\text{disturbance,cascade} = 19.4403
+The cascade controller improves disturbance rejection because the inner loop reacts directly to the disturbance before the disturbance fully propagates through the outer liquid-level dynamics.
+
+
+Problem 2
+====================
+[FIGURE] problem2_feedforward_diagram.png
+Caption: Feedforward plus feedback control diagram.
+
+For the feedforward design, the disturbance is assumed to enter on the plant-input side. The manipulated variable and the disturbance therefore both pass through the same boiler-level process dynamics.
+
+[ALIGN]
+Y(s)=G_p(s)\left[M(s)+G_d(s)D(s)\right]
+M(s)=M_{fb}(s)+M_{ff}(s)
+M_{ff}(s)=G_{ff}(s)D(s)
+For perfect disturbance cancellation, the disturbance contribution inside the plant input must be zero:
+
+[ALIGN]
+G_{ff}(s)D(s)+G_d(s)D(s)=0
+G_{ff}(s)=-G_d(s)
+Using the disturbance transfer function:
+
+[ALIGN]
+G_d(s)=\frac{1}{s+1}e^{-s}
+\boxed{G_{ff}(s)=-\frac{1}{s+1}e^{-s}}
+This result follows because the disturbance enters at the same summing point as the manipulated variable before the plant. Therefore, the plant transfer function cancels out in the feedforward design.
+
+
+Problem 3
+====================
+
+Part A: RGA and Pairing
+-----------------------
+The steady-state gain matrix is found by evaluating each transfer function at s = 0.
+
+[ALIGN]
+K=\begin{bmatrix}2.3 & 0.47\\-1.2 & 0.58\end{bmatrix}
+\Lambda = K \circ (K^{-1})^T
+[ALIGN]
+\Lambda = \begin{bmatrix}0.7028 & 0.2972\\0.2972 & 0.7028\end{bmatrix}
+The diagonal RGA values are closer to 1 than the off-diagonal values, so the appropriate pairings are:
+
+[ALIGN]
+Y_1 \leftrightarrow M_1
+Y_2 \leftrightarrow M_2
+
+Part B: MIMO Feedback Block Diagram
+-----------------------------------
+[FIGURE] problem3_mimo_diagram.png
+Caption: MIMO feedback control diagram without decouplers.
+
+The MIMO process contains four transfer functions. Each manipulated variable affects both output variables, which creates loop interaction.
+
+[ALIGN]
+G_{11}(s)=\frac{2.3}{4.6s+1}e^{-0.2s}
+G_{12}(s)=\frac{0.47}{2.2s+1}e^{-0.3s}
+G_{21}(s)=\frac{-1.2}{18s+1}e^{-0.4s}
+G_{22}(s)=\frac{0.58}{1.8s+1}e^{-0.5s}
+
+Part C: Decoupler Design
+------------------------
+For diagonal pairing, the decouplers are selected to cancel the off-diagonal process interactions.
+
+[ALIGN]
+D_{12}(s)=-\frac{G_{12}(s)}{G_{11}(s)}
+D_{21}(s)=-\frac{G_{21}(s)}{G_{22}(s)}
+Therefore:
+
+[ALIGN]
+D_{12}(s)=(-0.2043)\frac{4.6s+1}{2.2s+1}e^{-0.1s}
+D_{21}(s)=(2.0690)\frac{1.8s+1}{18s+1}e^{0.1s}
+The first decoupler contains an additional delay and is causal. The second decoupler contains a time advance, represented by the positive exponential term. A pure time advance is noncausal, so an exact implementation of this decoupler is not physically realizable. In practice, this decoupler would need to be approximated or modified.
+
+[FIGURE] problem3_decoupled_mimo_diagram.png
+Caption: MIMO feedback control diagram with decouplers.

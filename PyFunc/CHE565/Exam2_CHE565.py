@@ -3,7 +3,6 @@ import sympy as sp
 import matplotlib.pyplot as plt
 import control as ct
 from pathlib import Path
-
 from doc_builder import DocumentBuilder
 
 
@@ -478,8 +477,8 @@ def problem_1():
     doc.subsection("Parts A and B: Basic PI Feedback Control")
     subfiglog(
         [
-            ("Exam2_block_diagram_setpoint.png", "Setpoint step response"),
-            ("Exam2_block_diagram_disturbance.png", "Disturbance step response")],
+            (f"{PLOT_DIR}/Exam2_block_diagram_setpoint.png", "Setpoint step response"),
+            (f"{PLOT_DIR}/Exam2_block_diagram_disturbance.png", "Disturbance step response")],
     )
 
     p(
@@ -516,7 +515,7 @@ def problem_1():
     iae_sp = calculate_IAE(t_sp, y_sp, target=1)
 
     save_plot(
-        "problem1_basic_setpoint.png",
+        f"{PLOT_DIR}/problem1_basic_setpoint.png",
         t_sp,
         y_sp,
         "Problem 1A: Basic PI Response to Setpoint Step",
@@ -529,7 +528,7 @@ def problem_1():
     iae_d = calculate_IAE(t_d, y_d, target=0)
 
     save_plot(
-        "problem1_basic_disturbance.png",
+        f"{PLOT_DIR}/problem1_basic_disturbance.png",
         t_d,
         y_d,
         "Problem 1B: Basic PI Response to Disturbance Step",
@@ -539,8 +538,8 @@ def problem_1():
 
     subfiglog(
         [
-            ("problem1_basic_setpoint.png", "Setpoint step"),
-            ("problem1_basic_disturbance.png", "Disturbance step"),
+            (f"{PLOT_DIR}/problem1_basic_setpoint.png", "Setpoint step"),
+            (f"{PLOT_DIR}/problem1_basic_disturbance.png", "Disturbance step"),
         ],
         "Basic PI closed-loop responses.",
     )
@@ -563,8 +562,8 @@ def problem_1():
     # -------------------------------------------------------------------------
     doc.subsection("Part C: Cascade Control Structure")
 
-    save_cascade_diagram("problem1_cascade_diagram.png")
-    figlog("problem1_cascade_diagram.png", "Cascade control diagram.")
+    save_cascade_diagram(f"{PLOT_DIR}/problem1_cascade_diagram.png")
+    figlog(f"{PLOT_DIR}/problem1_cascade_diagram.png", "Cascade control diagram.")
 
     p(
         "A cascade loop is added by splitting the process into an inner process and an outer process. "
@@ -593,7 +592,7 @@ def problem_1():
     iae_csp = calculate_IAE(t_csp, y_csp, target=1)
 
     save_plot(
-        "problem1_cascade_setpoint.png",
+        f"{PLOT_DIR}/problem1_cascade_setpoint.png",
         t_csp,
         y_csp,
         "Problem 1D: Cascade Response to Setpoint Step",
@@ -606,7 +605,7 @@ def problem_1():
     iae_cd = calculate_IAE(t_cd, y_cd, target=0)
 
     save_plot(
-        "problem1_cascade_disturbance.png",
+        f"{PLOT_DIR}/problem1_cascade_disturbance.png",
         t_cd,
         y_cd,
         "Problem 1D: Cascade Response to Disturbance Step",
@@ -616,8 +615,8 @@ def problem_1():
 
     subfiglog(
         [
-            ("problem1_cascade_setpoint.png", "Cascade setpoint step"),
-            ("problem1_cascade_disturbance.png", "Cascade disturbance step"),
+            (f"{PLOT_DIR}/problem1_cascade_setpoint.png", "Cascade setpoint step"),
+            (f"{PLOT_DIR}/problem1_cascade_disturbance.png", "Cascade disturbance step"),
         ],
         "Cascade closed-loop responses with inner controller gain equal to 50.",
     )
@@ -677,8 +676,8 @@ def problem_1():
 def problem_2():
     doc.section("Problem 2")
 
-    save_feedforward_diagram("problem2_feedforward_diagram.png")
-    figlog("problem2_feedforward_diagram.png", "Feedforward plus feedback control diagram.")
+    save_feedforward_diagram(f"{PLOT_DIR}/problem2_feedforward_diagram.png")
+    figlog(f"{PLOT_DIR}/problem2_feedforward_diagram.png", "Feedforward plus feedback control diagram.")
 
     p(
         "For the feedforward design, the disturbance is assumed to enter on the plant-input side. "
@@ -761,8 +760,8 @@ def problem_3():
     # -------------------------------------------------------------------------
     doc.subsection("Part B: MIMO Feedback Block Diagram")
 
-    save_mimo_diagram("problem3_mimo_diagram.png", decoupled=False)
-    figlog("problem3_mimo_diagram.png", "MIMO feedback control diagram without decouplers.")
+    save_mimo_diagram(f"{PLOT_DIR}/problem3_mimo_diagram.png", decoupled=False)
+    figlog(f"{PLOT_DIR}/problem3_mimo_diagram.png", "MIMO feedback control diagram without decouplers.")
 
     p(
         "The MIMO process contains four transfer functions. Each manipulated variable affects both output "
@@ -807,8 +806,8 @@ def problem_3():
         "decoupler would need to be approximated or modified."
     )
 
-    save_mimo_diagram("problem3_decoupled_mimo_diagram.png", decoupled=True)
-    figlog("problem3_decoupled_mimo_diagram.png", "MIMO feedback control diagram with decouplers.")
+    save_mimo_diagram(f"{PLOT_DIR}/problem3_decoupled_mimo_diagram.png", decoupled=True)
+    figlog(f"{PLOT_DIR}/problem3_decoupled_mimo_diagram.png", "MIMO feedback control diagram with decouplers.")
 
 
 # =============================================================================

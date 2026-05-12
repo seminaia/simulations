@@ -36,7 +36,7 @@ For the setpoint response, the error is measured relative to a final desired val
 
 Part C: Cascade Control Structure
 ---------------------------------
-[FIGURE] problem1_cascade_diagram.png
+[FIGURE] Exam2_plots/problem1_cascade_diagram.png
 Caption: Cascade control diagram.
 
 A cascade loop is added by splitting the process into an inner process and an outer process. The inner controller is P-only, while the outer controller remains PI. The disturbance is assumed to enter the inner-loop process variable, allowing the inner loop to reject the disturbance before it propagates through the slower boiler-level dynamics.
@@ -69,7 +69,7 @@ The cascade controller improves disturbance rejection because the inner loop rea
 
 Problem 2
 ====================
-[FIGURE] problem2_feedforward_diagram.png
+[FIGURE] Exam2_plots/problem2_feedforward_diagram.png
 Caption: Feedforward plus feedback control diagram.
 
 For the feedforward design, the disturbance is assumed to enter on the plant-input side. The manipulated variable and the disturbance therefore both pass through the same boiler-level process dynamics.
@@ -111,7 +111,7 @@ Y_2 \leftrightarrow M_2
 
 Part B: MIMO Feedback Block Diagram
 -----------------------------------
-[FIGURE] problem3_mimo_diagram.png
+[FIGURE] Exam2_plots/problem3_mimo_diagram.png
 Caption: MIMO feedback control diagram without decouplers.
 
 The MIMO process contains four transfer functions. Each manipulated variable affects both output variables, which creates loop interaction.
@@ -136,5 +136,5 @@ D_{12}(s)=(-0.2043)\frac{4.6s+1}{2.2s+1}e^{-0.1s}
 D_{21}(s)=(2.0690)\frac{1.8s+1}{18s+1}e^{0.1s}
 The first decoupler contains an additional delay and is causal. The second decoupler contains a time advance, represented by the positive exponential term. A pure time advance is noncausal, so an exact implementation of this decoupler is not physically realizable. In practice, this decoupler would need to be approximated or modified.
 
-[FIGURE] problem3_decoupled_mimo_diagram.png
+[FIGURE] Exam2_plots/problem3_decoupled_mimo_diagram.png
 Caption: MIMO feedback control diagram with decouplers.

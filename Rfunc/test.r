@@ -1,6 +1,6 @@
 # ===================================================
 # VS Code R Capability Test Script
-# Run this file line by line (Ctrl+Enter) or all at once
+# Run this with ctrl + shiift + S
 # ===================================================
 
 # 1. ENVIRONMENT CHECK ---------------------------------

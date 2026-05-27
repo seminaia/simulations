@@ -25,7 +25,7 @@
     "files.simpleDialog.enable": false,
     "workbench.commandPalette.preserveInput": false,
     "workbench.externalBrowser": "firefox",
-    "workbench.preferredDarkColorTheme": "Dark 2026",
+    "workbench.preferredDarkColorTheme": "Dark Modern",
     "workbench.iconTheme": "vs-seti",
     "workbench.settings.alwaysShowAdvancedSettings": false,
     "workbench.settings.openDefaultKeybindings": true,

@@ -1,5 +1,5 @@
 """
-Competing phases for GPAW defect workflows.
+Competing phases for GPAW defect workflows
 Fetches structures from Materials Project, relaxes with PBE, computes chemical potentials.
 
 Outputs (in OUTPUT_DIR):
@@ -35,7 +35,7 @@ from gpaw_helpers import relax, assign_magmoms, pbe_params
 #  Configuration
 # ---------------------------------------------------------------------------
 
-MATERIAL = "TiO2"
+MATERIAL = "FeMn"
 API_KEY = "zBYiak7h6ies4ziNlAWqzXXHhc7rMBDB"
 ENERGY_ABOVE_HULL = 0.01
 OUTPUT_DIR = "competing_phases"
@@ -102,7 +102,8 @@ def setup_competing_phases(
             continue
 
         atoms = AseAtomsAdaptor.get_atoms(entry.structure)
-        assign_magmoms(atoms)
+        mag_map = {"Fe": 5.0, "Mn": 5.0}
+        assign_magmoms(atoms, mag_map, magnetization="FM")
         atoms = relax(
             atoms,
             pbe_params(kpts={"gamma": True, "density": 2.0},

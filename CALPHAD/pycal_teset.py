@@ -15,10 +15,10 @@ tern_comp = ['FE', 'C', 'VA']
 phase_keys = list(dbf.phases.keys())  # Get all phase keys from the database
 filtered_phases_tern = filter_phases(dbf, tern_comp, phase_keys)  # Filter phases based on components
 conds_tern = {
-    v.T: (500, 3000,100),  # vary from 500 to 1500 step 100
+    v.T: (500, 2000,100),  # vary from 500 to 1500 step 100
     v.P: 101325,
     v.N: 1,
-    v.X('C'): (0, 1, 0.01),  # vary from 0 to 0.08 step 0.01
+    v.X('C'): (0, 0.08, 0.01),  # vary from 0 to 0.08 step 0.01
 }    
 
 print(f"Phases considered in the ternary plot: {filtered_phases_tern}")
@@ -29,11 +29,10 @@ dof_tern = len(tern_comp) - len(filtered_phases_tern) + 2
 print(f"Degrees of freedom for the ternary plot: {dof_tern}")
 
 fig = plt.figure(figsize=(10, 7), dpi=100)
-ax = fig.gca()
 
-binplot(dbf, tern_comp,phase_keys, conds_tern)
+ax = binplot(dbf, tern_comp,phase_keys, conds_tern)
 ax.set_title('Binary Fe-C System')
 ax.set_xlabel('Mole Fraction of C')
 ax.set_ylabel('Temperature (K)')
 ax.legend()
-plt.show()
+ax.imshow()

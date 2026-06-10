@@ -2135,7 +2135,7 @@ $ THIS PHASE HAS A DISORDERED CONTRIBUTION FROM BCC_A2
  TYPE_DEFINITION ) GES AMEND_PHASE_DESCRIPTION BCC_B2 DIS_PART BCC_A2,,,!
  PHASE BCC_B2  %)  3 .5   .5   3 !
     CONSTITUENT BCC_B2  :AL%,CE,CU%,FE%,HF,LI,MG,MN,ND,NI,SI,SN,TA,TI,V,Y,ZN,
-    ZR : AL,CE,CU,FE,HF,LI,MG%,MN,ND,NI,SI%,SN,TA,TI%,V,Y,ZN,ZR : B,C,N,VA% :  !
+    ZR : AL,CE,CU,FE,HF,LI,MG%,MN,ND,NI,SI%,SN,TA,TI%,V,Y,ZN,ZR : VA :  !
 
 
    PARAMETER G(BCC_B2,FE:AL:VA;0)  2.98150E+02  -2*ALFEW1#;   6.00000E+03   
@@ -4573,7 +4573,7 @@ PARAM G(alfa_ALFEMNSI,AL:FE:MN:SI;0) 298.15 -575000+164*T+16*GHSERAL#
 
  LIST_OF_REFERENCES
  NUMBER  SOURCE
-$REF 1: E. Balitchev, T. Jantzen, I. Hurtago, D. Neuschï¿½tz
+$REF 1: E. Balitchev, T. Jantzen, I. Hurtago, D. Neuschütz
 $ CALPHAD 27 (2003) 275-278. 
 $REF 2: A. Prikhodovsky, Modelling of the coarsening process
 $ and application to semi-solid processing, Doctoral Thesis,

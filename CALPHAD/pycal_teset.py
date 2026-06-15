@@ -16,7 +16,7 @@ tern_comp = ['FE', 'C', 'VA']
 phase_keys = list(dbf.phases.keys())  # Get all phase keys from the database
 filtered_phases_tern = filter_phases(dbf, tern_comp, phase_keys)  # Filter phases based on components
 conds_tern = {
-    v.T: (1600, 2000,10),  # vary from 1600 to 2000 step 10
+    v.T: (800, 2000,10),  # vary from 1600 to 2000 step 10
     v.P: 101325,
     v.N: 1,
     v.X('C'): (0, 0.08, 0.001),  # vary from 0 to 0.08 step 0.001

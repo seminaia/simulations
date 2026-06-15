@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 from pycalphad.property_framework.metaproperties import IsolatedPhase
 # Load database
-f = "SGTE-unary1991-2010.TDB"
+
+f = "Fe-C.TDB"
 with open(f, 'r',encoding='latin-1') as file:
     content = file.read()
 dbf = Database(content)

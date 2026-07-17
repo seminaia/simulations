@@ -6,7 +6,6 @@ import pandas as pd
 file_path = "Oxide_formation.xls"
 df = pd.read_excel(file_path, sheet_name=0, header=None, dtype=str)
 
-# Helper to check if a string is a number
 def is_float(s):
     try:
         float(s)
@@ -15,7 +14,7 @@ def is_float(s):
         return False
 
 # ----------------------------------------------------------------------
-# 2. Parse and build a clean table with ΔG in kJ/mol
+# 2. Parse and build a clean table with ΔG in kJ and phase column
 # ----------------------------------------------------------------------
 clean_rows = []
 
@@ -31,7 +30,7 @@ for idx, row in df.iterrows():
     if not any([a, b, c, d]):
         continue
 
-    # Detect a new header
+    # Detect a new header (element symbol, and columns C & D are labels)
     if (b and "=" not in b and 
         c.strip() == "T, K" and d.strip() == "DGo , Kcal/mol"):
         current_element = b.strip()
@@ -44,17 +43,25 @@ for idx, row in df.iterrows():
             current_reaction = b.strip()
         continue
 
-    # Now we are inside a block and have a reaction – look for numeric data
+    # Now we are inside a block – look for numeric data in columns C and D
     if current_element is not None and current_reaction is not None:
         if is_float(c) and is_float(d):
             T = float(c)
             DG_kcal = float(d)
             DG_kJ = DG_kcal * 4.184   # convert to kJ/mol
+
+            # Capture phase label from column B if it's one of the known symbols
+            phase = ''
+            if b.strip() in ['m', 'M', 'b', 'B']:
+                phase = b.strip()
+            # Also, some rows have empty or other strings, but we only care about these.
+
             clean_rows.append({
                 'Element': current_element,
                 'Reaction': current_reaction,
                 'T (K)': T,
-                'DeltaG (kJ/mol)': DG_kJ
+                'DeltaG (kJ/mol)': DG_kJ,
+                'Phase': phase
             })
 
 # ----------------------------------------------------------------------
@@ -63,6 +70,6 @@ for idx, row in df.iterrows():
 clean_df = pd.DataFrame(clean_rows)
 clean_df.sort_values(['Element', 'T (K)'], inplace=True)
 
-output_file = "clean_oxide_data.xlsx"
+output_file = "clean_oxide_data_kJ_with_phase.xlsx"
 clean_df.to_excel(output_file, index=False)
-print(f"Converted {len(clean_df)} data points to '{output_file}' (ΔG in kJ/mol)")
+print(f"✅ Converted {len(clean_df)} data points to '{output_file}' (ΔG in kJ/mol, Phase column added)")

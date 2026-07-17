@@ -3,9 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
 
-# Use SVG backend to avoid any rasterisation issues
-matplotlib.use('svg')
-
 # ----------------------------------------------------------------------
 # 1. Parse the Excel file (unchanged)
 # ----------------------------------------------------------------------

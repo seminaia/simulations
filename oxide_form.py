@@ -70,6 +70,6 @@ for idx, row in df.iterrows():
 clean_df = pd.DataFrame(clean_rows)
 clean_df.sort_values(['Element', 'T (K)'], inplace=True)
 
-output_file = "clean_oxide_data_kJ_with_phase.xlsx"
+output_file = "clean_oxide_data.xlsx"
 clean_df.to_excel(output_file, index=False)
-print(f"✅ Converted {len(clean_df)} data points to '{output_file}' (ΔG in kJ/mol, Phase column added)")
+print(f"Cleaned data has been written to {output_file}")

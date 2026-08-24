@@ -3,8 +3,8 @@ import pandas as pd
 # ----------------------------------------------------------------------
 # 1. Read the original Excel file
 # ----------------------------------------------------------------------
-file_path = "Oxide_formation.xls"
-df = pd.read_excel(file_path, sheet_name=0, header=None, dtype=str)
+file_path = "EllinghamMaker_v12-5.xls"
+df = pd.read_csv(file_path)
 
 def is_float(s):
     try:
@@ -22,6 +22,7 @@ current_element = None
 current_reaction = None
 
 for idx, row in df.iterrows():
+    print(row)
     a = row[0] if pd.notna(row[0]) else ""
     b = row[1] if pd.notna(row[1]) else ""
     c = row[2] if pd.notna(row[2]) else ""
@@ -70,6 +71,6 @@ for idx, row in df.iterrows():
 clean_df = pd.DataFrame(clean_rows)
 clean_df.sort_values(['Element', 'T (K)'], inplace=True)
 
-output_file = "clean_oxide_data.xlsx"
-clean_df.to_excel(output_file, index=False)
+output_file = "clean_oxide_data.csv"
+clean_df.to_csv(output_file, index=False)
 print(f"Cleaned data has been written to {output_file}")

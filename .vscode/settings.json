@@ -762,5 +762,12 @@
     "workbench.settings.openDefaultSettings": true,
     "workbench.browser.openLocalhostLinks": false,
     "MATLAB.installPath": "/home/soki/MATLAB",
-    "chat.agent.sandbox.enabled": "on"
+    "chat.agent.sandbox.enabled": "on",
+    "python-envs.pythonProjects": [
+        {
+            "path": ".",
+            "envManager": "ms-python.python:conda",
+            "packageManager": "ms-python.python:conda"
+        }
+    ]
 }

@@ -310,7 +310,7 @@ flgs = np.array([[0, 0, 0, 0, ' ', 0]]) # no data for compounds in this form
 flsl = np.array([[0, 0, 0, 0, ' ', 0]]) # no data for compounds in this form                     
 
 # Metal: liquid, fluoride: liquid
-flll = np.array([ #T0,  T1,     G0,     G1,  chemical equation, label offset in vertical direction
+flll = np.array(object=[ #T0,  T1,     G0,     G1,  chemical equation, label offset in vertical direction
                 [1545,2500, -156.0, -157.0, r'$\frac{2}{3}Al + F_2 = \frac{2}{3}AlF_3 $', 0],
                 [1691,1955, -224.0, -222.0, '$ Ca + F_2 = CaF_2 $', 0],
                 [1120,1597, -240.0, -216.0, '$2Li + F_2 = 2LiF $', 0],

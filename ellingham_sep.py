@@ -339,11 +339,6 @@ chlorides= make_anion_dict(clss, clls, clgs, clsl, clll, clgl, clsg, cllg, clgg)
 # ======================================================================
 
 def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)'):
-    """
-    Plot all phase lines and labels for one anion.
-    color can be a single color or a dict mapping phase to color.
-    """
-    # Define line styles for each phase state (same as original)
     styles = {
         'ss': {'ls': '-',  'alpha': 1.0},
         'ls': {'ls': '--', 'alpha': 1.0},
@@ -355,7 +350,6 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
         'lg': {'ls': '--', 'alpha': 0.3},
         'gg': {'ls': ':',  'alpha': 0.3},
     }
-    # If color is a dict, use per‑phase colors; otherwise use the same color for all.
     if isinstance(color, dict):
         phase_colors = color
     else:
@@ -371,18 +365,23 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
             T1 = float(row[1])
             G0 = float(row[2])
             G1 = float(row[3])
-            label = row[4]
-            off = float(row[5]) if isinstance(row[5], (int, float)) else 0.0
             ax.plot([T0, T1], [G0, G1],
                     color=col, ls=style['ls'], alpha=style['alpha'],
                     marker='.', markersize=2.25)
-            # Label at the start point, shifted left and vertically by offset
-            ax.text(T0 - 50, G0 + off, label,
+
+    # ----- ONLY add labels for the ss phase -----
+    if 'ss' in anion_dict and anion_dict['ss'].size > 0:
+        for row in anion_dict['ss']:
+            T0 = float(row[0])
+            G0 = float(row[2])
+            label = row[4]
+            off = float(row[5]) if isinstance(row[5], (int, float)) else 0.0
+            ax.text(T0 - 25, G0 + off, label,
                     horizontalalignment='right',
                     verticalalignment='center',
                     fontsize=8)
 
-    # Axis settings (same as original)
+    # Axis settings (unchanged)
     xticks = [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
     yticks = np.arange(-1300, 100, 100)
     ax.set_xlim([-800, 2000])
@@ -397,48 +396,30 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
-    # Add the custom legend box (from original code)
+    # Legend box (unchanged)
     rectpos = [900, 1970, -1290, -1060]
     ax.add_patch(patches.Rectangle(
         (rectpos[0], rectpos[2]),
         rectpos[1]-rectpos[0],
         rectpos[3]-rectpos[2],
-        facecolor='#ffffff',
-        fill=True, edgecolor='k', linewidth=1
+        facecolor='#ffffff', fill=True, edgecolor='k', linewidth=1
     ))
     ax.text((rectpos[1]-rectpos[0])/2 + rectpos[0] + 155,
-            rectpos[3]-30,
-            'Metal',
-            horizontalalignment='center',
+            rectpos[3]-30, 'Metal', horizontalalignment='center',
             fontsize=9, fontweight='bold')
     ax.text((rectpos[1]-rectpos[0])/4 + rectpos[0] + 170,
-            rectpos[3]-65,
-            'Solid',
-            horizontalalignment='center', fontsize=9)
+            rectpos[3]-65, 'Solid', horizontalalignment='center', fontsize=9)
     ax.text((rectpos[1]-rectpos[0])/2 + rectpos[0] + 155,
-            rectpos[3]-65,
-            'Liquid',
-            horizontalalignment='center', fontsize=9)
+            rectpos[3]-65, 'Liquid', horizontalalignment='center', fontsize=9)
     ax.text(3*(rectpos[1]-rectpos[0])/4 + rectpos[0] + 140,
-            rectpos[3]-65,
-            'Gas',
-            horizontalalignment='center', fontsize=9)
-    ax.text(rectpos[0]+ 70,
-            rectpos[3]-110,
-            'Compound',
-            horizontalalignment='center', fontsize=9,
-            rotation=90, fontweight='bold')
-    ax.text(rectpos[0]+ 290,
-            rectpos[3]-110,
-            'Solid',
+            rectpos[3]-65, 'Gas', horizontalalignment='center', fontsize=9)
+    ax.text(rectpos[0]+ 70, rectpos[3]-110, 'Compound',
+            horizontalalignment='center', fontsize=9, rotation=90, fontweight='bold')
+    ax.text(rectpos[0]+ 290, rectpos[3]-110, 'Solid',
             horizontalalignment='right', fontsize=9)
-    ax.text(rectpos[0]+ 290,
-            rectpos[3]-155,
-            'Liquid',
+    ax.text(rectpos[0]+ 290, rectpos[3]-155, 'Liquid',
             horizontalalignment='right', fontsize=9)
-    ax.text(rectpos[0]+ 290,
-            rectpos[3]-200,
-            'Gas',
+    ax.text(rectpos[0]+ 290, rectpos[3]-200, 'Gas',
             horizontalalignment='right', fontsize=9)
 
     # Line style examples
@@ -452,28 +433,21 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
     ax.plot([1520, 1660], [-1255, -1255], color='k', ls='--', alpha=0.3)
     ax.plot([1780, 1920], [-1255, -1255], color='k', ls=':',  alpha=0.3)
 
-    # Sources text – similar to original but for each figure
-    ax.text(rectpos[0] + 30,
-            rectpos[3]-25,
-            'Sources',
+    # Sources text (unchanged)
+    ax.text(rectpos[0] + 30, rectpos[3]-25, 'Sources',
             fontsize=9, fontweight='bold')
-    ax.text(rectpos[0] + 30,
-            rectpos[3]-30,
+    ax.text(rectpos[0] + 30, rectpos[3]-30,
             '$O_2$, $N_2$, $F_2$ and $Cl_2$ data from:',
             fontsize=9, verticalalignment='top')
-    ax.text(rectpos[0] + 30,
-            rectpos[3]-35,
+    ax.text(rectpos[0] + 30, rectpos[3]-35,
             '\nReed, T.B., 1971. Free energy of \nformation of binary compounds. \nMIT Press, Cambridge, Mass.',
             fontsize=8, verticalalignment='top', fontstyle='italic')
-    ax.text(rectpos[0] + 30,
-            rectpos[3]-30,
+    ax.text(rectpos[0] + 30, rectpos[3]-30,
             '\n\n\n\nC data from:',
             fontsize=9, verticalalignment='top')
-    ax.text(rectpos[0] + 30,
-            rectpos[3]-44,
+    ax.text(rectpos[0] + 30, rectpos[3]-44,
             '\n\n\n\n\nColtters, R.G., 1985. Thermodynamics \nof binary metallic carbides: A review. \nMaterials Science and Engineering \n76, 1–50.',
             fontsize=8, verticalalignment='top', fontstyle='italic')
-
 # ======================================================================
 # Generate separate figures for each anion
 # ======================================================================

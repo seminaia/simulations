@@ -297,7 +297,7 @@ def convert_units(*arrays):
     for arr in arrays:
         if arr.size == 0:
             continue
-        numeric = arr[:, :4].astype(float)
+        numeric = arr[:, 0:4].astype(float)
         numeric[:, 0:2] -= 273.15      # K → °C
         numeric[:, 2:4] *= 4.184       # kcal → kJ
         arr[:, :4] = numeric

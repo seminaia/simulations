@@ -290,43 +290,34 @@ clgg = np.array([
     [1680,2500, -122.4, -110.4, '$2K + Cl_2 = 2KCl $', 0],
     [1738,2500, -110.0,  -96.8, '$2Na + Cl_2 = 2NaCl $', 0],
 ])
-
-# ======================================================================
-# Unit conversion: K → °C, kcal → kJ, and scale offsets
-# ======================================================================
-
+# ------------------------------
+# CONVERSION – K to °C, kcal to kJ, but offsets are NOT scaled
+# ------------------------------
 def convert_units(*arrays):
     for arr in arrays:
         if arr.size == 0:
             continue
-        # Convert first four columns
         numeric = arr[:, :4].astype(float)
         numeric[:, 0:2] -= 273.15      # K → °C
         numeric[:, 2:4] *= 4.184       # kcal → kJ
         arr[:, :4] = numeric
-        # Scale offset (column 5) if present
+        # OFFSET (column 5) is left UNSCALED – just convert to float if needed
         if arr.shape[1] > 5:
-            arr[:, 5] = arr[:, 5].astype(float) * 4.184
+            arr[:, 5] = arr[:, 5].astype(float)   # keep original numbers
 
 # Apply to all arrays
-convert_units(
-    oxss, oxls, oxgs, oxsl, oxll, oxgl, oxsg, oxlg, oxgg,
-    cass, cals, cags, casl, call, cagl, casg, calg, cagg,
-    niss, nils, nigs, nisl, nill, nigl, nisg, nilg, nigg,
-    flss, flls, flgs, flsl, flll, flgl, flsg, fllg, flgg,
-    clss, clls, clgs, clsl, clll, clgl, clsg, cllg, clgg
-)
+convert_units(oxss, oxls, oxgs, oxsl, oxll, oxgl, oxsg, oxlg, oxgg,
+              cass, cals, cags, casl, call, cagl, casg, calg, cagg,
+              niss, nils, nigs, nisl, nill, nigl, nisg, nilg, nigg,
+              flss, flls, flgs, flsl, flll, flgl, flsg, fllg, flgg,
+              clss, clls, clgs, clsl, clll, clgl, clsg, cllg, clgg)
 
-# ======================================================================
-# Helper to collect phase arrays into a dictionary
-# ======================================================================
-
+# ------------------------------
+# Helper to build anion dictionaries
+# ------------------------------
 def make_anion_dict(ss, ls, gs, sl, ll, gl, sg, lg, gg):
-    return {
-        'ss': ss, 'ls': ls, 'gs': gs,
-        'sl': sl, 'll': ll, 'gl': gl,
-        'sg': sg, 'lg': lg, 'gg': gg
-    }
+    return {'ss': ss, 'ls': ls, 'gs': gs, 'sl': sl, 'll': ll,
+            'gl': gl, 'sg': sg, 'lg': lg, 'gg': gg}
 
 oxides   = make_anion_dict(oxss, oxls, oxgs, oxsl, oxll, oxgl, oxsg, oxlg, oxgg)
 carbides = make_anion_dict(cass, cals, cags, casl, call, cagl, casg, calg, cagg)
@@ -334,10 +325,9 @@ nitrides = make_anion_dict(niss, nils, nigs, nisl, nill, nigl, nisg, nilg, nigg)
 fluorides= make_anion_dict(flss, flls, flgs, flsl, flll, flgl, flsg, fllg, flgg)
 chlorides= make_anion_dict(clss, clls, clgs, clsl, clll, clgl, clsg, cllg, clgg)
 
-# ======================================================================
-# Plotting function for a single anion
-# ======================================================================
-
+# ------------------------------
+# Plotting function – labels only for ss phase, offset -25, unscaled offsets
+# ------------------------------
 def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)'):
     styles = {
         'ss': {'ls': '-',  'alpha': 1.0},
@@ -355,21 +345,20 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
     else:
         phase_colors = {phase: color for phase in styles.keys()}
 
+    # Plot all lines
     for phase, arr in anion_dict.items():
         if arr.size == 0:
             continue
         style = styles.get(phase, {'ls': '-', 'alpha': 1.0})
         col = phase_colors.get(phase, color)
         for row in arr:
-            T0 = float(row[0])
-            T1 = float(row[1])
-            G0 = float(row[2])
-            G1 = float(row[3])
+            T0 = float(row[0]); T1 = float(row[1])
+            G0 = float(row[2]); G1 = float(row[3])
             ax.plot([T0, T1], [G0, G1],
                     color=col, ls=style['ls'], alpha=style['alpha'],
                     marker='.', markersize=2.25)
 
-    # ----- ONLY add labels for the ss phase -----
+    # ----- LABELS ONLY FOR ss PHASE, offset -25, no scaling of offsets -----
     if 'ss' in anion_dict and anion_dict['ss'].size > 0:
         for row in anion_dict['ss']:
             T0 = float(row[0])
@@ -381,7 +370,7 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
                     verticalalignment='center',
                     fontsize=8)
 
-    # Axis settings (unchanged)
+    # Axis settings (same as original)
     xticks = [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
     yticks = np.arange(-1300, 100, 100)
     ax.set_xlim([-800, 2000])
@@ -396,7 +385,7 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
-    # Legend box (unchanged)
+    # Legend box (copied from original)
     rectpos = [900, 1970, -1290, -1060]
     ax.add_patch(patches.Rectangle(
         (rectpos[0], rectpos[2]),
@@ -405,23 +394,21 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
         facecolor='#ffffff', fill=True, edgecolor='k', linewidth=1
     ))
     ax.text((rectpos[1]-rectpos[0])/2 + rectpos[0] + 155,
-            rectpos[3]-30, 'Metal', horizontalalignment='center',
-            fontsize=9, fontweight='bold')
+            rectpos[3]-30, 'Metal', ha='center', fontsize=9, fontweight='bold')
     ax.text((rectpos[1]-rectpos[0])/4 + rectpos[0] + 170,
-            rectpos[3]-65, 'Solid', horizontalalignment='center', fontsize=9)
+            rectpos[3]-65, 'Solid', ha='center', fontsize=9)
     ax.text((rectpos[1]-rectpos[0])/2 + rectpos[0] + 155,
-            rectpos[3]-65, 'Liquid', horizontalalignment='center', fontsize=9)
+            rectpos[3]-65, 'Liquid', ha='center', fontsize=9)
     ax.text(3*(rectpos[1]-rectpos[0])/4 + rectpos[0] + 140,
-            rectpos[3]-65, 'Gas', horizontalalignment='center', fontsize=9)
+            rectpos[3]-65, 'Gas', ha='center', fontsize=9)
     ax.text(rectpos[0]+ 70, rectpos[3]-110, 'Compound',
-            horizontalalignment='center', fontsize=9, rotation=90, fontweight='bold')
+            ha='center', fontsize=9, rotation=90, fontweight='bold')
     ax.text(rectpos[0]+ 290, rectpos[3]-110, 'Solid',
-            horizontalalignment='right', fontsize=9)
+            ha='right', fontsize=9)
     ax.text(rectpos[0]+ 290, rectpos[3]-155, 'Liquid',
-            horizontalalignment='right', fontsize=9)
+            ha='right', fontsize=9)
     ax.text(rectpos[0]+ 290, rectpos[3]-200, 'Gas',
-            horizontalalignment='right', fontsize=9)
-
+            ha='right', fontsize=9)
     # Line style examples
     ax.plot([1260, 1400], [-1160, -1160], color='k', ls='-',  alpha=1.0)
     ax.plot([1520, 1660], [-1160, -1160], color='k', ls='--', alpha=1.0)
@@ -433,25 +420,25 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
     ax.plot([1520, 1660], [-1255, -1255], color='k', ls='--', alpha=0.3)
     ax.plot([1780, 1920], [-1255, -1255], color='k', ls=':',  alpha=0.3)
 
-    # Sources text (unchanged)
+    # Sources
     ax.text(rectpos[0] + 30, rectpos[3]-25, 'Sources',
             fontsize=9, fontweight='bold')
     ax.text(rectpos[0] + 30, rectpos[3]-30,
             '$O_2$, $N_2$, $F_2$ and $Cl_2$ data from:',
-            fontsize=9, verticalalignment='top')
+            fontsize=9, va='top')
     ax.text(rectpos[0] + 30, rectpos[3]-35,
             '\nReed, T.B., 1971. Free energy of \nformation of binary compounds. \nMIT Press, Cambridge, Mass.',
-            fontsize=8, verticalalignment='top', fontstyle='italic')
+            fontsize=8, va='top', fontstyle='italic')
     ax.text(rectpos[0] + 30, rectpos[3]-30,
             '\n\n\n\nC data from:',
-            fontsize=9, verticalalignment='top')
+            fontsize=9, va='top')
     ax.text(rectpos[0] + 30, rectpos[3]-44,
             '\n\n\n\n\nColtters, R.G., 1985. Thermodynamics \nof binary metallic carbides: A review. \nMaterials Science and Engineering \n76, 1–50.',
-            fontsize=8, verticalalignment='top', fontstyle='italic')
-# ======================================================================
-# Generate separate figures for each anion
-# ======================================================================
+            fontsize=8, va='top', fontstyle='italic')
 
+# ------------------------------
+# Generate figures
+# ------------------------------
 def save_anion_figure(anion_dict, color, name, ylabel):
     fig, ax = pl.subplots(figsize=(10, 8))
     plot_anion(ax, anion_dict, color,
@@ -462,24 +449,13 @@ def save_anion_figure(anion_dict, color, name, ylabel):
     pl.close(fig)
     print(f"Saved ellingham_{name}.pdf")
 
-# For oxides, we want all lines in red (as original)
 save_anion_figure(oxides, 'r', 'oxides',
                   r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol O$_2$')
-
-# For carbides, use dark grey
 save_anion_figure(carbides, '0.4', 'carbides',
                   r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol C')
-
-# For nitrides, use blue
 save_anion_figure(nitrides, 'b', 'nitrides',
                   r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol N$_2$')
-
-# For fluorides, use green
 save_anion_figure(fluorides, [0, 1, 0], 'fluorides',
                   r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol F$_2$')
-
-# For chlorides, use a different green (original used 'g')
 save_anion_figure(chlorides, 'g', 'chlorides',
                   r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol Cl$_2$')
-
-print("All diagrams saved successfully.")

@@ -666,20 +666,20 @@ for row in cass:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='-',  alpha=1)
 for row in cals:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='--',  alpha=1,)
-#for row in cags:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls=':',  alpha=1,)
-#for row in casl:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='-',  alpha=0.6)
-#for row in call:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='--', alpha=0.6,)  
-#for row in cagl:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls=':',  alpha=0.6,)
-#for row in casg:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='-',  alpha=0.3,)    
-#for row in casg:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='--',  alpha=0.3,)
-#for row in cagg:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls=':',  alpha=0.3,)
+for row in cags:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls=':',  alpha=1,)
+for row in casl:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='-',  alpha=0.6)
+for row in call:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='--', alpha=0.6,)  
+for row in cagl:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls=':',  alpha=0.6,)
+for row in casg:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='-',  alpha=0.3,)    
+for row in casg:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='--',  alpha=0.3,)
+for row in cagg:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls=':',  alpha=0.3,)
 
 # Add text labels for each reaction 
 for row in cass:
@@ -694,20 +694,20 @@ for row in niss:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='-',  alpha=1)
 for row in nils:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='--',  alpha=1,)
-#for row in nigs:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls=':',  alpha=1,)
-#for row in nisl:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='-',  alpha=0.6)
-#for row in nill:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='--', alpha=0.6,)    
-#for row in nigl:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls=':',  alpha=0.6,)
-#for row in nisg:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='-',  alpha=0.3,)    
-#for row in nisg:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='--',  alpha=0.3,)
-#for row in nigg:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls=':',  alpha=0.3,)
+for row in nigs:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls=':',  alpha=1,)
+for row in nisl:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='-',  alpha=0.6)
+for row in nill:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='--', alpha=0.6,)    
+for row in nigl:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls=':',  alpha=0.6,)
+for row in nisg:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='-',  alpha=0.3,)    
+for row in nisg:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='--',  alpha=0.3,)
+for row in nigg:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls=':',  alpha=0.3,)
 
 # Add text labels for each reaction 
 for row in niss:
@@ -722,16 +722,16 @@ for row in flss:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='-',  alpha=1)
 for row in flls:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='--',  alpha=1,)
-#for row in flgs:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls=':',  alpha=1,)
-#for row in flsl:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='-',  alpha=0.6)
+for row in flgs:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls=':',  alpha=1,)
+for row in flsl:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='-',  alpha=0.6)
 for row in flll:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='--', alpha=0.6,)    
 for row in flgl:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls=':',  alpha=0.6,)
-#for row in flsg:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='-',  alpha=0.3,)    
+for row in flsg:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='-',  alpha=0.3,)    
 for row in flsg:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='--',  alpha=0.3,)
 for row in flgg:
@@ -750,8 +750,8 @@ for row in clss:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls='-',  alpha=1)
 for row in clls:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls='--',  alpha=1,)
-#for row in clgs:
-#    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls=':',  alpha=1,)
+for row in clgs:
+    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls=':',  alpha=1,)
 for row in clsl:
     a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls='-',  alpha=0.6)
 for row in clll:
@@ -791,8 +791,8 @@ a2.axhline(0,color='k')
 
 # Title and axis titles
 a2.set_title('Carbides, nitrides, fluorides and chlorides',fontweight='bold')
-a2.set_xlabel('Temperature (°C)',x=0.64)#fontweight='bold')
-a2.set_ylabel('Standard free energy of formation ($\Delta \mathit{G}_f \! \degree$) kJ/$mol_{C/N_2/F_2/Cl_2}$',)#fontweight='bold')
+a2.set_xlabel('Temperature (°C)',x=0.64, fontweight='bold')
+a2.set_ylabel(r'Standard free energy of formation ($\Delta \mathit{G}_f \! \degree$) kJ/$mol_{C/N_2/F_2/Cl_2}$', fontweight='bold')
 
 # Another long hack to draw out a legend
 #  Add a rectangle
@@ -842,7 +842,7 @@ a2.text(rectpos[0] + 30,
         ) 
 
 # Tight layout
-#pl.tight_layout()
+pl.tight_layout()
 
 # Save the figures
 pl.savefig('ellingham.pdf',dpi=400,bbox_inches='tight')

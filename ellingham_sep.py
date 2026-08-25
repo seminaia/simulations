@@ -420,22 +420,22 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
     ax.plot([1520, 1660], [-1255, -1255], color='k', ls='--', alpha=0.3)
     ax.plot([1780, 1920], [-1255, -1255], color='k', ls=':',  alpha=0.3)
 
-    # Sources
-    ax.text(rectpos[0] + 30, rectpos[3]-25, 'Sources',
-            fontsize=9, fontweight='bold')
-    ax.text(rectpos[0] + 30, rectpos[3]-30,
-            '$O_2$, $N_2$, $F_2$ and $Cl_2$ data from:',
-            fontsize=9, va='top')
-    ax.text(rectpos[0] + 30, rectpos[3]-35,
-            '\nReed, T.B., 1971. Free energy of \nformation of binary compounds. \nMIT Press, Cambridge, Mass.',
-            fontsize=8, va='top', fontstyle='italic')
-    ax.text(rectpos[0] + 30, rectpos[3]-30,
-            '\n\n\n\nC data from:',
-            fontsize=9, va='top')
-    ax.text(rectpos[0] + 30, rectpos[3]-44,
-            '\n\n\n\n\nColtters, R.G., 1985. Thermodynamics \nof binary metallic carbides: A review. \nMaterials Science and Engineering \n76, 1–50.',
-            fontsize=8, va='top', fontstyle='italic')
-
+    ## Sources
+    #ax.text(rectpos[0] + 30, rectpos[3]-25, 'Sources',
+    #        fontsize=9, fontweight='bold')
+    #ax.text(rectpos[0] + 30, rectpos[3]-30,
+    #        '$O_2$, $N_2$, $F_2$ and $Cl_2$ data from:',
+    #        fontsize=9, va='top')
+    #ax.text(rectpos[0] + 30, rectpos[3]-35,
+    #        '\nReed, T.B., 1971. Free energy of \nformation of binary compounds. \nMIT Press, Cambridge, Mass.',
+    #        fontsize=8, va='top', fontstyle='italic')
+    #ax.text(rectpos[0] + 30, rectpos[3]-30,
+    #        '\n\n\n\nC data from:',
+    #        fontsize=9, va='top')
+    #ax.text(rectpos[0] + 30, rectpos[3]-44,
+    #        '\n\n\n\n\nColtters, R.G., 1985. Thermodynamics \nof binary metallic carbides: A review. \nMaterials Science and Engineering \n76, 1–50.',
+    #        fontsize=8, va='top', fontstyle='italic')
+#
 # ------------------------------
 # Generate figures
 # ------------------------------

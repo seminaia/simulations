@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ellingham_separate.py
+ellingham_sep.py
 
 Generates separate Ellingham diagrams for Oxides, Carbides, Nitrides,
 Fluorides, and Chlorides. Data from Reed (1971) and Coltters (1985).
+ToDO: Add more data for Carbides, Nitrides, Fluorides, and Chlorides and Hydrides and sulfides
 """
 
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')          # avoids FT_Render_Glyph crash
-import matplotlib.pyplot as pl
+import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 # ----------------------------------------------------------------------
 # Plot style (same as original)
 # ----------------------------------------------------------------------
-pl.rcParams.update({
+plt.rcParams.update({
     'mathtext.default': 'regular',
     'mathtext.fontset': 'custom',
     'mathtext.it': 'Arial:italic',
@@ -24,11 +24,10 @@ pl.rcParams.update({
     'font.family': 'Arial',
 })
 
-# ======================================================================
-# DATA – exactly as in your original script
-# ======================================================================
-
 # ---------- Oxides ----------
+# Metal: Solid, Oxide: Solid
+# T0, T1,  G0,   G1,  Reaction,  label vertical offset
+
 oxss = np.array([
     [   0, 932, -266.6, -220.0, r'$\frac{4}{3} Al + O_2 = \frac{2}{3} Al_2O_3$', -13],
     [   0, 904, -111.0,  -74.0, r'$\frac{4}{3} Sb + O_2 = \frac{2}{3} Sb_2O_3$', 3],
@@ -65,6 +64,7 @@ oxss = np.array([
     [   0, 693, -166.0, -134.0, '$2Zn + O_2 = 2ZnO $', 4],
     [   0,2125, -262.0, -166.0, '$Zr + O_2 = ZrO_2 $', 9],
 ])
+# Metal: liquid, Oxide: Solid
 
 oxls = np.array([
     [ 932,2345, -220.0, -147.6, r'$\frac{4}{3} Al + O = \frac{2}{3} Al_2O_3$', 0],
@@ -86,6 +86,7 @@ oxls = np.array([
     [ 693,1180, -134.0, -109.0, '$2Zn + O_2 = 2ZnO $', 0],
     [2125,2980, -166.0, -130.0, '$Zr + O_2 = ZrO_2 $', 0],
 ])
+# Metal: Gas, Oxide: Solid
 
 oxgs = np.array([
     [1895,2191, -183.0, -159.0, '$2Ba + O_2 = 2BaO $', 0],
@@ -96,7 +97,7 @@ oxgs = np.array([
     [1156,1193, -122.0, -119.0, '$4Na + O_2 = 2Na_2O $', 0],
     [1180,2240, -109.0,   -9.0, '$2Zn + O_2 = 2ZnO $', 0],
 ])
-
+# Metal: Solid, Oxide: Liquid
 oxsl = np.array([
     [ 723,2313, -171.5, -112.0, r'$\frac{4}{3} B + O = \frac{2}{3} B_2O_3$', 0],
     [1642,1809,  -75.0,  -71.9, '$2Fe + O_2 = 2FeO$', 0],
@@ -104,6 +105,7 @@ oxsl = np.array([
     [1818,2190, -100.0,  -96.0, '$V + O_2 = VO_2$', 0],
     [1743,2100,  -67.0,  -57.0, r'$ \frac{2}{3}W + O_2 = \frac{2}{3}WO_3 $', 0],
 ])
+# Metal: Liquid, Oxide: Liquid
 
 oxll = np.array([
     [2345,2736, -147.6, -128.5, r'$\frac{4}{3} Al + O = \frac{2}{3} Al_2O_3$', 0],
@@ -121,6 +123,7 @@ oxll = np.array([
     [2033,2500, -159.0, -142.5, '$2Ti + O_2 = 2TiO$', 0],
     [2190,2500,  -96.0,  -81.0, '$V + O_2 = VO_2$', 0],
 ])
+# Metal: Gas, Oxide: Liquid
 
 oxgl = np.array([
     [2191,2500, -159.0, -131.0, '$2Ba + O_2 = 2BaO $', 0],
@@ -129,6 +132,7 @@ oxgl = np.array([
     [2240,2340,   -9.0,    0.0, '$2Zn + O_2 = 2ZnO $', 0],
 ])
 
+# Metal: Solid, Oxide: Gas
 oxsg = np.array([
     [0,3400,  -55.6, -191.9, '$2C + O_2 = 2CO $', 0],
     [0,3400,  -94.5,  -94.5, '$C + O_2 = CO_2 $', 0],
@@ -136,10 +140,13 @@ oxsg = np.array([
     [2100,2500,  -57.0,  -52.0, r'$ \frac{2}{3}W + O_2 = \frac{2}{3}WO_3 $', 0],
 ])
 
+# Metal: Liquid, Oxide: Gas
 oxlg = np.array([
     [ 915, 955,  -73.0,  -72.0, '$4Cs + O_2 = 2Cs_2O$', -16],
     [1698,1908,  -45.0,  -32.0, r'$\frac{4}{3} Sb + O_2 = \frac{2}{3} Sb_2O_3$', 0],
 ])
+
+# Metal: Gas, Oxide: Gas
 
 oxgg = np.array([
     [0,3400, -119.3,  -26.6, '$4H + O_2 = 2H_2O$', 0],
@@ -149,6 +156,8 @@ oxgg = np.array([
 ])
 
 # ---------- Carbides ----------
+# Metal: Solid, Carbide: Solid
+
 cass = np.array([
     [   0, 1414,   -57,    -49, '$ Si + C = SiC $', -9],
     [   0, 1750,  -160, -150.5, '$ Ti + C = TiC $', -5],
@@ -158,6 +167,7 @@ cass = np.array([
     [   0, 1000,   -70,    -59, '$2Mo + C = Mo_2C$', -12],
     [   0,  720,  -183,   -175, '$Zr + C = ZrC$', 1],
 ])
+# Metal: Liquid, Carbide: Solid
 cals = np.array([
     [1414,2000,    -49,    -30, '$ Si + C = SiC $', 0],
 ])
@@ -170,6 +180,8 @@ calg = np.array([[0, 0, 0, 0, ' ', 0]])
 cagg = np.array([[0, 0, 0, 0, ' ', 0]])
 
 # ---------- Nitrides ----------
+# Metal: Solid, Nitride: Solid
+
 niss = np.array([
     [   0, 932, -144.3, -101.0, '$2Al + N_2 = 2AlN $', 0],
     [   0,2300, -121.4,  -20.8, '$2B + N_2 = 2BN$', 0],
@@ -182,6 +194,8 @@ niss = np.array([
     [   0,2190,  -83.3,    3.6, '$2V + N_2 = 2VN$', -13],
     [   0,2128, -163.8,  -67.2, '$2Zr + N_2 = 2ZrN $', -2],
 ])
+# Metal: Liquid, Nitride: Solid
+
 nils = np.array([
     [2300,2500, -20.8,       0, '$2B + N_2 = 2BN$', 0],
     [ 923,1376,  -65.8,  -41.3, '$3Mg + N_2 = Mg_3N_2', 0],
@@ -193,11 +207,14 @@ nill = np.array([[0, 0, 0, 0, ' ', 0]])
 nigl = np.array([[0, 0, 0, 0, ' ', 0]])
 nisg = np.array([[0, 0, 0, 0, ' ', 0]])
 nilg = np.array([[0, 0, 0, 0, ' ', 0]])
+# Metal: Gas, Nitride: Gas
 nigg = np.array([
     [0,2000,  -24.1,   85.2, '$6H + N_2 = 2NH_3$', 0],
 ])
 
 # ---------- Fluorides ----------
+# Metal: Solid, Fluoride: Solid
+
 flss = np.array([
     [   0, 932, -215.3, -181.0, r'$\frac{2}{3}Al + F_2 = \frac{2}{3}AlF_3 $', 0],
     [   0,1123, -288.0, -245.0, '$ Ca + F_2 = CaF_2 $', 5],
@@ -207,6 +224,7 @@ flss = np.array([
     [   0, 336, -270.0, -253.0, '$2K + F_2 = 2KF $', +0.3],
     [   0, 371, -274.0, -255.0, '$2Na + F_2 = 2NaF $', -0.3],
 ])
+# Metal: Liquid, Fluoride: Solid
 flls = np.array([
     [ 932,1545, -181.0, -156.0, r'$\frac{2}{3}Al + F_2 = \frac{2}{3}AlF_3 $', 0],
     [1123,1691, -245.0, -224.0, '$ Ca + F_2 = CaF_2 $', 0],
@@ -216,6 +234,8 @@ flls = np.array([
 ])
 flgs = np.array([[0, 0, 0, 0, ' ', 0]])
 flsl = np.array([[0, 0, 0, 0, ' ', 0]])
+# Metal: Liquid, Fluoride: Liquid
+
 flll = np.array([
     [1545,2500, -156.0, -157.0, r'$\frac{2}{3}Al + F_2 = \frac{2}{3}AlF_3 $', 0],
     [1691,1955, -224.0, -222.0, '$ Ca + F_2 = CaF_2 $', 0],
@@ -223,6 +243,8 @@ flll = np.array([
     [1031,1130, -214.0, -209.0, '$2K + F_2 = 2KF $', 0],
     [1187,1268, -214.0, -209.0, '$2Na + F_2 = 2NaF', 0],
 ])
+# Metal: Gas, Fluoride: Liquid
+
 flgl = np.array([
     [1955,2500, -222.0, -186.0, '$ Ca + F_2 = CaF_2 $', 0],
     [1597,1954, -216.0, -194.0, '$2Li + F_2 = 2LiF $', 0],
@@ -231,6 +253,8 @@ flgl = np.array([
 ])
 flsg = np.array([[0, 0, 0, 0, ' ', 0]])
 fllg = np.array([[0, 0, 0, 0, ' ', 0]])
+# Metal: Gas, Fluoride: Gas
+
 flgg = np.array([
     [   0,2500,  -81.2,  -36.0, r'$\frac{1}{2}C + F_2 = \frac{1}{2}CF_4 $', 0],
     [   0,   0, -129.8, -129.8, '$2H + F_2 = 2HF $', 0],
@@ -241,6 +265,8 @@ flgg = np.array([
 ])
 
 # ---------- Chlorides ----------
+# Metal: Solid, Chloride: Solid
+
 clss = np.array([
     [   0, 465, -110.9,  -92.9, r'$\frac{2}{3}Al + Cl_2 = \frac{2}{3}AlCl_3 $', -5],
     [   0,1055, -188.0, -154.0, '$ Ca + Cl_2 = CaCl_2 $', 0],
@@ -251,36 +277,48 @@ clss = np.array([
     [   0, 371, -196.8, -180.0, '$2Na + Cl_2 = 2NaCl $', -5],
     [   0,   0,  -36.1,  -36.1, r'$\frac{1}{3} W + Cl_2 = \frac{1}{3} WCl_6 $', 8],
 ])
+# Metal: Liquid, Chloride: Solid
+
 clls = np.array([
     [ 459, 887, -177.6, -161.0, '$2Li + Cl_2 = 2LiCl $', 0],
     [ 336,1031, -193.2, -161.0, '$2K + Cl_2 = 2KCl $', 0],
     [ 371,1073, -180.0, -149.4, '$2Na + Cl_2 = 2NaCl $', 0],
 ])
+# Metal: Gas, Chloride: Solid
+
 clgs = np.array([[0, 0, 0, 0, ' ', 0]])
+# Metal: Solid, Chloride: Liquid
+
 clsl = np.array([
     [ 465, 500,  -92.9,  -91.7, r'$\frac{2}{3}Al + Cl_2 = \frac{2}{3}AlCl_3 $', 0],
     [1055,1123, -154.0, -152.0, '$ Ca + Cl_2 = CaCl_2 $', 0],
     [   0, 548,  -36.1,  -15.0, r'$\frac{1}{3} W + Cl_2 = \frac{1}{3} WCl_6 $', 0],
 ])
+
+# Metal: Liquid, Chloride: Liquid
 clll = np.array([
     [1123,1755, -152.0, -136.0, '$ Ca + Cl_2 = CaCl_2 $', 0],
     [ 887,1597, -161.0, -141.2, '$2Li + Cl_2 = 2LiCl $', 0],
     [1031,1043, -161.0, -160.0, '$2K + Cl_2 = 2KCl $', 0],
     [1073,1156, -149.4, -145.6, '$2Na + Cl_2 = 2NaCl $', 0],
 ])
+# Metal: Gas, Chloride: Liquid
 clgl = np.array([
     [1755,1900, -136.0, -128.0, '$ Ca + Cl_2 = CaCl_2 $', 0],
     [1597,1655, -141.2, -138.4, '$2Li + Cl_2 = 2LiCl $', 0],
     [1043,1680, -160.0, -122.4, '$2K + Cl_2 = 2KCl $', 0],
     [1156,1738, -145.6, -110.0, '$2Na + Cl_2 = 2NaCl $', 0],
 ])
+# Metal: Solid, Chloride: Gas
 clsg = np.array([
     [ 500, 932,  -91.7,  -84.6, r'$\frac{2}{3}Al + Cl_2 = \frac{2}{3}AlCl_3 $', 0],
     [ 548,1500,  -15.0,   -0.8, r'$\frac{1}{3} W + Cl_2 = \frac{1}{3} WCl_6 $', 0],
 ])
+# Metal: Liquid, Chloride: Gas
 cllg = np.array([
     [ 932,2273,  -84.6,  -70.2, r'$\frac{2}{3}Al + Cl_2 = \frac{2}{3}AlCl_3 $', 0],
 ])
+# Metal: Gas, Chloride: Gas
 clgg = np.array([
     [2273,2500,  -70.2,  -71.6, r'$\frac{2}{3}Al + Cl_2 = \frac{2}{3}AlCl_3 $', 0],
     [1900,2500, -128.0, -114.0, '$ Ca + Cl_2 = CaCl_2 $', 0],
@@ -349,7 +387,7 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
     for phase, arr in anion_dict.items():
         if arr.size == 0:
             continue
-        style = styles.get(phase, {'ls': '-', 'alpha': 1.0})
+        style = styles.get(phase)
         col = phase_colors.get(phase, color)
         for row in arr:
             T0 = float(row[0]); T1 = float(row[1])
@@ -388,7 +426,71 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
     ax.set_xlabel(xlabel,x=0.64)#fontweight='bold')
     ax.set_ylabel(ylabel)#fontweight='bold')
 
-    #  Add short lines to indicate the line style
+    #  Add a rectangle
+    rectpos = [900,1970, -1290, -1060]
+    rectpos1 = [900, 1970, -1400, -1300]
+    ax.add_patch(patches.Rectangle(
+        (rectpos[0], rectpos[2]),
+        rectpos[1]-rectpos[0],
+        rectpos[3]-rectpos[2],
+        facecolor='#ffffff',
+        fill=True, edgecolor='k', linewidth=1
+        )
+    )
+#  Add a series of text labels
+    ax.text((rectpos[1]-rectpos[0])/2 + rectpos[0] + 155,
+        rectpos[3]-30,
+        'Metal',
+        horizontalalignment='center',
+        fontsize=9,
+        fontweight='bold',
+        )
+    ax.text((rectpos[1]-rectpos[0])/4 + rectpos[0] + 170,
+        rectpos[3]-65,
+        'Solid',
+        horizontalalignment='center',
+        fontsize=9,
+        )
+    ax.text((rectpos[1]-rectpos[0])/2 + rectpos[0] + 155,
+        rectpos[3]-65,
+        'Liquid',
+        horizontalalignment='center',
+        fontsize=9,
+        )
+    ax.text(3*(rectpos[1]-rectpos[0])/4 + rectpos[0] + 140,
+        rectpos[3]-65,
+        'Gas',
+        horizontalalignment='center',
+        fontsize=9,        
+        )
+    ax.text(rectpos[0]+ 70,
+        rectpos[3]-200,
+        'Compound',
+        horizontalalignment='center',
+        fontsize=9,
+        rotation=90,
+        fontweight='bold',
+        )
+    ax.text(rectpos[0]+ 290,
+        rectpos[3]-110,
+        'Solid',
+        horizontalalignment='right',
+        fontsize=9,
+        )
+    ax.text(rectpos[0]+ 290,
+        rectpos[3]-155,
+        'Liquid',
+        horizontalalignment='right',
+        fontsize=9,
+        )
+    ax.text(rectpos[0]+ 290,
+        rectpos[3]-200,
+        'Gas',
+        horizontalalignment='right',
+        fontsize=9,        
+        )
+
+#  Add short lines to indicate the line style
     ax.plot([1260, 1400], [-1160, -1160], color='r', ls='-',  alpha=1,   label='Metal solid, oxide solid')
     ax.plot([1520, 1660], [-1160, -1160], color='r', ls='--', alpha=1,   label='Metal liquid, oxide solid')
     ax.plot([1780, 1920], [-1160, -1160], color='r', ls=':',  alpha=1,   label='Metal gas, oxide solid')
@@ -398,62 +500,52 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
     ax.plot([1260, 1400], [-1255, -1255], color='r', ls='-',  alpha=0.3, label='Metal solid, oxide gas')
     ax.plot([1520, 1660], [-1255, -1255], color='r', ls='--', alpha=0.3, label='Metal liquid, oxide gas')
     ax.plot([1780, 1920], [-1255, -1255], color='r', ls=':',  alpha=0.3, label='Metal gas, oxide gas')
-    
-    rectpos = [900,1970, -1290, -1060]
-    ax.add_patch(patches.Rectangle(
-                (rectpos[0], rectpos[2]),
-                rectpos[1]-rectpos[0],
-                rectpos[3]-rectpos[2],
-                facecolor='#ffffff',
-                fill=True, edgecolor='k', linewidth=1
-                )
-                )    
-    ## Sources
-    ax.text(rectpos[0] + 30, rectpos[3]-25, 'Sources',
+       ## Sources
+    ax.text(rectpos1[0] + 300, rectpos1[3]-100, 'Sources',
                 fontsize=9, fontweight='bold')
-    ax.text(rectpos[0] + 30, rectpos[3]-30,
+    ax.text(rectpos1[0] + 300, rectpos1[3]-110,
                 '$O_2$, $N_2$, $F_2$ and $Cl_2$ data from:',
                 fontsize=9, va='top')
-    ax.text(rectpos[0] + 30, rectpos[3]-35,
+    ax.text(rectpos1[0] + 300, rectpos1[3]-120,
                 '\nReed, T.B., 1971. Free energy of \nformation of binary compounds. \nMIT Press, Cambridge, Mass.',
                 fontsize=8, va='top', fontstyle='italic')
-    ax.text(rectpos[0] + 30, rectpos[3]-30,
+    ax.text(rectpos1[0] + 300, rectpos1[3]-130,
                 '\n\n\n\nC data from:',
                 fontsize=9, va='top')
-    ax.text(rectpos[0] + 30, rectpos[3]-44,
+    ax.text(rectpos1[0] + 300, rectpos1[3]-140,
                 '\n\n\n\n\nColtters, R.G., 1985. Thermodynamics \nof binary metallic carbides: A review. \nMaterials Science and Engineering \n76, 1–50.',
                 fontsize=8, va='top', fontstyle='italic')
-   
 #
 # ------------------------------
 # Generate figures
 # ------------------------------
 def save_anion_figure(anion_dict, color, name, ylabel):
-    fig, ax = pl.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(10, 8))
     plot_anion(ax, anion_dict, color,
                title=f'{name.capitalize()}',
                ylabel=ylabel)
-    pl.tight_layout()
-    pl.savefig(f'ellingham_{name}.pdf', dpi=400, bbox_inches='tight')
-    pl.close(fig)
+    plt.tight_layout()
+    plt.savefig(f'ellingham_{name}.pdf', dpi=400, bbox_inches='tight')
+    plt.close(fig)
     print(f"Saved ellingham_{name}.pdf")
 
 
 # Use dummy data to include a legend
 
 # Tight layout
-pl.tight_layout()
+plt.tight_layout()
 
 # Save the figures
-pl.savefig('ellingham.pdf',dpi=400,bbox_inches='tight')
+plt.savefig('ellingham.pdf',dpi=400,bbox_inches='tight')
 
 save_anion_figure(oxides, 'r', 'oxides',
                   r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol O$_2$')
 save_anion_figure(carbides, '0.4', 'carbides',
                   r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol C')
-#save_anion_figure(nitrides, 'b', 'nitrides',
-#                  r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol N$_2$')
-#save_anion_figure(fluorides, [0, 1, 0], 'fluorides',
-#                  r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol F$_2$')
-#save_anion_figure(chlorides, 'g', 'chlorides',
-#                  r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol Cl$_2$')
+save_anion_figure(nitrides, 'b', 'nitrides', r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol N$_2$'
+                  )
+
+save_anion_figure(fluorides, [0, 1, 0], 'fluorides',
+                  r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol F$_2$')
+save_anion_figure(chlorides, 'g', 'chlorides',
+                  r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol Cl$_2$')

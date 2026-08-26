@@ -359,8 +359,6 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
                     marker='.', markersize=2.25)
 
 
-    linedict = {'marker':'.', 'markersize':2.25}
-
     # Add text labels for each reaction    
     for row in anion_dict['ss']:
         ax.text(float(row[0]) - 25,float(row[2]) + float(row[5]), 
@@ -386,9 +384,9 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
     ax.axhline(0,color='k')
 
     # Title and axis titles
-    ax.set_title('Oxides',fontweight='bold')
-    ax.set_xlabel('Temperature (°C)',x=0.64)#fontweight='bold')
-    ax.set_ylabel(r'Standard free energy of formation ($\Delta \mathit{G}_f \! \degree$) kJ/$mol_{O_2}$',)#fontweight='bold')
+    ax.set_title(title, fontsize=14, fontweight='bold')
+    ax.set_xlabel(xlabel,x=0.64)#fontweight='bold')
+    ax.set_ylabel(ylabel)#fontweight='bold')
 
     #  Add short lines to indicate the line style
     ax.plot([1260, 1400], [-1160, -1160], color='r', ls='-',  alpha=1,   label='Metal solid, oxide solid')
@@ -400,23 +398,32 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
     ax.plot([1260, 1400], [-1255, -1255], color='r', ls='-',  alpha=0.3, label='Metal solid, oxide gas')
     ax.plot([1520, 1660], [-1255, -1255], color='r', ls='--', alpha=0.3, label='Metal liquid, oxide gas')
     ax.plot([1780, 1920], [-1255, -1255], color='r', ls=':',  alpha=0.3, label='Metal gas, oxide gas')
-# %% Make the carbide, nitride, fluoride and chloride diagram
-
+    
+    rectpos = [900,1970, -1290, -1060]
+    ax.add_patch(patches.Rectangle(
+                (rectpos[0], rectpos[2]),
+                rectpos[1]-rectpos[0],
+                rectpos[3]-rectpos[2],
+                facecolor='#ffffff',
+                fill=True, edgecolor='k', linewidth=1
+                )
+                )    
     ## Sources
-    #ax.text(rectpos[0] + 30, rectpos[3]-25, 'Sources',
-    #        fontsize=9, fontweight='bold')
-    #ax.text(rectpos[0] + 30, rectpos[3]-30,
-    #        '$O_2$, $N_2$, $F_2$ and $Cl_2$ data from:',
-    #        fontsize=9, va='top')
-    #ax.text(rectpos[0] + 30, rectpos[3]-35,
-    #        '\nReed, T.B., 1971. Free energy of \nformation of binary compounds. \nMIT Press, Cambridge, Mass.',
-    #        fontsize=8, va='top', fontstyle='italic')
-    #ax.text(rectpos[0] + 30, rectpos[3]-30,
-    #        '\n\n\n\nC data from:',
-    #        fontsize=9, va='top')
-    #ax.text(rectpos[0] + 30, rectpos[3]-44,
-    #        '\n\n\n\n\nColtters, R.G., 1985. Thermodynamics \nof binary metallic carbides: A review. \nMaterials Science and Engineering \n76, 1–50.',
-    #        fontsize=8, va='top', fontstyle='italic')
+    ax.text(rectpos[0] + 30, rectpos[3]-25, 'Sources',
+                fontsize=9, fontweight='bold')
+    ax.text(rectpos[0] + 30, rectpos[3]-30,
+                '$O_2$, $N_2$, $F_2$ and $Cl_2$ data from:',
+                fontsize=9, va='top')
+    ax.text(rectpos[0] + 30, rectpos[3]-35,
+                '\nReed, T.B., 1971. Free energy of \nformation of binary compounds. \nMIT Press, Cambridge, Mass.',
+                fontsize=8, va='top', fontstyle='italic')
+    ax.text(rectpos[0] + 30, rectpos[3]-30,
+                '\n\n\n\nC data from:',
+                fontsize=9, va='top')
+    ax.text(rectpos[0] + 30, rectpos[3]-44,
+                '\n\n\n\n\nColtters, R.G., 1985. Thermodynamics \nof binary metallic carbides: A review. \nMaterials Science and Engineering \n76, 1–50.',
+                fontsize=8, va='top', fontstyle='italic')
+   
 #
 # ------------------------------
 # Generate figures

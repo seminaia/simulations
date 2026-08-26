@@ -358,67 +358,49 @@ def plot_anion(ax, anion_dict, color, title, ylabel, xlabel='Temperature (°C)')
                     color=col, ls=style['ls'], alpha=style['alpha'],
                     marker='.', markersize=2.25)
 
-    # ----- LABELS ONLY FOR ss PHASE, offset -25, no scaling of offsets -----
-    if 'ss' in anion_dict and anion_dict['ss'].size > 0:
-        for row in anion_dict['ss']:
-            T0 = float(row[0])
-            G0 = float(row[2])
-            label = row[4]
-            off = float(row[5]) if isinstance(row[5], (int, float)) else 0.0
-            ax.text(T0 - 25, G0 + off, label,
-                    horizontalalignment='right',
-                    verticalalignment='center',
-                    fontsize=8)
 
-    # Axis settings (same as original)
+    linedict = {'marker':'.', 'markersize':2.25}
+
+    # Add text labels for each reaction    
+    for row in anion_dict['ss']:
+        ax.text(float(row[0]) - 25,float(row[2]) + float(row[5]), 
+                row[4],
+                horizontalalignment='right',
+                verticalalignment='center',
+                fontsize=8)
+
+    # Set ticks and axis limits
     xticks = [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
     yticks = np.arange(-1300, 100, 100)
-    ax.set_xlim([-800, 2000])
+    ax.set_xlim([-800,2000])
     ax.set_xticks(xticks)
     ax.set_ylim([-1300, 50])
     ax.set_yticks(yticks)
-    for x in xticks:
-        ax.axvline(x, color='0.5', alpha=0.5, zorder=-9)
-    ax.axvline(0, color='k')
-    ax.axhline(0, color='k')
-    ax.set_title(title, fontweight='bold')
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
 
-    # Legend box (copied from original)
-    rectpos = [900, 1970, -1290, -1060]
-    ax.add_patch(patches.Rectangle(
-        (rectpos[0], rectpos[2]),
-        rectpos[1]-rectpos[0],
-        rectpos[3]-rectpos[2],
-        facecolor='#ffffff', fill=True, edgecolor='k', linewidth=1
-    ))
-    ax.text((rectpos[1]-rectpos[0])/2 + rectpos[0] + 155,
-            rectpos[3]-30, 'Metal', ha='center', fontsize=9, fontweight='bold')
-    ax.text((rectpos[1]-rectpos[0])/4 + rectpos[0] + 170,
-            rectpos[3]-65, 'Solid', ha='center', fontsize=9)
-    ax.text((rectpos[1]-rectpos[0])/2 + rectpos[0] + 155,
-            rectpos[3]-65, 'Liquid', ha='center', fontsize=9)
-    ax.text(3*(rectpos[1]-rectpos[0])/4 + rectpos[0] + 140,
-            rectpos[3]-65, 'Gas', ha='center', fontsize=9)
-    ax.text(rectpos[0]+ 70, rectpos[3]-110, 'Compound',
-            ha='center', fontsize=9, rotation=90, fontweight='bold')
-    ax.text(rectpos[0]+ 290, rectpos[3]-110, 'Solid',
-            ha='right', fontsize=9)
-    ax.text(rectpos[0]+ 290, rectpos[3]-155, 'Liquid',
-            ha='right', fontsize=9)
-    ax.text(rectpos[0]+ 290, rectpos[3]-200, 'Gas',
-            ha='right', fontsize=9)
-    # Line style examples
-    ax.plot([1260, 1400], [-1160, -1160], color='k', ls='-',  alpha=1.0)
-    ax.plot([1520, 1660], [-1160, -1160], color='k', ls='--', alpha=1.0)
-    ax.plot([1780, 1920], [-1160, -1160], color='k', ls=':',  alpha=1.0)
-    ax.plot([1260, 1400], [-1208, -1208], color='k', ls='-',  alpha=0.6)
-    ax.plot([1520, 1660], [-1208, -1208], color='k', ls='--', alpha=0.6)
-    ax.plot([1780, 1920], [-1208, -1208], color='k', ls=':',  alpha=0.6)
-    ax.plot([1260, 1400], [-1255, -1255], color='k', ls='-',  alpha=0.3)
-    ax.plot([1520, 1660], [-1255, -1255], color='k', ls='--', alpha=0.3)
-    ax.plot([1780, 1920], [-1255, -1255], color='k', ls=':',  alpha=0.3)
+    # Manually add vertical grid lines only
+    for line in xticks:
+        ax.axvline(line,color='0.5',alpha=0.5,zorder=-9)
+
+    # Add T = 0 and G = 0 lines
+    ax.axvline(0,color='k')
+    ax.axhline(0,color='k')
+
+    # Title and axis titles
+    ax.set_title('Oxides',fontweight='bold')
+    ax.set_xlabel('Temperature (°C)',x=0.64)#fontweight='bold')
+    ax.set_ylabel(r'Standard free energy of formation ($\Delta \mathit{G}_f \! \degree$) kJ/$mol_{O_2}$',)#fontweight='bold')
+
+    #  Add short lines to indicate the line style
+    ax.plot([1260, 1400], [-1160, -1160], color='r', ls='-',  alpha=1,   label='Metal solid, oxide solid')
+    ax.plot([1520, 1660], [-1160, -1160], color='r', ls='--', alpha=1,   label='Metal liquid, oxide solid')
+    ax.plot([1780, 1920], [-1160, -1160], color='r', ls=':',  alpha=1,   label='Metal gas, oxide solid')
+    ax.plot([1260, 1400], [-1208, -1208], color='r', ls='-',  alpha=0.6, label='Metal solid, oxide liquid')
+    ax.plot([1520, 1660], [-1208, -1208], color='r', ls='--', alpha=0.6, label='Metal liquid, oxide liquid')
+    ax.plot([1780, 1920], [-1208, -1208], color='r', ls=':',  alpha=0.6, label='Metal gas, oxide liquid')
+    ax.plot([1260, 1400], [-1255, -1255], color='r', ls='-',  alpha=0.3, label='Metal solid, oxide gas')
+    ax.plot([1520, 1660], [-1255, -1255], color='r', ls='--', alpha=0.3, label='Metal liquid, oxide gas')
+    ax.plot([1780, 1920], [-1255, -1255], color='r', ls=':',  alpha=0.3, label='Metal gas, oxide gas')
+# %% Make the carbide, nitride, fluoride and chloride diagram
 
     ## Sources
     #ax.text(rectpos[0] + 30, rectpos[3]-25, 'Sources',
@@ -449,329 +431,8 @@ def save_anion_figure(anion_dict, color, name, ylabel):
     pl.close(fig)
     print(f"Saved ellingham_{name}.pdf")
 
-fig, (a1, a2) = pl.subplots(1,2,figsize=(15.5, 10.5))
 
 # Use dummy data to include a legend
-a1.plot(-1000, 1000, color='r', ls='-',  alpha=1,   label='Metal solid, oxide solid')
-a1.plot(-1000, 1000, color='r', ls='--', alpha=1,   label='Metal liquid, oxide solid')
-a1.plot(-1000, 1000, color='r', ls=':',  alpha=1,   label='Metal gas, oxide solid')
-a1.plot(-1000, 1000, color='r', ls='-',  alpha=0.6, label='Metal solid, oxide liquid')
-a1.plot(-1000, 1000, color='r', ls='--', alpha=0.6, label='Metal liquid, oxide liquid')
-a1.plot(-1000, 1000, color='r', ls=':',  alpha=0.6, label='Metal gas, oxide liquid')
-a1.plot(-1000, 1000, color='r', ls='-',  alpha=0.3, label='Metal solid, oxide gas')
-a1.plot(-1000, 1000, color='r', ls='--', alpha=0.3, label='Metal liquid, oxide gas')
-a1.plot(-1000, 1000, color='r', ls=':',  alpha=0.3, label='Metal gas, oxide gas')
-
-
-linedict = {'marker':'.', 'markersize':2.25}
-
-for row in oxss:
-    a1.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='r', ls='-',  alpha=1,)
-for row in oxls:
-    a1.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='r', ls='--',  alpha=1,)
-for row in oxgs:
-    a1.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='r', ls=':',  alpha=1,)
-for row in oxsl:
-    a1.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='r', ls='-',  alpha=0.6,)
-for row in oxll:
-    a1.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='r', ls='--', alpha=0.6,) 
-for row in oxgl:
-    a1.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='r', ls=':',  alpha=0.6,)
-for row in oxsg:
-    a1.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='r', ls='-',  alpha=0.3,)
-for row in oxgg:
-    a1.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='r', ls=':',  alpha=0.3,)
-for row in oxlg:
-    a1.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='r', ls='--',  alpha=0.3,)
-
-# Add text labels for each reaction    
-for row in oxss:
-    a1.text(float(row[0]) - 25,float(row[2]) + float(row[5]), 
-            row[4],
-            horizontalalignment='right',
-            verticalalignment='center',
-            fontsize=8)
-
-# Set ticks and axis limits
-xticks = [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
-yticks = np.arange(-1300, 100, 100)
-a1.set_xlim([-800,2000])
-a1.set_xticks(xticks)
-a1.set_ylim([-1300, 50])
-a1.set_yticks(yticks)
-
-# Manually add vertical grid lines only
-for line in xticks:
-    a1.axvline(line,color='0.5',alpha=0.5,zorder=-9)
-
-# Add T = 0 and G = 0 lines
-a1.axvline(0,color='k')
-a1.axhline(0,color='k')
-
-# Title and axis titles
-a1.set_title('Oxides',fontweight='bold')
-a1.set_xlabel('Temperature (°C)',x=0.64)#fontweight='bold')
-a1.set_ylabel(r'Standard free energy of formation ($\Delta \mathit{G}_f \! \degree$) kJ/$mol_{O_2}$',)#fontweight='bold')
-
-
-# A long hack to draw out a legend
-#  Add a rectangle
-rectpos = [900,1970, -1290, -1060]
-a1.add_patch(patches.Rectangle(
-        (rectpos[0], rectpos[2]),
-        rectpos[1]-rectpos[0],
-        rectpos[3]-rectpos[2],
-        facecolor='#ffffff',
-        fill=True, edgecolor='k', linewidth=1
-        )
-        )
-#  Add a series of text labels
-a1.text((rectpos[1]-rectpos[0])/2 + rectpos[0] + 155,
-        rectpos[3]-30,
-        'Metal',
-        horizontalalignment='center',
-        fontsize=9,
-        fontweight='bold',
-        )
-a1.text((rectpos[1]-rectpos[0])/4 + rectpos[0] + 170,
-        rectpos[3]-65,
-        'Solid',
-        horizontalalignment='center',
-        fontsize=9,
-        )
-a1.text((rectpos[1]-rectpos[0])/2 + rectpos[0] + 155,
-        rectpos[3]-65,
-        'Liquid',
-        horizontalalignment='center',
-        fontsize=9,
-        )
-a1.text(3*(rectpos[1]-rectpos[0])/4 + rectpos[0] + 140,
-        rectpos[3]-65,
-        'Gas',
-        horizontalalignment='center',
-        fontsize=9,        
-        )
-a1.text(rectpos[0]+ 70,
-        rectpos[3]-110,
-        'Compound',
-        horizontalalignment='center',
-        fontsize=9,
-        rotation=90,
-        fontweight='bold',
-        )
-a1.text(rectpos[0]+ 290,
-        rectpos[3]-110,
-        'Solid',
-        horizontalalignment='right',
-        fontsize=9,
-        )
-a1.text(rectpos[0]+ 290,
-        rectpos[3]-155,
-        'Liquid',
-        horizontalalignment='right',
-        fontsize=9,
-        )
-a1.text(rectpos[0]+ 290,
-        rectpos[3]-200,
-        'Gas',
-        horizontalalignment='right',
-        fontsize=9,        
-        )
-
-#  Add short lines to indicate the line style
-a1.plot([1260, 1400], [-1160, -1160], color='r', ls='-',  alpha=1,   label='Metal solid, oxide solid')
-a1.plot([1520, 1660], [-1160, -1160], color='r', ls='--', alpha=1,   label='Metal liquid, oxide solid')
-a1.plot([1780, 1920], [-1160, -1160], color='r', ls=':',  alpha=1,   label='Metal gas, oxide solid')
-a1.plot([1260, 1400], [-1208, -1208], color='r', ls='-',  alpha=0.6, label='Metal solid, oxide liquid')
-a1.plot([1520, 1660], [-1208, -1208], color='r', ls='--', alpha=0.6, label='Metal liquid, oxide liquid')
-a1.plot([1780, 1920], [-1208, -1208], color='r', ls=':',  alpha=0.6, label='Metal gas, oxide liquid')
-a1.plot([1260, 1400], [-1255, -1255], color='r', ls='-',  alpha=0.3, label='Metal solid, oxide gas')
-a1.plot([1520, 1660], [-1255, -1255], color='r', ls='--', alpha=0.3, label='Metal liquid, oxide gas')
-a1.plot([1780, 1920], [-1255, -1255], color='r', ls=':',  alpha=0.3, label='Metal gas, oxide gas')
-
-
-
-# %% Make the carbide, nitride, fluoride and chloride diagram
-
-# Add in the line segments from the carbide data
-for row in cass:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='-',  alpha=1)
-for row in cals:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='--',  alpha=1,)
-for row in cags:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls=':',  alpha=1,)
-for row in casl:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='-',  alpha=0.6)
-for row in call:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='--', alpha=0.6,)  
-for row in cagl:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls=':',  alpha=0.6,)
-for row in casg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='-',  alpha=0.3,)    
-for row in casg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls='--',  alpha=0.3,)
-for row in cagg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='0.4', ls=':',  alpha=0.3,)
-
-# Add text labels for each reaction 
-for row in cass:
-    a2.text(float(row[0]) - 25,float(row[2]) + float(row[5]), 
-            row[4],
-            horizontalalignment='right',
-            verticalalignment='center',
-            fontsize=8)
-
-# Add in the line segments from the nitride data
-for row in niss:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='-',  alpha=1)
-for row in nils:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='--',  alpha=1,)
-for row in nigs:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls=':',  alpha=1,)
-for row in nisl:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='-',  alpha=0.6)
-for row in nill:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='--', alpha=0.6,)    
-for row in nigl:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls=':',  alpha=0.6,)
-for row in nisg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='-',  alpha=0.3,)    
-for row in nisg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls='--',  alpha=0.3,)
-for row in nigg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='b', ls=':',  alpha=0.3,)
-
-# Add text labels for each reaction 
-for row in niss:
-    a2.text(float(row[0]) - 25,float(row[2]) + float(row[5]), 
-            row[4],
-            horizontalalignment='right',
-            verticalalignment='center',
-            fontsize=8)
-    
-# Add in the line segments from the fluoride data
-for row in flss:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='-',  alpha=1)
-for row in flls:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='--',  alpha=1,)
-for row in flgs:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls=':',  alpha=1,)
-for row in flsl:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='-',  alpha=0.6)
-for row in flll:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='--', alpha=0.6,)    
-for row in flgl:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls=':',  alpha=0.6,)
-for row in flsg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='-',  alpha=0.3,)    
-for row in flsg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls='--',  alpha=0.3,)
-for row in flgg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color=[0, 1, 0], ls=':',  alpha=0.3,)
-
-# Add text labels for each reaction 
-for row in flss:
-    a2.text(float(row[0]) - 25,float(row[2]) + float(row[5]), 
-            row[4],
-            horizontalalignment='right',
-            verticalalignment='center',
-            fontsize=8)
-
-# Add in the line segments from the chloride data
-for row in clss:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls='-',  alpha=1)
-for row in clls:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls='--',  alpha=1,)
-for row in clgs:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls=':',  alpha=1,)
-for row in clsl:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls='-',  alpha=0.6)
-for row in clll:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls='--', alpha=0.6,)   
-for row in clgl:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls=':',  alpha=0.6,)
-for row in clsg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls='-',  alpha=0.3,)    
-for row in cllg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls='--',  alpha=0.3,)
-for row in clgg:
-    a2.plot([float(row[0]), float(row[1])],[float(row[2]), float(row[3])], **linedict, color='g', ls=':',  alpha=0.3,)
-
-# Add text labels for each reaction 
-for row in clss:
-    a2.text(float(row[0]) - 25,float(row[2]) + float(row[5]), 
-            row[4],
-            horizontalalignment='right',
-            verticalalignment='center',
-            fontsize=8)
-
-
-
-# Set ticks and axis limits
-a2.set_xlim([-800,2000])
-a2.set_xticks(xticks)
-a2.set_ylim([-1300, 50])
-a2.set_yticks(yticks)
-
-# Manually add vertical grid lines only
-for line in xticks:
-    a2.axvline(line,color='0.5',alpha=0.5,zorder=-9)
-
-# Add T = 0 and G = 0 lines
-a2.axvline(0,color='k')
-a2.axhline(0,color='k')
-
-# Title and axis titles
-a2.set_title('Carbides, nitrides, fluorides and chlorides',fontweight='bold')
-a2.set_xlabel('Temperature (°C)',x=0.64, fontweight='bold')
-a2.set_ylabel(r'Standard free energy of formation ($\Delta \mathit{G}_f \! \degree$) kJ/$mol_{C/N_2/F_2/Cl_2}$', fontweight='bold')
-
-# Another long hack to draw out a legend
-#  Add a rectangle
-rectpos = [900,1970, -1290, -1060]
-a2.add_patch(patches.Rectangle(
-        (rectpos[0], rectpos[2]),
-        rectpos[1]-rectpos[0],
-        rectpos[3]-rectpos[2],
-        facecolor='#ffffff',
-        fill=True, edgecolor='k', linewidth=1
-        #zorder=-3
-        )
-        )
-#  Add a series of text labels    
-a2.text(rectpos[0] + 30,
-        rectpos[3]-25,
-        'Sources',
-        fontsize=9,
-        fontweight='bold',
-        )
-
-a2.text(rectpos[0] + 30,
-        rectpos[3]-30,
-        '$O_2$, $N_2$, $F_2$ and $Cl_2$ data from:',
-        fontsize=9,
-        verticalalignment='top',
-        )
-a2.text(rectpos[0] + 30,
-        rectpos[3]-35,
-        '\nReed, T.B., 1971. Free energy of \nformation of binary compounds. \nMIT Press, Cambridge, Mass.',
-        fontsize=8,
-        verticalalignment='top',
-        fontstyle='italic',
-        ) 
-a2.text(rectpos[0] + 30,
-        rectpos[3]-30,
-        '\n\n\n\nC data from:',
-        fontsize=9,
-        verticalalignment='top',
-        )
-a2.text(rectpos[0] + 30,
-        rectpos[3]-44,
-        '\n\n\n\n\nColtters, R.G., 1985. Thermodynamics \nof binary metallic carbides: A review. \nMaterials Science and Engineering \n76, 1–50.',
-        fontsize=8,
-        verticalalignment='top',
-        fontstyle='italic',        
-        ) 
 
 # Tight layout
 pl.tight_layout()
@@ -779,10 +440,10 @@ pl.tight_layout()
 # Save the figures
 pl.savefig('ellingham.pdf',dpi=400,bbox_inches='tight')
 
-#save_anion_figure(oxides, 'r', 'oxides',
-#                  r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol O$_2$')
-#save_anion_figure(carbides, '0.4', 'carbides',
-#                  r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol C')
+save_anion_figure(oxides, 'r', 'oxides',
+                  r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol O$_2$')
+save_anion_figure(carbides, '0.4', 'carbides',
+                  r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol C')
 #save_anion_figure(nitrides, 'b', 'nitrides',
 #                  r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol N$_2$')
 #save_anion_figure(fluorides, [0, 1, 0], 'fluorides',

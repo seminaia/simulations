@@ -7,26 +7,23 @@ Generates separate Ellingham diagrams for Oxides, Carbides, Nitrides,
 Fluorides, Chlorides, Hydrides and Sulfides.
 
 Data:
-  * O2, N2, F2, Cl2 reference lines and salt data — Reed, T.B., 1971.
-    Free Energy of Formation of Binary Compounds. MIT Press, Cambridge, Mass.
-  * Carbides — Coltters, R.G., 1985. Thermodynamics of binary metallic
+  * O2, N2, F2, Cl2 lines and salt data - Reed, T.B., 1971. Free Energy of
+    Formation of Binary Compounds. MIT Press, Cambridge, Mass.
+  * Carbides - Coltters, R.G., 1985. Thermodynamics of binary metallic
     carbides: a review. Materials Science and Engineering 76, 1-50.
-  * Added salts, hydrides and sulfides — two-point linear segments
-    (dG = dH - T*dS) compiled from standard thermochemical tables
-    (Barin, 1993); slopes follow the reaction entropy. Verify against
-    the primary source before publication-quality use.
+  * Added salts, hydrides and sulfides - two-point linear segments (dG = dH -
+    T*dS) compiled from standard thermochemical tables (Barin, 1993).
 
-Storage convention (raw tables below):
-  temperatures in K, energies in kcal per mole of gas reference
-  (O2, N2, F2, Cl2, H2, S2) or per mole C for carbides.
-  convert_units() turns them into degC / kJ before plotting.
+Storage convention (raw tables): temperatures in K, energies in kcal per mole
+of gas reference (O2, N2, F2, Cl2, H2, S2) or per mole C for carbides.
+convert_units() turns them into degC / kJ before plotting.
 
 Line style code (metal state x compound state):
-  metal:   solid '-'   liquid '--'   gas ':'
-  compound: solid a=1.0   liquid a=0.6   gas a=0.3
+  metal:    solid '-'   liquid '--'   gas ':'
+  compound: solid a=1.0  liquid a=0.6  gas a=0.3
 
 Usage:
-  python ellingham.py                        # every family, every element
+  python ellingham.py                          # every family, every element
   python ellingham.py --elements Al,Fe,Mg
   python ellingham.py --families oxides,sulfides
   python ellingham.py --phases ss,ll
@@ -39,9 +36,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-# ----------------------------------------------------------------------
-# Plot style
-# ----------------------------------------------------------------------
 plt.rcParams.update({
     'mathtext.default': 'regular',
     'mathtext.fontset': 'custom',
@@ -77,49 +71,10 @@ def filter_anion_dict(anion_dict, allowed_elements):
             for phase, arr in anion_dict.items()}
 
 
-# ----------------------------------------------------------------------
-# Element reference: Symbol -> [Name, molar mass]
-# ----------------------------------------------------------------------
-molarmass_bin = {
-    'Ac': ['Actinium', 227], 'Ag': ['Silver', 107.8682], 'Al': ['Aluminum', 26.9815],
-    'Am': ['Americium', 243], 'Ar': ['Argon', 39.948], 'As': ['Arsenic', 74.9216],
-    'At': ['Astatine', 210], 'Au': ['Gold', 196.9665], 'B': ['Boron', 10.811],
-    'Ba': ['Barium', 137.327], 'Be': ['Beryllium', 9.0122], 'Bi': ['Bismuth', 208.9804],
-    'Br': ['Bromine', 79.904], 'C': ['Carbon', 12.0107], 'Ca': ['Calcium', 40.078],
-    'Cd': ['Cadmium', 112.411], 'Ce': ['Cerium', 140.116], 'Cl': ['Chlorine', 35.453],
-    'Co': ['Cobalt', 58.9332], 'Cr': ['Chromium', 51.9961], 'Cs': ['Cesium', 132.9055],
-    'Cu': ['Copper', 63.546], 'Dy': ['Dysprosium', 162.5], 'Er': ['Erbium', 167.259],
-    'Eu': ['Europium', 151.964], 'F': ['Fluorine', 18.9984], 'Fe': ['Iron', 55.845],
-    'Ga': ['Gallium', 69.723], 'Gd': ['Gadolinium', 157.25], 'Ge': ['Germanium', 72.64],
-    'H': ['Hydrogen', 1.0079], 'He': ['Helium', 4.0026], 'Hf': ['Hafnium', 178.49],
-    'Hg': ['Mercury', 200.59], 'Ho': ['Holmium', 164.9303], 'I': ['Iodine', 126.9045],
-    'In': ['Indium', 114.818], 'Ir': ['Iridium', 192.217], 'K': ['Potassium', 39.0983],
-    'Kr': ['Krypton', 83.8], 'La': ['Lanthanum', 138.9055], 'Li': ['Lithium', 6.941],
-    'Lu': ['Lutetium', 174.967], 'Mg': ['Magnesium', 24.305], 'Mn': ['Manganese', 54.938],
-    'Mo': ['Molybdenum', 95.94], 'N': ['Nitrogen', 14.0067], 'Na': ['Sodium', 22.9897],
-    'Nb': ['Niobium', 92.9064], 'Nd': ['Neodymium', 144.24], 'Ne': ['Neon', 20.1797],
-    'Ni': ['Nickel', 58.6934], 'O': ['Oxygen', 15.9994], 'Os': ['Osmium', 190.23],
-    'P': ['Phosphorus', 30.9738], 'Pa': ['Protactinium', 231.0359], 'Pb': ['Lead', 207.2],
-    'Pd': ['Palladium', 106.42], 'Pr': ['Praseodymium', 140.9077], 'Pt': ['Platinum', 195.078],
-    'Pu': ['Plutonium', 244], 'Ra': ['Radium', 226], 'Rb': ['Rubidium', 85.4678],
-    'Re': ['Rhenium', 186.207], 'Rh': ['Rhodium', 102.9055], 'Rn': ['Radon', 222],
-    'Ru': ['Ruthenium', 101.07], 'S': ['Sulfur', 32.065], 'Sb': ['Antimony', 121.76],
-    'Sc': ['Scandium', 44.9559], 'Se': ['Selenium', 78.96], 'Si': ['Silicon', 28.0855],
-    'Sm': ['Samarium', 150.36], 'Sn': ['Tin', 118.71], 'Sr': ['Strontium', 87.62],
-    'Ta': ['Tantalum', 180.9479], 'Tb': ['Terbium', 158.9253], 'Tc': ['Technetium', 98],
-    'Te': ['Tellurium', 127.6], 'Th': ['Thorium', 232.0381], 'Ti': ['Titanium', 47.867],
-    'Tl': ['Thallium', 204.3833], 'Tm': ['Thulium', 168.9342], 'U': ['Uranium', 238.0289],
-    'V': ['Vanadium', 50.9415], 'W': ['Tungsten', 183.84], 'Xe': ['Xenon', 131.293],
-    'Y': ['Yttrium', 88.9059], 'Yb': ['Ytterbium', 173.04], 'Zn': ['Zinc', 65.39],
-    'Zr': ['Zirconium', 91.224],
-}
-
 # ======================================================================
-# OXIDES  (Reed 1971) — raw: K, kcal/mol O2
+# OXIDES (Reed 1971) - raw: K, kcal/mol O2
 # row: [T0, T1, G0, G1, reaction, label-offset]
 # ======================================================================
-
-# Metal solid, oxide solid
 oxss = np.array([
     [   0,  480,  -14.0,    0.0, '$4Ag + O_2 = 2Ag_2O $', 0],
     [   0,  932, -266.6, -220.0, r'$\frac{4}{3} Al + O_2 = \frac{2}{3} Al_2O_3$', -13],
@@ -160,7 +115,6 @@ oxss = np.array([
     [   0, 2125, -262.0, -166.0, '$Zr + O_2 = ZrO_2 $', 9],
 ], dtype=object)
 
-# Metal liquid, oxide solid
 oxls = np.array([
     [ 932, 2345, -220.0, -147.6, r'$\frac{4}{3} Al + O_2 = \frac{2}{3} Al_2O_3$', 0],
     [ 904,  928,  -74.0,  -73.0, r'$\frac{4}{3} Sb + O_2 = \frac{2}{3} Sb_2O_3$', 0],
@@ -183,7 +137,6 @@ oxls = np.array([
     [2125, 2980, -166.0, -130.0, '$Zr + O_2 = ZrO_2 $', 0],
 ], dtype=object)
 
-# Metal gas, oxide solid
 oxgs = np.array([
     [1895, 2191, -183.0, -159.0, '$2Ba + O_2 = 2BaO $', 0],
     [1756, 2887, -217.0, -117.0, '$2Ca + O_2 = 2CaO $', 0],
@@ -194,7 +147,6 @@ oxgs = np.array([
     [1180, 2240, -109.0,   -9.0, '$2Zn + O_2 = 2ZnO $', 0],
 ], dtype=object)
 
-# Metal solid, oxide liquid
 oxsl = np.array([
     [ 723, 2313, -171.5, -112.0, r'$\frac{4}{3} B + O_2 = \frac{2}{3} B_2O_3$', 0],
     [1642, 1809,  -75.0,  -71.9, '$2Fe + O_2 = 2FeO$', 0],
@@ -203,7 +155,6 @@ oxsl = np.array([
     [1743, 2100,  -67.0,  -57.0, r'$ \frac{2}{3}W + O_2 = \frac{2}{3}WO_3 $', 0],
 ], dtype=object)
 
-# Metal liquid, oxide liquid
 oxll = np.array([
     [2345, 2736, -147.6, -128.5, r'$\frac{4}{3} Al + O_2 = \frac{2}{3} Al_2O_3$', 0],
     [ 928, 1698,  -73.0,  -45.0, r'$\frac{4}{3} Sb + O_2 = \frac{2}{3} Sb_2O_3$', 0],
@@ -222,7 +173,6 @@ oxll = np.array([
     [2190, 2500,  -96.0,  -81.0, '$V + O_2 = VO_2$', 0],
 ], dtype=object)
 
-# Metal gas, oxide liquid
 oxgl = np.array([
     [2191, 2500, -159.0, -131.0, '$2Ba + O_2 = 2BaO $', 0],
     [1031, 1325, -104.0,  -71.0, '$4K + O_2 = 2K_2O $', 0],
@@ -230,7 +180,6 @@ oxgl = np.array([
     [2240, 2340,   -9.0,    0.0, '$2Zn + O_2 = 2ZnO $', 0],
 ], dtype=object)
 
-# Metal solid, oxide gas
 oxsg = np.array([
     [   0, 3400,  -55.6, -191.9, '$2C + O_2 = 2CO $', 0],
     [   0, 3400,  -94.5,  -94.5, '$C + O_2 = CO_2 $', 0],
@@ -239,13 +188,11 @@ oxsg = np.array([
     [2100, 2500,  -57.0,  -52.0, r'$ \frac{2}{3}W + O_2 = \frac{2}{3}WO_3 $', 0],
 ], dtype=object)
 
-# Metal liquid, oxide gas
 oxlg = np.array([
     [ 915,  955,  -73.0,  -72.0, '$4Cs + O_2 = 2Cs_2O$', -16],
     [1698, 1908,  -45.0,  -32.0, r'$\frac{4}{3} Sb + O_2 = \frac{2}{3} Sb_2O_3$', 0],
 ], dtype=object)
 
-# Metal gas, oxide gas
 oxgg = np.array([
     [   0, 3400, -135.4,   -4.7, '$2CO + O_2 = 2CO_2$', 0],
     [   0, 3400, -119.3,  -26.6, '$4H + O_2 = 2H_2O$', 0],
@@ -254,30 +201,28 @@ oxgg = np.array([
     [1908, 2380,  -32.0,    0.0, r'$\frac{4}{3} Sb + O_2 = \frac{2}{3} Sb_2O_3$', 0],
 ], dtype=object)
 
-# ======================================================================
-# CARBIDES (Coltters 1985) — raw: K, kcal/mol C
-# ======================================================================
 
-# Metal solid, carbide solid
+# ======================================================================
+# CARBIDES (Coltters 1985) - raw: K, kcal/mol C
+# ======================================================================
 cass = np.array([
-    [   0, 1414,   -57.0,   -49.0, '$ Si + C = SiC $', -9],
-    [   0, 1750,  -160.0, -150.5, '$ Ti + C = TiC $', -5],
-    [   0,  723,    23.0,    -1.0, '$3Fe + C = Fe_3C $', 0],
-    [   0, 1290,   -31.0,   -34.0, '$2W + C = W_2C$', -1],
-    [   0,  800,   -39.5,   -45.0, '$W + C = WC$', -10],
-    [   0, 1000,   -70.0,   -59.0, '$2Mo + C = Mo_2C$', -12],
-    [   0,  720,  -183.0,  -175.0, '$Zr + C = ZrC$', 1],
-    # --- added (Barin 1993, linear approximations) ---
-    [   0, 3083,   -20.5,   -14.3, '$V + C = VC$', 0],
-    [   0, 3885,   -32.0,   -24.2, '$Nb + C = NbC$', 26],
-    [   0, 4153,   -33.6,   -25.3, '$Ta + C = TaC$', -16],
-    [   0, 4200,   -44.0,   -33.0, '$Hf + C = HfC$', -30],
-    [   0, 2700,   -16.0,   -10.6, '$4B + C = B_4C$', 0],
+    [   0, 1414,   -57,    -49, '$ Si + C = SiC $', -9],
+    [   0, 1750,  -160, -150.5, '$ Ti + C = TiC $', -5],
+    [   0,  723,    23,     -1, '$3Fe + C = Fe_3C $', 0],
+    [   0, 1290,   -31,    -34, '$2W + C = W_2C$', -1],
+    [   0,  800, -39.5,    -45, '$W + C = WC$', -10],
+    [   0, 1000,   -70,    -59, '$2Mo + C = Mo_2C$', -12],
+    [   0,  720,  -183,   -175, '$Zr + C = ZrC$', 1],
+    # --- added (Barin 1993) ---
+    [   0, 3083, -20.5,  -14.3, '$V + C = VC$', 0],
+    [   0, 3885, -32.0,  -24.2, '$Nb + C = NbC$', 26],
+    [   0, 4150, -34.0,  -25.0, '$Ta + C = TaC$', 12],
+    [   0, 4160, -44.0,  -33.0, '$Hf + C = HfC$', 5],
+    [   0, 2627, -13.0,   -6.5, '$4B + C = B_4C$', -14],
 ], dtype=object)
 
-# Metal liquid, carbide solid
 cals = np.array([
-    [1414, 2000,   -49.0,   -30.0, '$ Si + C = SiC $', 0],
+    [1414, 2000,   -49,    -30, '$ Si + C = SiC $', 0],
 ], dtype=object)
 
 cags = EMPTY()
@@ -288,11 +233,10 @@ casg = EMPTY()
 calg = EMPTY()
 cagg = EMPTY()
 
-# ======================================================================
-# NITRIDES (Reed 1971) — raw: K, kcal/mol N2
-# ======================================================================
 
-# Metal solid, nitride solid
+# ======================================================================
+# NITRIDES (Reed 1971) - raw: K, kcal/mol N2
+# ======================================================================
 niss = np.array([
     [   0,  932, -144.3, -101.0, '$2Al + N_2 = 2AlN $', 0],
     [   0, 2300, -121.4,  -20.8, '$2B + N_2 = 2BN$', 0],
@@ -304,12 +248,11 @@ niss = np.array([
     [   0, 1940, -160.5,  -73.4, '$2Ti + N_2 = 2TiN $', 1],
     [   0, 2190,  -83.3,    3.6, '$2V + N_2 = 2VN$', -13],
     [   0, 2128, -163.8,  -67.2, '$2Zr + N_2 = 2ZrN $', -2],
-    # --- added (Barin 1993, linear approximations) ---
+    # --- added (Barin 1993) ---
     [   0, 3580, -159.0,  -70.0, '$2Hf + N_2 = 2HfN $', 18],
     [   0, 1800,  -58.0,  -15.0, '$2Cr + N_2 = 2CrN $', 0],
 ], dtype=object)
 
-# Metal liquid, nitride solid
 nils = np.array([
     [2300, 2500,  -20.8,    0.0, '$2B + N_2 = 2BN$', 0],
     [ 923, 1376,  -65.8,  -41.3, '$3Mg + N_2 = Mg_3N_2$', 0],
@@ -323,16 +266,14 @@ nigl = EMPTY()
 nisg = EMPTY()
 nilg = EMPTY()
 
-# Metal gas, nitride gas
 nigg = np.array([
-    [0, 2000, -24.1, 85.2, '$6H + N_2 = 2NH_3$', 0],
+    [   0, 2000,  -24.1,   85.2, '$6H + N_2 = 2NH_3$', 0],
 ], dtype=object)
 
-# ======================================================================
-# FLUORIDES (Reed 1971) — raw: K, kcal/mol F2
-# ======================================================================
 
-# Metal solid, fluoride solid
+# ======================================================================
+# FLUORIDES (Reed 1971) - raw: K, kcal/mol F2
+# ======================================================================
 flss = np.array([
     [   0,  932, -215.3, -181.0, r'$\frac{2}{3}Al + F_2 = \frac{2}{3}AlF_3 $', 0],
     [   0, 1123, -288.0, -245.0, '$ Ca + F_2 = CaF_2 $', 5],
@@ -341,73 +282,62 @@ flss = np.array([
     [   0,  453, -290.0, -271.0, '$2Li + F_2 = 2LiF $', -8],
     [   0,  336, -270.0, -253.0, '$2K + F_2 = 2KF $', 0.3],
     [   0,  371, -274.0, -255.0, '$2Na + F_2 = 2NaF $', -0.3],
-    # --- added (Barin 1993, linear approximations) ---
+    # --- added (Barin 1993) ---
     [   0,  923, -246.4, -216.0, '$Mg + F_2 = MgF_2 $', 0],
 ], dtype=object)
 
-# Metal liquid, fluoride solid
 flls = np.array([
     [ 932, 1545, -181.0, -156.0, r'$\frac{2}{3}Al + F_2 = \frac{2}{3}AlF_3 $', 0],
     [1123, 1691, -245.0, -224.0, '$ Ca + F_2 = CaF_2 $', 0],
     [ 453, 1120, -271.0, -240.0, '$2Li + F_2 = 2LiF $', 0],
     [ 336, 1031, -253.0, -214.0, '$2K + F_2 = 2KF $', 0],
-    [ 371, 1187, -255.0, -214.0, '$2Na + F_2 = 2NaF $', 0],
-    # --- added ---
+    [ 371, 1187, -255.0, -214.0, '$2Na + F_2 = 2NaF$', 0],
     [ 923, 1363, -216.0, -201.5, '$Mg + F_2 = MgF_2 $', 0],
 ], dtype=object)
 
-# Metal gas, fluoride solid
 flgs = np.array([
-    # --- added ---
     [1363, 1536, -201.5, -194.0, '$Mg + F_2 = MgF_2 $', 0],
 ], dtype=object)
 
 flsl = EMPTY()
 
-# Metal liquid, fluoride liquid
 flll = np.array([
     [1545, 2500, -156.0, -157.0, r'$\frac{2}{3}Al + F_2 = \frac{2}{3}AlF_3 $', 0],
     [1691, 1955, -224.0, -222.0, '$ Ca + F_2 = CaF_2 $', 0],
     [1120, 1597, -240.0, -216.0, '$2Li + F_2 = 2LiF $', 0],
     [1031, 1130, -214.0, -209.0, '$2K + F_2 = 2KF $', 0],
-    [1187, 1268, -214.0, -209.0, '$2Na + F_2 = 2NaF $', 0],
+    [1187, 1268, -214.0, -209.0, '$2Na + F_2 = 2NaF$', 0],
 ], dtype=object)
 
-# Metal gas, fluoride liquid
 flgl = np.array([
     [1955, 2500, -222.0, -186.0, '$ Ca + F_2 = CaF_2 $', 0],
     [1597, 1954, -216.0, -194.0, '$2Li + F_2 = 2LiF $', 0],
     [1130, 1775, -209.0, -166.0, '$2K + F_2 = 2KF $', 0],
-    [1268, 1977, -209.0, -156.0, '$2Na + F_2 = 2NaF $', 0],
-    # --- added ---
+    [1268, 1977, -209.0, -156.0, '$2Na + F_2 = 2NaF$', 0],
     [1536, 2300, -194.0, -166.0, '$Mg + F_2 = MgF_2 $', 0],
 ], dtype=object)
 
-# Metal solid, fluoride gas
 flsg = np.array([
-    # --- added ---
+    # SiF4 is gaseous; Si boils at 1687 K
     [   0, 1687, -186.6, -157.5, r'$\frac{1}{2}Si + F_2 = \frac{1}{2}SiF_4 $', 0],
 ], dtype=object)
 
 fllg = EMPTY()
 
-# Metal gas, fluoride gas
 flgg = np.array([
     [   0, 2500,  -81.2,  -36.0, r'$\frac{1}{2}C + F_2 = \frac{1}{2}CF_4 $', 0],
     [   0,    0, -129.8, -129.8, '$2H + F_2 = 2HF $', 0],
     [1954, 2500, -194.0, -179.0, '$2Li + F_2 = 2LiF $', 0],
     [1775, 2500, -166.0, -150.0, '$2K + F_2 = 2KF $', 0],
-    [1977, 2500, -156.0, -150.0, '$2Na + F_2 = 2NaF $', 0],
+    [1977, 2500, -156.0, -150.0, '$2Na + F_2 = 2NaF$', 0],
     [   0, 1287, -129.8, -134.1, '$2H + F_2 = 2HF $', 0],
-    # --- added ---
     [1687, 2500, -157.5, -143.7, r'$\frac{1}{2}Si + F_2 = \frac{1}{2}SiF_4 $', 0],
 ], dtype=object)
 
-# ======================================================================
-# CHLORIDES (Reed 1971) — raw: K, kcal/mol Cl2
-# ======================================================================
 
-# Metal solid, chloride solid
+# ======================================================================
+# CHLORIDES (Reed 1971) - raw: K, kcal/mol Cl2
+# ======================================================================
 clss = np.array([
     [   0,  465, -110.9,  -92.9, r'$\frac{2}{3}Al + Cl_2 = \frac{2}{3}AlCl_3 $', -5],
     [   0, 1055, -188.0, -154.0, '$ Ca + Cl_2 = CaCl_2 $', 0],
@@ -417,66 +347,54 @@ clss = np.array([
     [   0,  336, -209.4, -193.2, '$2K + Cl_2 = 2KCl $', 0],
     [   0,  371, -196.8, -180.0, '$2Na + Cl_2 = 2NaCl $', -5],
     [   0,    0,  -36.1,  -36.1, r'$\frac{1}{3} W + Cl_2 = \frac{1}{3} WCl_6 $', 8],
-    # --- added (Barin 1993, linear approximations) ---
+    # --- added (Barin 1993) ---
     [   0,  923, -141.2, -110.5, '$Mg + Cl_2 = MgCl_2 $', 0],
 ], dtype=object)
 
-# Metal liquid, chloride solid
 clls = np.array([
     [ 459,  887, -177.6, -161.0, '$2Li + Cl_2 = 2LiCl $', 0],
     [ 336, 1031, -193.2, -161.0, '$2K + Cl_2 = 2KCl $', 0],
     [ 371, 1073, -180.0, -149.4, '$2Na + Cl_2 = 2NaCl $', 0],
-    # --- added ---
     [ 923,  987, -110.5, -108.4, '$Mg + Cl_2 = MgCl_2 $', 0],
 ], dtype=object)
 
 clgs = EMPTY()
 
-# Metal solid, chloride liquid
 clsl = np.array([
     [ 465,  500,  -92.9,  -91.7, r'$\frac{2}{3}Al + Cl_2 = \frac{2}{3}AlCl_3 $', 0],
     [1055, 1123, -154.0, -152.0, '$ Ca + Cl_2 = CaCl_2 $', 0],
     [   0,  548,  -36.1,  -15.0, r'$\frac{1}{3} W + Cl_2 = \frac{1}{3} WCl_6 $', 0],
-    # --- added (TiCl4: b.p. 409 K) ---
+    # TiCl4 boils at 409 K
     [   0,  409,  -95.8,  -88.8, r'$\frac{1}{2}Ti + Cl_2 = \frac{1}{2}TiCl_4 $', 0],
 ], dtype=object)
 
-# Metal liquid, chloride liquid
 clll = np.array([
     [1123, 1755, -152.0, -136.0, '$ Ca + Cl_2 = CaCl_2 $', 0],
     [ 887, 1597, -161.0, -141.2, '$2Li + Cl_2 = 2LiCl $', 0],
     [1031, 1043, -161.0, -160.0, '$2K + Cl_2 = 2KCl $', 0],
     [1073, 1156, -149.4, -145.6, '$2Na + Cl_2 = 2NaCl $', 0],
-    # --- added ---
     [ 987, 1363, -108.4,  -95.9, '$Mg + Cl_2 = MgCl_2 $', 0],
 ], dtype=object)
 
-# Metal gas, chloride liquid
 clgl = np.array([
     [1755, 1900, -136.0, -128.0, '$ Ca + Cl_2 = CaCl_2 $', 0],
     [1597, 1655, -141.2, -138.4, '$2Li + Cl_2 = 2LiCl $', 0],
     [1043, 1680, -160.0, -122.4, '$2K + Cl_2 = 2KCl $', 0],
     [1156, 1738, -145.6, -110.0, '$2Na + Cl_2 = 2NaCl $', 0],
-    # --- added ---
     [1363, 1685,  -95.9,  -83.0, '$Mg + Cl_2 = MgCl_2 $', 0],
 ], dtype=object)
 
-# Metal solid, chloride gas
 clsg = np.array([
     [ 500,  932,  -91.7,  -84.6, r'$\frac{2}{3}Al + Cl_2 = \frac{2}{3}AlCl_3 $', 0],
     [ 548, 1500,  -15.0,   -0.8, r'$\frac{1}{3} W + Cl_2 = \frac{1}{3} WCl_6 $', 0],
-    # --- added ---
     [ 409, 1941,  -88.8,  -62.7, r'$\frac{1}{2}Ti + Cl_2 = \frac{1}{2}TiCl_4 $', 0],
 ], dtype=object)
 
-# Metal liquid, chloride gas
 cllg = np.array([
     [ 932, 2273,  -84.6,  -70.2, r'$\frac{2}{3}Al + Cl_2 = \frac{2}{3}AlCl_3 $', 0],
-    # --- added ---
     [1941, 2500,  -62.7,  -53.0, r'$\frac{1}{2}Ti + Cl_2 = \frac{1}{2}TiCl_4 $', 0],
 ], dtype=object)
 
-# Metal gas, chloride gas
 clgg = np.array([
     [2273, 2500,  -70.2,  -71.6, r'$\frac{2}{3}Al + Cl_2 = \frac{2}{3}AlCl_3 $', 0],
     [1900, 2500, -128.0, -114.0, '$ Ca + Cl_2 = CaCl_2 $', 0],
@@ -485,15 +403,13 @@ clgg = np.array([
     [1655, 2500, -138.4, -118.4, '$2Li + Cl_2 = 2LiCl $', 0],
     [1680, 2500, -122.4, -110.4, '$2K + Cl_2 = 2KCl $', 0],
     [1738, 2500, -110.0,  -96.8, '$2Na + Cl_2 = 2NaCl $', 0],
-    # --- added ---
     [1685, 2000,  -83.0,  -71.0, '$Mg + Cl_2 = MgCl_2 $', 0],
 ], dtype=object)
 
-# ======================================================================
-# HYDRIDES (added, Barin 1993) — raw: K, kcal/mol H2
-# ======================================================================
 
-# Metal solid, hydride solid
+# ======================================================================
+# HYDRIDES (added, Barin 1993) - raw: K, kcal/mol H2
+# ======================================================================
 hyss = np.array([
     [   0,  454,  -32.6,  -27.0, '$2Li + H_2 = 2LiH $', 14],
     [   0,  371,  -16.1,  -11.6, '$2Na + H_2 = 2NaH $', 0],
@@ -503,7 +419,6 @@ hyss = np.array([
     [   0, 1500,  -38.0,  -30.2, '$Zr + H_2 = ZrH_2 $', -20],
 ], dtype=object)
 
-# Metal liquid, hydride solid
 hyls = np.array([
     [ 454,  961,  -27.0,   -8.8, '$2Li + H_2 = 2LiH $', 0],
     [ 371,  700,  -11.6,    0.5, '$2Na + H_2 = 2NaH $', 0],
@@ -512,12 +427,10 @@ hyls = np.array([
 
 hygs = EMPTY()
 
-# Metal solid, hydride liquid (CaH2 melts at 1089 K, just below Ca m.p.)
 hysl = np.array([
     [1089, 1115,   -6.9,   -5.9, '$Ca + H_2 = CaH_2 $', 0],
 ], dtype=object)
 
-# Metal liquid, hydride liquid
 hyll = np.array([
     [ 961, 1150,   -8.8,   -2.1, '$2Li + H_2 = 2LiH $', 0],
 ], dtype=object)
@@ -527,11 +440,10 @@ hysg = EMPTY()
 hylg = EMPTY()
 hygg = EMPTY()
 
-# ======================================================================
-# SULFIDES (added, Barin 1993) — raw: K, kcal/mol S2
-# ======================================================================
 
-# Metal solid, sulfide solid
+# ======================================================================
+# SULFIDES (added, Barin 1993) - raw: K, kcal/mol S2
+# ======================================================================
 suss = np.array([
     [   0, 1422,  -47.2,    0.0, '$2Fe + S_2 = 2FeS $', -38],
     [   0, 1519, -102.8,  -37.4, '$2Mn + S_2 = 2MnS $', 0],
@@ -544,7 +456,6 @@ suss = np.array([
     [   0,  933,  -76.9,  -38.7, r'$\frac{4}{3}Al + S_2 = \frac{2}{3}Al_2S_3 $', 0],
 ], dtype=object)
 
-# Metal liquid, sulfide solid
 suls = np.array([
     [1519, 2339,  -37.4,   -2.4, '$2Mn + S_2 = 2MnS $', 0],
     [ 693, 1180,  -68.4,  -46.5, '$2Zn + S_2 = 2ZnS $', 0],
@@ -556,7 +467,6 @@ suls = np.array([
     [   0,  630,  -23.4,    1.2, '$2Hg + S_2 = 2HgS $', 0],
 ], dtype=object)
 
-# Metal gas, sulfide solid
 sugs = np.array([
     [1180, 1900,  -46.5,  -14.5, '$2Zn + S_2 = 2ZnS $', 0],
     [1363, 2100, -106.3,  -71.5, '$2Mg + S_2 = 2MgS $', 0],
@@ -566,7 +476,6 @@ sugs = np.array([
 
 susl = EMPTY()
 
-# Metal liquid, sulfide liquid
 sull = np.array([
     [1395, 2022,    8.7,   35.7, '$2Pb + S_2 = 2PbS $', 0],
 ], dtype=object)
@@ -575,7 +484,6 @@ sugl = EMPTY()
 susg = EMPTY()
 sulg = EMPTY()
 
-# Metal gas, sulfide gas
 sugg = np.array([
     [   0, 2000,   16.0,   18.0, '$C + S_2 = CS_2 $', 0],
     [   0, 2000,  -16.0,   21.4, '$4H + S_2 = 2H_2S $', 0],
@@ -583,7 +491,7 @@ sugg = np.array([
 
 
 # ----------------------------------------------------------------------
-# CONVERSION — K to degC, kcal to kJ (label offsets stay UNSCALED)
+# CONVERSION - K to degC, kcal to kJ (label offsets stay UNSCALED)
 # ----------------------------------------------------------------------
 def convert_units(*arrays):
     for arr in arrays:
@@ -651,8 +559,7 @@ STYLES = {
 
 def plot_family(ax, phases, color, title, ylabel, compound,
                 xlabel='Temperature (°C)'):
-    """Draw one Ellingham diagram. `compound` names the legend box
-    ('oxide', 'sulfide', ...)."""
+    """Draw one Ellingham diagram."""
     for phase, arr in phases.items():
         if arr.size == 0:
             continue
@@ -663,7 +570,7 @@ def plot_family(ax, phases, color, title, ylabel, compound,
                     color=color, ls=st['ls'], alpha=st['alpha'],
                     marker='.', markersize=2.25)
 
-    # ss reaction labels (as in the original figure)
+    # ss reaction labels
     for row in phases.get('ss', EMPTY()):
         ax.text(float(row[0]) - 25, float(row[2]) + float(row[5]), row[4],
                 horizontalalignment='right', verticalalignment='center',
@@ -682,7 +589,7 @@ def plot_family(ax, phases, color, title, ylabel, compound,
     ax.set_xlabel(xlabel, x=0.64)
     ax.set_ylabel(ylabel)
 
-    # ---- legend box: metal state x compound state ----
+    # legend box: metal state x compound state
     rectpos = [900, 1970, -1290, -1060]
     rectpos1 = [900, 1970, -1400, -1300]
     ax.add_patch(patches.Rectangle(
@@ -704,8 +611,7 @@ def plot_family(ax, phases, color, title, ylabel, compound,
     ax.text(rectpos[0]+290, rectpos[3]-155, 'Liquid', ha='right', fontsize=9)
     ax.text(rectpos[0]+290, rectpos[3]-200, 'Gas', ha='right', fontsize=9)
 
-    # line-style key (uses the family colour and compound name)
-    c = color
+    # line-style key
     key = [
         (1260, '-',  1.0, f'Metal solid, {compound} solid'),
         (1520, '--', 1.0, f'Metal liquid, {compound} solid'),
@@ -719,9 +625,9 @@ def plot_family(ax, phases, color, title, ylabel, compound,
     ]
     for i, (x0, ls, a, label) in enumerate(key):
         y = [-1160, -1208, -1255][i // 3]
-        ax.plot([x0, x0 + 140], [y, y], color=c, ls=ls, alpha=a, label=label)
+        ax.plot([x0, x0 + 140], [y, y], color=color, ls=ls, alpha=a, label=label)
 
-    # ---- sources box ----
+    # sources box
     ax.text(rectpos1[0]+300, rectpos1[3]-100, 'Sources',
             fontsize=9, fontweight='bold')
     ax.text(rectpos1[0]+300, rectpos1[3]-110,
@@ -734,7 +640,7 @@ def plot_family(ax, phases, color, title, ylabel, compound,
             fontsize=9, va='top')
     ax.text(rectpos1[0]+300, rectpos1[3]-140,
             '\n\n\n\n\nColtters, R.G., 1985. Thermodynamics \nof binary metallic '
-            'carbides: A review. \nMaterials Science and Engineering \n76, 1–50.',
+            'carbides: A review. \nMaterials Science and Engineering \n76, 1-50.',
             fontsize=8, va='top', fontstyle='italic')
 
 
@@ -773,7 +679,6 @@ if __name__ == '__main__':
     if args.elements.lower() != 'all':
         allowed_elements = {e.strip().capitalize()
                             for e in args.elements.split(',')}
-
     allowed_phases = set(args.phases.split(',')) if args.phases else None
 
     if args.families.lower() == 'all':
@@ -786,16 +691,15 @@ if __name__ == '__main__':
                              f'Valid: {", ".join(FAMILIES)}')
 
     for name in selected:
-        phases = FAMILIES[name]['phases']
-        if allowed_elements is not None:
-            phases = filter_anion_dict(phases, allowed_elements)
-        if allowed_phases is not None:
-            phases = {p: a for p, a in phases.items() if p in allowed_phases}
-        if all(arr.size == 0 for arr in phases.values()):
-            print(f'Skipping {name} – no matching reactions.')
-            continue
-        # temporarily swap in the filtered set
-        original = FAMILIES[name]['phases']
-        FAMILIES[name]['phases'] = phases
-        save_family_figure(name)
-        FAMILIES[name]['phases'] = original
+            phases = FAMILIES[name]['phases']
+            if allowed_elements is not None:
+                phases = filter_anion_dict(phases, allowed_elements)
+            if allowed_phases is not None:
+                phases = {p: a for p, a in phases.items() if p in allowed_phases}
+            if all(arr.size == 0 for arr in phases.values()):               
+                print(f'Skipping {name} - no matching reactions.')
+                continue
+            original = FAMILIES[name]['phases']
+            FAMILIES[name]['phases'] = phases
+            save_family_figure(name)
+            FAMILIES[name]['phases'] = original

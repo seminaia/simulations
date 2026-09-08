@@ -31,6 +31,7 @@ Usage:
 
 import re
 import argparse
+import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -73,7 +74,6 @@ def filter_anion_dict(anion_dict, allowed_elements):
 
 # ======================================================================
 # OXIDES (Reed 1971) - raw: K, kcal/mol O2
-# row: [T0, T1, G0, G1, reaction, label-offset]
 # ======================================================================
 oxss = np.array([
     [   0,  480,  -14.0,    0.0, '$4Ag + O_2 = 2Ag_2O $', 0],
@@ -213,7 +213,6 @@ cass = np.array([
     [   0,  800, -39.5,    -45, '$W + C = WC$', -10],
     [   0, 1000,   -70,    -59, '$2Mo + C = Mo_2C$', -12],
     [   0,  720,  -183,   -175, '$Zr + C = ZrC$', 1],
-    # --- added (Barin 1993) ---
     [   0, 3083, -20.5,  -14.3, '$V + C = VC$', 0],
     [   0, 3885, -32.0,  -24.2, '$Nb + C = NbC$', 26],
     [   0, 4150, -34.0,  -25.0, '$Ta + C = TaC$', 12],
@@ -248,7 +247,6 @@ niss = np.array([
     [   0, 1940, -160.5,  -73.4, '$2Ti + N_2 = 2TiN $', 1],
     [   0, 2190,  -83.3,    3.6, '$2V + N_2 = 2VN$', -13],
     [   0, 2128, -163.8,  -67.2, '$2Zr + N_2 = 2ZrN $', -2],
-    # --- added (Barin 1993) ---
     [   0, 3580, -159.0,  -70.0, '$2Hf + N_2 = 2HfN $', 18],
     [   0, 1800,  -58.0,  -15.0, '$2Cr + N_2 = 2CrN $', 0],
 ], dtype=object)
@@ -265,7 +263,6 @@ nill = EMPTY()
 nigl = EMPTY()
 nisg = EMPTY()
 nilg = EMPTY()
-
 nigg = np.array([
     [   0, 2000,  -24.1,   85.2, '$6H + N_2 = 2NH_3$', 0],
 ], dtype=object)
@@ -282,7 +279,6 @@ flss = np.array([
     [   0,  453, -290.0, -271.0, '$2Li + F_2 = 2LiF $', -8],
     [   0,  336, -270.0, -253.0, '$2K + F_2 = 2KF $', 0.3],
     [   0,  371, -274.0, -255.0, '$2Na + F_2 = 2NaF $', -0.3],
-    # --- added (Barin 1993) ---
     [   0,  923, -246.4, -216.0, '$Mg + F_2 = MgF_2 $', 0],
 ], dtype=object)
 
@@ -300,7 +296,6 @@ flgs = np.array([
 ], dtype=object)
 
 flsl = EMPTY()
-
 flll = np.array([
     [1545, 2500, -156.0, -157.0, r'$\frac{2}{3}Al + F_2 = \frac{2}{3}AlF_3 $', 0],
     [1691, 1955, -224.0, -222.0, '$ Ca + F_2 = CaF_2 $', 0],
@@ -318,12 +313,10 @@ flgl = np.array([
 ], dtype=object)
 
 flsg = np.array([
-    # SiF4 is gaseous; Si boils at 1687 K
     [   0, 1687, -186.6, -157.5, r'$\frac{1}{2}Si + F_2 = \frac{1}{2}SiF_4 $', 0],
 ], dtype=object)
 
 fllg = EMPTY()
-
 flgg = np.array([
     [   0, 2500,  -81.2,  -36.0, r'$\frac{1}{2}C + F_2 = \frac{1}{2}CF_4 $', 0],
     [   0,    0, -129.8, -129.8, '$2H + F_2 = 2HF $', 0],
@@ -347,7 +340,6 @@ clss = np.array([
     [   0,  336, -209.4, -193.2, '$2K + Cl_2 = 2KCl $', 0],
     [   0,  371, -196.8, -180.0, '$2Na + Cl_2 = 2NaCl $', -5],
     [   0,    0,  -36.1,  -36.1, r'$\frac{1}{3} W + Cl_2 = \frac{1}{3} WCl_6 $', 8],
-    # --- added (Barin 1993) ---
     [   0,  923, -141.2, -110.5, '$Mg + Cl_2 = MgCl_2 $', 0],
 ], dtype=object)
 
@@ -359,12 +351,10 @@ clls = np.array([
 ], dtype=object)
 
 clgs = EMPTY()
-
 clsl = np.array([
     [ 465,  500,  -92.9,  -91.7, r'$\frac{2}{3}Al + Cl_2 = \frac{2}{3}AlCl_3 $', 0],
     [1055, 1123, -154.0, -152.0, '$ Ca + Cl_2 = CaCl_2 $', 0],
     [   0,  548,  -36.1,  -15.0, r'$\frac{1}{3} W + Cl_2 = \frac{1}{3} WCl_6 $', 0],
-    # TiCl4 boils at 409 K
     [   0,  409,  -95.8,  -88.8, r'$\frac{1}{2}Ti + Cl_2 = \frac{1}{2}TiCl_4 $', 0],
 ], dtype=object)
 
@@ -408,7 +398,7 @@ clgg = np.array([
 
 
 # ======================================================================
-# HYDRIDES (added, Barin 1993) - raw: K, kcal/mol H2
+# HYDRIDES (Barin 1993) - raw: K, kcal/mol H2
 # ======================================================================
 hyss = np.array([
     [   0,  454,  -32.6,  -27.0, '$2Li + H_2 = 2LiH $', 14],
@@ -426,7 +416,6 @@ hyls = np.array([
 ], dtype=object)
 
 hygs = EMPTY()
-
 hysl = np.array([
     [1089, 1115,   -6.9,   -5.9, '$Ca + H_2 = CaH_2 $', 0],
 ], dtype=object)
@@ -442,7 +431,7 @@ hygg = EMPTY()
 
 
 # ======================================================================
-# SULFIDES (added, Barin 1993) - raw: K, kcal/mol S2
+# SULFIDES (Barin 1993) - raw: K, kcal/mol S2
 # ======================================================================
 suss = np.array([
     [   0, 1422,  -47.2,    0.0, '$2Fe + S_2 = 2FeS $', -38],
@@ -475,7 +464,6 @@ sugs = np.array([
 ], dtype=object)
 
 susl = EMPTY()
-
 sull = np.array([
     [1395, 2022,    8.7,   35.7, '$2Pb + S_2 = 2PbS $', 0],
 ], dtype=object)
@@ -483,7 +471,6 @@ sull = np.array([
 sugl = EMPTY()
 susg = EMPTY()
 sulg = EMPTY()
-
 sugg = np.array([
     [   0, 2000,   16.0,   18.0, '$C + S_2 = CS_2 $', 0],
     [   0, 2000,  -16.0,   21.4, '$4H + S_2 = 2H_2S $', 0],
@@ -644,16 +631,82 @@ def plot_family(ax, phases, color, title, ylabel, compound,
             fontsize=8, va='top', fontstyle='italic')
 
 
-def save_family_figure(name):
-    fam = FAMILIES[name]
-    ylabel = (r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol '
-              + fam['gas'])
-    fig, ax = plt.subplots(figsize=(10, 8))
-    plot_family(ax, fam['phases'], fam['color'], name.capitalize(),
-                ylabel, fam['compound'])
-    plt.tight_layout()
-    out = f'ellingham_{name}.pdf'
-    plt.savefig(out, dpi=400, bbox_inches='tight')
-    plt.close(fig)
-    print(f'Saved {out}')
+# ======================================================================
+# MAIN EXECUTION
+# ======================================================================
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Plot Ellingham diagrams for selected elements and families."
+    )
+    parser.add_argument(
+        "--elements", type=str, default="all",
+        help="Comma-separated element symbols, e.g. Al,Fe,Mg (case insensitive). Default: all"
+    )
+    parser.add_argument(
+        "--families", type=str, default="all",
+        help="Comma-separated family names, e.g. oxides,sulfides. Default: all"
+    )
+    parser.add_argument(
+        "--phases", type=str, default=None,
+        help="Comma-separated phase codes to plot, e.g. ss,ll (all phases if omitted)"
+    )
+    args = parser.parse_args()
 
+    # 1. Build allowed elements set (case-insensitive, capitalized for matching)
+    if args.elements.lower() == "all":
+        allowed_elements = None
+    else:
+        allowed_elements = {e.strip().capitalize() for e in args.elements.split(',')}
+
+    # 2. Build allowed families list
+    if args.families.lower() == "all":
+        allowed_families = list(FAMILIES.keys())
+    else:
+        allowed_families = [f.strip().lower() for f in args.families.split(',')]
+        invalid_families = [f for f in allowed_families if f not in FAMILIES]
+        if invalid_families:
+            print(f"Error: Unknown families: {', '.join(invalid_families)}")
+            print(f"Available families: {', '.join(FAMILIES.keys())}")
+            sys.exit(1)
+
+    # 3. Build allowed phases set
+    if args.phases is not None:
+        allowed_phases = {p.strip().lower() for p in args.phases.split(',')}
+    else:
+        allowed_phases = None
+
+    # 4. Generate plots for each selected family
+    for name in allowed_families:
+        fam = FAMILIES[name]
+        
+        # Filter by phases
+        if allowed_phases is not None:
+            filtered_phases = {
+                phase: arr for phase, arr in fam['phases'].items() 
+                if phase in allowed_phases
+            }
+        else:
+            filtered_phases = fam['phases'].copy()
+            
+        # Filter by elements
+        if allowed_elements is not None:
+            filtered_phases = {
+                phase: filter_by_elements(arr, allowed_elements) 
+                for phase, arr in filtered_phases.items()
+            }
+        
+        # Skip if all arrays are empty
+        if all(arr.size == 0 for arr in filtered_phases.values()):
+            print(f"Skipping {name} – no matching reactions for the specified elements/phases.")
+            continue
+            
+        # Plot and save
+        ylabel = (r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol ' + fam['gas'])
+        fig, ax = plt.subplots(figsize=(10, 8))
+        plot_family(ax, filtered_phases, fam['color'], name.capitalize(),
+                    ylabel, fam['compound'])
+        plt.tight_layout()
+        out = f'ellingham_{name}.pdf'
+        plt.savefig(out, dpi=400, bbox_inches='tight')
+        plt.close(fig)
+        print(f'Saved {out}')

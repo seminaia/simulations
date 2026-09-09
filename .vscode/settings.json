@@ -42,7 +42,7 @@
     "chat.tools.terminal.terminalProfile.linux": {
 
     },
-    "chat.unifiedAgentsBar.enabled": false,
+    "chat.unifiedAgentsBar.enabled": true,
     "chat.tools.terminal.outputLocation": "terminal",
     "chat.mcp.discovery.enabled": {
         "claude-desktop": true,

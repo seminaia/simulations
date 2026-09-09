@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
 """
-simulations_ppt.py
-==================
-Generates the "Introduction to Atomistic and Molecular Simulations" Beamer
-slide deck using DocumentBuilder and matplotlib (for graphs).
-
-Usage
------
-    conda activate myGPAWenv
-    python simulations_ppt.py
 """
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 import matplotlib
@@ -19,73 +9,21 @@ matplotlib.use("Agg")  # non-interactive backend
 import matplotlib.pyplot as plt
 import numpy as np
 
-# ── make sure PyFunc is importable ──────────────────────────────────────────
-sys.path.insert(0, str(object=Path(__file__).resolve().parent / "PyFunc"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "PyFunc"))
 from doc_builder import DocumentBuilder
 
 
-# ============================================================================
-# 1.  Generate the matplotlib figure  (Time Scales vs Length Scales)
-# ============================================================================
 FIG_DIR = Path(__file__).resolve().parent / "figures"
 FIG_DIR.mkdir(exist_ok=True)
 
-SCATTER_PATH = FIG_DIR / "timescale_vs_lengthscale.pdf"
-
-
-def make_loglog_figure(outpath: Path) -> None:
-    """Produce the Time-Scales vs Length-Scales log-log scatter plot."""
-    lengths = [1e-10, 1e-9, 1e-7, 1e-6, 1e-2]
-    times   = [1e-12, 1e-9, 1e-6, 1e-3, 1e0 ]
-    labels  = [
-        "Quantum/DFT",
-        "Classical/MD",
-        "Nanostructures",
-        "Microstructures",
-        "Macrostructures",
-    ]
-    offsets_x = [0.3, 0.3, 0.3, 0.3, 0.3]   # log-scale text offsets (multipliers)
-    offsets_y = [5.0, 5.0, 5.0, 5.0, 5.0]
-
-    fig, ax = plt.subplots(figsize=(8, 5.5))
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlim(1e-12, 1e0)
-    ax.set_ylim(1e-12, 1e2)
-    ax.set_xlabel("Length Scale (m)", fontsize=12)
-    ax.set_ylabel("Time Scale (s)", fontsize=12)
-    ax.grid(True, which="both", ls="--", alpha=0.5)
-
-    ax.scatter(lengths, times, s=60, color="black", zorder=5)
-
-    for x, y, lbl, ox, oy in zip(lengths, times, labels, offsets_x, offsets_y):
-        ax.annotate(
-            text=lbl,
-            xy=(x, y),
-            xytext=(x * ox, y * oy),
-            fontsize=10,
-            ha="center",
-        )
-
-    fig.tight_layout()
-    fig.savefig(str(object=outpath), dpi=300)
-    plt.close(fig)
-    print(f"[OK] Saved figure → {outpath}")
-
-
-# ============================================================================
-# 2.  Build the slide deck
-# ============================================================================
 def build_deck() -> None:
     """Construct and compile the Beamer presentation."""
 
-    # -- generate the matplotlib figure first --------------------------------
-    make_loglog_figure(SCATTER_PATH)
 
     # -- builder -------------------------------------------------------------
     db = DocumentBuilder(
-        base_name="simulations_ppt",
-        title="Introduction to Atomistic and Molecular Simulations",
+        base_name="dcfc_ppt",
+        title="A Closed-loop Carbon Cycle Schema: reversible-Direct Carbon Fuel Cells",
         author="Soknarith Sem",
         institute="Worcester Polytechnic Institute",
         document_options="aspectratio=169,10pt",
@@ -146,8 +84,6 @@ def build_deck() -> None:
         r"\adjincludegraphics[#1,width=0.45\linewidth,"
         r"height=0.32\textheight,keepaspectratio]{#2}}"
     )
-
-    # -- custom title slide (scoped background) --------------------------
     db.maketitle(False)  # disable auto \titlepage
     db.raw_body(r"{")
     db.raw_body(r"\setbeamertemplate{background canvas}{")

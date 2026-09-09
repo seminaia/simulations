@@ -753,7 +753,27 @@
     "github.copilot.chat.review.intent": true,
     "github.copilot.chat.searchSubagent.enabled": true,
     "latex-utilities.countWord.path": "usr/bin/texcount",
-    "latex-workshop.docker.image.latex": "latexmk",
+    "latex-workshop.latex.tools": [
+        {
+            "name": "latexmk-local",
+            "command": "/usr/bin/latexmk",
+            "args": [
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "-pdf",
+                "%DOC%"
+            ]
+        }
+    ],
+    "latex-workshop.latex.recipes": [
+        {
+            "name": "latexmk (local)",
+            "tools": [
+                "latexmk-local"
+            ]
+        }
+    ],
     "files.autoSaveWhenNoErrors": true,
     "workbench.editor.alwaysShowEditorActions": true,
     "workbench.editor.closeOnFileDelete": true,

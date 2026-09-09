@@ -769,5 +769,8 @@
             "envManager": "ms-python.python:conda",
             "packageManager": "ms-python.python:conda"
         }
+    ],
+    "python.analysis.extraPaths": [
+        "./PyFunc"
     ]
 }

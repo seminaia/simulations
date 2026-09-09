@@ -53,7 +53,7 @@ import matplotlib.patches as patches
 #   * ["Al", "Fe", "Mg", ...]   -> plot only these (case insensitive)
 # Command-line flags (--elements / --phases / --families) still override.
 # ======================================================================
-ELEMENTS_TO_PLOT = ["Al", "Ti", "Mg","Mn","Fe","Cu","Sn","Zn", "Pb","Ni", "Co", "Cr", "V", "Mo", "W","C"]        # e.g.  ["Al", "Ti", "Mg"]
+ELEMENTS_TO_PLOT = ["Al", "Ti", "Mg","Mn","Fe","Cu","Sn","Zn", "Pb","Ni", "Co", "Cr", "V", "Mo", "W","C","Gd","Ce","La","Y","Zr"]        # e.g.  ["Al", "Ti", "Mg"]
 
 # Optionally restrict the families / phase regimes in the code too:
 FAMILIES_TO_PLOT = None        # e.g.  ["oxides", "sulfides"]

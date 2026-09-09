@@ -27,9 +27,15 @@ Line style code (metal state x compound state):
 
 Usage:
   python ellingham.py                        # every family, every element
-  python ellingham.py --elements Al,Fe,Mg
-  python ellingham.py --families oxides,sulfides
-  python ellingham.py --phases ss,ll
+
+  Restrict the output EITHER in the code (edit the config block near the top,
+  line ~50) or on the command line (CLI flags always override the code):
+
+    ELEMENTS_TO_PLOT = ["Al", "Fe", "Mg"]      # in the code
+    python ellingham.py --elements Al,Fe,Mg    # on the command line
+
+    python ellingham.py --families oxides,sulfides
+    python ellingham.py --phases ss,ll
 """
 
 import re
@@ -38,6 +44,21 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+
+# ======================================================================
+# >>> CHOOSE YOUR ELEMENTS HERE <<<
+# ----------------------------------------------------------------------
+# Edit this list to control which elements appear in every diagram.
+#   * None                      -> plot every element
+#   * ["Al", "Fe", "Mg", ...]   -> plot only these (case insensitive)
+# Command-line flags (--elements / --phases / --families) still override.
+# ======================================================================
+ELEMENTS_TO_PLOT = ["Al", "Ti", "Mg","Mn","Fe","Cu","Sn","Zn", "Pb","Ni", "Co", "Cr", "V", "Mo", "W","C"]        # e.g.  ["Al", "Ti", "Mg"]
+
+# Optionally restrict the families / phase regimes in the code too:
+FAMILIES_TO_PLOT = None        # e.g.  ["oxides", "sulfides"]
+PHASES_TO_PLOT   = None        # e.g.  ["ss", "ll"]
+# ======================================================================
 
 # ----------------------------------------------------------------------
 # Plot style
@@ -75,6 +96,7 @@ def filter_by_elements(arr, allowed_elements):
 def filter_anion_dict(anion_dict, allowed_elements):
     return {phase: filter_by_elements(arr, allowed_elements)
             for phase, arr in anion_dict.items()}
+
 
 # ----------------------------------------------------------------------
 # Element reference: Symbol -> [Name, molar mass]
@@ -735,7 +757,7 @@ def plot_family(ax, phases, color, title, ylabel, compound,
             '\n\n\n\n\nColtters, R.G., 1985. Thermodynamics \nof binary metallic '
             'carbides: A review. \nMaterials Science and Engineering \n76, 1–50.',
             fontsize=8, va='top', fontstyle='italic')
-    add_pressure_nomograph(ax, T_right_C=2000)
+
 
 def save_family_figure(name):
     fam = FAMILIES[name]
@@ -750,264 +772,64 @@ def save_family_figure(name):
     plt.close(fig)
     print(f'Saved {out}')
 
-def apply_pressure_shift(phases, pressure):
-    """Shifts Delta G values based on non-standard gas pressure."""
-    
-    R_kJ = 0.008314
-    ln_P = np.log(pressure/101325)
-    
-    shifted_phases = {}
-    for phase, arr in phases.items():
-        if arr.size == 0:
-            shifted_phases[phase] = arr
-            continue
-        new_arr = arr.copy()
-        T0_K = new_arr[:, 0].astype(float) + 273.15
-        T1_K = new_arr[:, 1].astype(float) + 273.15
-        new_arr[:, 2] = new_arr[:, 2].astype(float) - R_kJ * T0_K * ln_P
-        new_arr[:, 3] = new_arr[:, 3].astype(float) - R_kJ * T1_K * ln_P
-        shifted_phases[phase] = new_arr
-    return shifted_phases
 
-def add_pressure_nomograph(ax, T_right_C=2000, minor_step=1):
-    """
-    Draws the pressure nomograph on the right axis with minor ticks spaced
-    evenly in the exponent (log10 scale).
-    
-    minor_step: interval between minor ticks in log10 units (e.g., 2 means
-                ticks at 10^-38, 10^-36, 10^-34, 10^-32 between 10^-40 and 10^-30)
-    """
-    R_kJ = 0.008314
-    T_right_K = T_right_C + 273.15
-    
-    # Major tick exponents (powers of 10)
-    major_exps = [-40, -30, -20, -10, -5, 0, 5, 10]
-    P_major_Pa = [10**e for e in major_exps]
-    
-    # Minor ticks: evenly spaced in the exponent between major ticks
-    P_minor_Pa = []
-    for i in range(len(major_exps) - 1):
-        e_start = major_exps[i]
-        e_end = major_exps[i + 1]
-        # Generate intermediate exponents
-        for e in range(e_start + minor_step, e_end, minor_step):
-            P_minor_Pa.append(10**e)
-    
-    # Calculate positions using inverse of exp calculation
-    G_major = [R_kJ * T_right_K * np.log(P / 101325) for P in P_major_Pa]
-    G_minor = [R_kJ * T_right_K * np.log(P / 101325) for P in P_minor_Pa]
-    
-    ymin, ymax = ax.get_ylim()
-    
-    # Create twin axis
-    ax2 = ax.twinx()
-    ax2.set_ylim(ymin, ymax)
-    
-    # Filter to visible range
-    valid_major = [(P, G) for P, G in zip(P_major_Pa, G_major) if ymin <= G <= ymax]
-    valid_minor = [G for G in G_minor if ymin <= G <= ymax]
-    
-    if valid_major:
-        P_valid, G_valid = zip(*valid_major)
-        ax2.set_yticks(list(G_valid))
-        ax2.set_yticklabels([f'{P:.0e}' for P in P_valid], fontsize=8)
-    
-    # Add minor ticks (no labels, just dashes)
-    if valid_minor:
-        ax2.set_yticks(valid_minor, minor=True)
-        ax2.tick_params(axis='y', which='minor', length=6, width=0.8, color='#555555')
-    
-    ax2.set_ylabel(r'Equilibrium $P$ (Pa)', fontsize=10, color='#333333')
-    ax2.tick_params(axis='y', colors='#333333')
-    
-    # Mark the origin 'O'
-    ax.plot(-273.15, 0, 'ko', markersize=7, zorder=10)
-    ax.annotate('O', (-273.15, 0), textcoords="offset points", 
-                xytext=(8, 8), fontsize=11, fontweight='bold',
-                bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='black', alpha=0.8))
-def add_markings_for_elements(ax, phases, elements_list, temp_c, family_color):
-    """
-    Draws Richardson lines from O and marks ΔG° and P_eq (in Pa).
-    Uses clip_on=False to ensure lines reach the exact edge of the plot.
-    """
-    R_kJ = 0.008314
-    T_K = temp_c + 273.15
-    T_O = -273.15
-    G_O = 0.0
-    T_right = 2000.0  # Matches the right edge of the plot
-    
-    for i, element in enumerate(elements_list):
-        target_row = None
-        for phase, arr in phases.items():
-            if arr.size == 0: continue
-            for row in arr:
-                if element_from_reaction(row[4]).lower() == element.lower():
-                    T0, T1 = float(row[0]), float(row[1])
-                    if T0 <= temp_c <= T1:
-                        target_row = row
-                        break
-            if target_row is not None: break
-        
-        if target_row is None:
-            print(f"⚠️ Could not find valid segment for '{element}' at {temp_c}°C.")
-            continue
-        
-        T0, T1, G0, G1 = float(target_row[0]), float(target_row[1]), float(target_row[2]), float(target_row[3])
-        
-        if T1 == T0: dG_std = G0
-        else: dG_std = G0 + (G1 - G0) * (temp_c - T0) / (T1 - T0)
-            
-        # Calculate P_eq using exactly 101325 Pa as standard state
-        P_Pa = 101325 * np.exp(dG_std / (R_kJ * T_K ))
-        
-        # Calculate Richardson line
-        slope = (dG_std - G_O) / (temp_c - T_O)
-        G_right = slope * (T_right - T_O)
-        
-        # Draw the line with clip_on=False so it touches the exact right spine
-        ax.plot([T_O, T_right], [G_O, G_right], color=family_color, linestyle='--', 
-                linewidth=1.5, alpha=0.7, zorder=5, clip_on=False)
-        
-        # Mark the exact point on the curve
-        ax.plot(temp_c, dG_std, 'o', color=family_color, markersize=8, zorder=10, 
-                markeredgecolor='white', markeredgewidth=1.5)
-                
-        # Add a small square marker EXACTLY where the line hits the right axis 
-        # to visually prove the alignment with the nomograph
-        ax.plot(T_right, G_right, 's', color=family_color, markersize=5, zorder=11, clip_on=False)
-        
-        if P_Pa < 1e-3: p_str = f"{P_Pa:.1e}"
-        else: p_str = f"{P_Pa:.1f}"
-            
-        label_text = f"{element.upper()}: ΔG° = {dG_std:.1f} kJ/mol\nP_eq = {p_str} Pa"
-        y_offset = 40 + (i * 45) 
-        x_offset = 60
-        
-        ax.annotate(label_text, 
-                    xy=(temp_c, dG_std), 
-                    xytext=(temp_c + x_offset, dG_std + y_offset),
-                    fontsize=8, fontweight='bold', color=family_color,
-                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor=family_color, alpha=0.9),
-                    arrowprops=dict(arrowstyle='->', color=family_color, lw=1.5))
-# ======================================================================
-# MAIN EXECUTION
-# ======================================================================
-if __name__ == "__main__":
-    import os
-    
-    print("=" * 60)
-    print("Starting Ellingham Diagram Generator")
-    print("=" * 60)
-    
+# ----------------------------------------------------------------------
+# CLI
+# ----------------------------------------------------------------------
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="Plot Ellingham diagrams with Richardson construction lines."
-    )
-    parser.add_argument(
-        "--elements", type=str, default="all",
-        help="Comma-separated element symbols, e.g. Al,Fe,Ti. Default: all"
-    )
-    parser.add_argument(
-        "--families", type=str, default="all",
-        help="Comma-separated family names, e.g. oxides,sulfides. Default: all"
-    )
-    parser.add_argument(
-        "--phases", type=str, default=None,
-        help="Comma-separated phase codes to plot, e.g. ss,ll (all phases if omitted)"
-    )
-    parser.add_argument(
-        "--pressure", type=float, default=101325,
-        help="Global partial pressure shift in Pa (e.g., 101325). Default: 101325 Pa (1 atm)"
-    )
-    parser.add_argument(
-        "--temp", type=float, default=None,
-        help="Temperature in °C to draw Richardson lines and mark P_eq (Pa) for all filtered elements."
-    )
-    parser.add_argument(
-        "--show", action="store_true",
-        help="Display the plots on screen instead of just saving them."
-    )
+        description='Plot Ellingham diagrams for selected elements.')
+    parser.add_argument('--elements', type=str, default=None,
+                        help='Comma-separated element symbols, e.g. Al,Fe,Mg '
+                             '(overrides ELEMENTS_TO_PLOT in the code)')
+    parser.add_argument('--phases', type=str, default=None,
+                        help='Comma-separated phase codes to plot, e.g. ss,ll '
+                             '(overrides PHASES_TO_PLOT in the code)')
+    parser.add_argument('--families', type=str, default=None,
+                        help='Comma-separated families: '
+                             + ','.join(FAMILIES) +
+                             ' (overrides FAMILIES_TO_PLOT in the code)')
     args = parser.parse_args()
 
-    # 1. Build allowed elements set
-    if args.elements.lower() == "all":
-        allowed_elements = None
-        print("-> Filtering: All elements")
-        mark_elements = []
-    else:
-        allowed_elements = {e.strip().capitalize() for e in args.elements.split(',')}
-        mark_elements = [e.strip() for e in args.elements.split(',')] # Keep original case for marking
-        print(f"-> Filtering & Marking elements: {allowed_elements}")
+    # ---- elements: CLI wins, else the ELEMENTS_TO_PLOT list in the code ----
+    allowed_elements = None
+    if args.elements is not None:
+        allowed_elements = {e.strip().capitalize()
+                            for e in args.elements.split(',')}
+    elif ELEMENTS_TO_PLOT is not None:
+        allowed_elements = {e.strip().capitalize() for e in ELEMENTS_TO_PLOT}
 
-    # 2. Build allowed families list
-    if args.families.lower() == "all":
-        allowed_families = list(FAMILIES.keys())
-        print(f"-> Filtering families: All ({len(allowed_families)} families)")
-    else:
-        allowed_families = [f.strip().lower() for f in args.families.split(',')]
-        invalid_families = [f for f in allowed_families if f not in FAMILIES]
-        if invalid_families:
-            print(f"Error: Unknown families: {', '.join(invalid_families)}")
-            print(f"Available families: {', '.join(FAMILIES.keys())}")
-            sys.exit(1)
-        print(f"-> Filtering families: {allowed_families}")
-
-    # 3. Build allowed phases set
+    # ---- phases: CLI wins, else PHASES_TO_PLOT ----
+    allowed_phases = None
     if args.phases is not None:
-        allowed_phases = {p.strip().lower() for p in args.phases.split(',')}
-        print(f"-> Filtering phases: {allowed_phases}")
+        allowed_phases = set(args.phases.split(','))
+    elif PHASES_TO_PLOT is not None:
+        allowed_phases = set(PHASES_TO_PLOT)
+
+    # ---- families: CLI wins, else FAMILIES_TO_PLOT ----
+    if args.families is not None:
+        selected = [f.strip().lower() for f in args.families.split(',')]
+    elif FAMILIES_TO_PLOT is not None:
+        selected = [f.strip().lower() for f in FAMILIES_TO_PLOT]
     else:
-        allowed_phases = None
-        print("-> Filtering phases: All phases")
+        selected = list(FAMILIES)
 
-    print(f"-> Global pressure shift: {args.pressure} Pa")
-    if args.temp is not None:
-        print(f"-> MARKING: Drawing Richardson lines at {args.temp} °C for specified elements.")
-    print("-" * 60)
+    unknown = [f for f in selected if f not in FAMILIES]
+    if unknown:
+        raise SystemExit(f'Unknown families: {unknown}. '
+                         f'Valid: {", ".join(FAMILIES)}')
 
-    # 4. Generate plots
-    generated_count = 0
-    for name in allowed_families:
-        fam = FAMILIES[name]
-        
-        filtered_phases = fam['phases'].copy()
-        
-        if allowed_phases is not None:
-            filtered_phases = {phase: arr for phase, arr in filtered_phases.items() if phase in allowed_phases}
-            
+    for name in selected:
+        phases = FAMILIES[name]['phases']
         if allowed_elements is not None:
-            filtered_phases = {phase: filter_by_elements(arr, allowed_elements) for phase, arr in filtered_phases.items()}
-        
-        if all(arr.size == 0 for arr in filtered_phases.values()):
-            print(f"Skipping '{name}' – no matching reactions.")
+            phases = filter_anion_dict(phases, allowed_elements)
+        if allowed_phases is not None:
+            phases = {p: a for p, a in phases.items() if p in allowed_phases}
+        if all(arr.size == 0 for arr in phases.values()):
+            print(f'Skipping {name} – no matching reactions.')
             continue
-            
-        final_phases = apply_pressure_shift(filtered_phases, args.pressure)
-        print(f"Generating '{name}' diagram...")
-        
-        p_str = f"{args.pressure:.0e}" if args.pressure != 101325 else "101325"
-        title = f"{name.capitalize()} Formation (Base P = {p_str} Pa)"
-        ylabel = r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol ' + fam['gas']
-        
-        fig, ax = plt.subplots(figsize=(10, 8))
-        plot_family(ax, final_phases, fam['color'], title, ylabel, fam['compound'])
-        
-        # Add the Pa nomograph
-        add_pressure_nomograph(ax, T_right_C=2000)
-        
-        # Add markings for each specified element at the given temperature
-        if args.temp is not None and len(mark_elements) > 0:
-            add_markings_for_elements(ax, final_phases, mark_elements, args.temp, fam['color'])
-            
-        plt.tight_layout()
-                    
-        out = f'ellingham_{name}.pdf'
-        abs_path = os.path.abspath(out)
-        plt.savefig(out, dpi=400, bbox_inches='tight')
-        
-        if args.show:
-            plt.show()
-        else:
-            plt.close(fig)
-            
-        print(f"Saved: {abs_path}")
-
+        # temporarily swap in the filtered set
+        original = FAMILIES[name]['phases']
+        FAMILIES[name]['phases'] = phases
+        save_family_figure(name)
+        FAMILIES[name]['phases'] = original

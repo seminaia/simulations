@@ -772,5 +772,6 @@
     ],
     "python.analysis.extraPaths": [
         "./PyFunc"
-    ]
+    ],
+    "terminal.integrated.enableFileLinks": true
 }

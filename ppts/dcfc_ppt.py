@@ -15,10 +15,35 @@ from doc_builder import DocumentBuilder
 
 FIG_DIR = Path(__file__).resolve().parent / "figures"
 FIG_DIR.mkdir(exist_ok=True)
+SCATTER_PATH = FIG_DIR / "timescale_vs_lengthscale.pdf"
+
+
+def make_scatter_figure(outpath: Path) -> None:
+    lengths = [1e-10, 1e-9, 1e-7, 1e-6, 1e-2]
+    times = [1e-12, 1e-9, 1e-6, 1e-3, 1e0]
+    labels = ["Quantum/DFT", "Classical/MD", "Nanostructures", "Microstructures", "Macrostructures"]
+
+    figure, axis = plt.subplots(figsize=(8, 5.5))
+    axis.set_xscale("log")
+    axis.set_yscale("log")
+    axis.set_xlim(1e-12, 1e0)
+    axis.set_ylim(1e-12, 1e2)
+    axis.set_xlabel("Length Scale (m)")
+    axis.set_ylabel("Time Scale (s)")
+    axis.grid(True, which="both", linestyle="--", alpha=0.5)
+    axis.scatter(lengths, times, s=60, color="black", zorder=5)
+
+    for length, time, label in zip(lengths, times, labels):
+        axis.annotate(label, xy=(length, time), xytext=(length * 0.3, time * 5), ha="center")
+
+    figure.tight_layout()
+    figure.savefig(outpath, dpi=300)
+    plt.close(figure)
 
 def build_deck() -> None:
     """Construct and compile the Beamer presentation."""
 
+    make_scatter_figure(SCATTER_PATH)
 
     # -- builder -------------------------------------------------------------
     db = DocumentBuilder(
@@ -27,6 +52,7 @@ def build_deck() -> None:
         author="Soknarith Sem",
         institute="Worcester Polytechnic Institute",
         document_options="aspectratio=169,10pt",
+        documentclass="beamer",
     )
 
     # -- theme ---------------------------------------------------------------
@@ -167,7 +193,7 @@ def build_deck() -> None:
     # =====================================================================
     # Save
     # =====================================================================
-    tex_path = db.save_beamer_tex()
+    tex_path = db.save_tex()
     print(f"[OK] .tex written → {tex_path}")
 
     # Uncomment to also compile PDF (requires pdflatex + Metropolis theme):

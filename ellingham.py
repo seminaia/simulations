@@ -602,32 +602,14 @@ def add_pressure_nomograph(ax, T_right_C=2000, T_left_C=-800, minor_step=1, eq_k
     
     ymin, ymax = ax.get_ylim()
     
-    # Create twin axis
-    ax2 = ax.twinx()
-    ax2.set_ylim(ymin, ymax)
     
     # Filter to visible range
     valid_major = [(P, G) for P, G in zip(P_major, G_major) if ymin <= G <= ymax]
     valid_minor = [G for G in G_minor if ymin <= G <= ymax]
     
-    if valid_major:
-        P_valid, G_valid = zip(*valid_major)
-        ax2.set_yticks(list(G_valid))
-        ax2.set_yticklabels([f'{P:.0e}' for P in P_valid], fontsize=8)
 
-    # Fan out from the pivot (T=0K, ΔG=0) through EVERY major tick -
-    # including ones whose right-edge value falls above/below the visible
-    # range - so a line isn't dropped just because its right-edge label
-    # doesn't fit; it may still cross through (and be readable in) the
-    # plot via the top or bottom border instead of the right edge.
     pivot_T, pivot_G = -273.15, 0.0
 
-    # For ticks that don't get a right-axis label (because their value at
-    # T_right falls outside the visible ΔG range), the fan line instead
-    # exits through the top or bottom border - label the P/activity value
-    # right there, at the exact point it crosses, so it's still readable
-    # without needing the right-hand scale. clip_on in draw_nomograph_fan
-    # already makes each line itself stop right at that same border.
     for P, G in zip(P_major, G_major):
         if ymin <= G <= ymax:
             continue
@@ -642,36 +624,16 @@ def add_pressure_nomograph(ax, T_right_C=2000, T_left_C=-800, minor_step=1, eq_k
                         xytext=(0, 3 if va == 'bottom' else -3),
                         fontsize=6.5, color='#555555', ha='center', va=va,
                         clip_on=True, zorder=6)
-
-    # Add minor ticks (no labels, just dashes)
-    if valid_minor:
-        ax2.set_yticks(valid_minor, minor=True)
-        ax2.tick_params(axis='y', which='minor', length=6, width=0.8, color='#555555')
     
-    if eq_kind == 'activity':
-        ax2.set_ylabel(r'Carbon activity $a$(C)', fontsize=10, color='#333333')
-    else:
-        ax2.set_ylabel(rf'Equilibrium $P$({gas_plain}) (Pa)', fontsize=10, color='#333333')
-    ax2.tick_params(axis='y', colors='#333333')
-    
-    # Mark the origin 'O' — only meaningful on the oxide diagram (O for O2);
-    # other families' Richardson lines still anchor at this same (T=0K,
-    # ΔG=0) point, but it isn't a real "O" species there, so it stays
-    # unlabeled (and undrawn) to avoid a misleading letter.
     if name == 'oxides':
         ax.plot(-273.15, 0, 'ko', markersize=7, zorder=10)
         ax.annotate('O', (-273.15, 0), textcoords="offset points",
                     xytext=(8, 8), fontsize=11, fontweight='bold',
                     bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='black', alpha=0.8))
+
+
 def add_markings_for_elements(ax, phases, elements_list, temp_c, family_color, eq_kind='pressure'):
-    """
-    Draws Richardson lines from O and marks the equilibrium point for each
-    element. Returns a list of (element, dG_std, value_str) rows describing
-    ΔG° and the corresponding equilibrium quantity — a gas partial pressure
-    (Pa) for every family except carbides, which react with solid carbon
-    and so get a carbon *activity* instead — for use in a results table
-    (drawn separately, so the chart itself stays uncluttered).
-    """
+
     R_kJ = 0.008314
     T_K = temp_c + 273.15
     T_O = -273.15
@@ -700,10 +662,6 @@ def add_markings_for_elements(ax, phases, elements_list, temp_c, family_color, e
         if T1 == T0: dG_std = G0
         else: dG_std = G0 + (G1 - G0) * (temp_c - T0) / (T1 - T0)
 
-        # ΔG° = RT ln(Q) where Q is the reaction quotient at equilibrium:
-        # Q = P_anion (Pa, relative to the 101325 Pa standard state) for
-        # every gas-forming family, or Q = a_C (dimensionless carbon
-        # activity) for carbides.
         if eq_kind == 'activity':
             value = np.exp(dG_std / (R_kJ * T_K))
             value_str = f'{value:.2e}' if value < 1e-2 else f'{value:.3f}'
@@ -872,12 +830,6 @@ def main():
             table_ax = fig.add_subplot(gs[1])
             fig.subplots_adjust(left=0.06, right=0.97, top=0.90, bottom=0.08)
             if name == 'oxides':
-                # Oxides get two extra outward-offset ratio scales (CO/CO2,
-                # H2/H2O) alongside the main P(O2) one; shrink the plot's own
-                # box now (subplots_adjust must come first, since it resets
-                # any axes position back to the gridspec cell) so those twin
-                # axes — created below and inheriting this box — have room
-                # for their tick labels instead of colliding with the table.
                 pos = ax.get_position()
                 ax.set_position([pos.x0, pos.y0, pos.width * 0.80, pos.height])
         else:

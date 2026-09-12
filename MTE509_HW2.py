@@ -164,8 +164,8 @@ p1 = ((E1 / c)**2 - m_e**2)**0.5
 p2 = ((E2 / c)**2 - m_e**2)**0.5
 
 # Calculate radius (removing the extra factor of 2 so it is radius, not diameter)
-r1 = p1 / 2 / (e * B) * 1e3 
-r2 = p2 / 2 / (e * B) * 1e3
+r1 = p1 / (e * B) * 1e3 
+r2 = p2 / (e * B) * 1e3
 
 
 print(f"r1: {r1:.4f} mm, r2: {r2:.4f} mm")

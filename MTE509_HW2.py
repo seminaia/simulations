@@ -154,6 +154,6 @@ print("""From the plots and numerical results:
 V1=100e3
 V2 = 300e3
 B=1
-r1=((e*V1/c)**2-m_e**2)**0.5/(e*B)*1e3
-r2=((e*V2/c)**2-m_e**2)**0.5/(e*B)*1e3
+r1=2*(((e*V1/c)**2-m_e**2))**0.5/(e*B)*1e3
+r2=2*(((e*V2/c)**2-m_e**2))**0.5/(e*B)*1e3
 print(f"r1: {r1}, r2: {r2}")

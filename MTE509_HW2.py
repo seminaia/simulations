@@ -151,21 +151,9 @@ print("""From the plots and numerical results:
    - Higher voltage is beneficial but with diminishing returns
 """)
 
-V1 = 100e3
+V1=100e3
 V2 = 300e3
-B = 1
-
-# Total Energy = Kinetic (e*V) + Rest Mass Energy (m_e * c^2)
-E1 = (e * V1) + (m_e * c**2)
-E2 = (e * V2) + (m_e * c**2)
-
-# momentum: p = sqrt((E/c)^2 - m_e^2)
-p1 = ((E1 / c)**2 - m_e**2)**0.5
-p2 = ((E2 / c)**2 - m_e**2)**0.5
-
-# Calculate radius (removing the extra factor of 2 so it is radius, not diameter)
-r1 = p1 / (e * B) * 1e3 
-r2 = p2 / (e * B) * 1e3
-
-
-print(f"r1: {r1:.4f} mm, r2: {r2:.4f} mm")
+B=1
+r1=(2*((e*V1/c)**2-(m_e*c)**2 ))**0.5/(e*B)*1e3
+r2=(2*((e*V2/c)**2-(m_e*c)**2))**0.5/(e*B)*1e3
+print(f"r1: {r1}, r2: {r2}")

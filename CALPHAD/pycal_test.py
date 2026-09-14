@@ -14,6 +14,7 @@ with open(f, 'r',encoding='latin-1') as file:
 dbf = Database(content)
 tern_comp = ['FE', 'C', 'VA']
 phase_keys = list(dbf.phases.keys())  # Get all phase keys from the database
+
 print("All phase keys from the database:", phase_keys)
 filtered_phases_tern = filter_phases(dbf, tern_comp, phase_keys)  # Filter phases based on components
 print("Filtered phases for the ternary plot:", list(filtered_phases_tern))

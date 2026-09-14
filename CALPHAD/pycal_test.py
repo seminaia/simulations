@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from pycalphad import Database, ternplot, binplot, Workspace
 from pycalphad.core.utils import filter_phases
-from pycalphad.mapping import plot_binary
+from pycalphad.mapping import BinaryStrategy, plot_binary
 import pycalphad.variables as v
 import numpy as np
 import pandas as pd
@@ -21,7 +21,7 @@ conds_tern = {
     v.N: 1,
     v.X('C'): (0, 0.08, 0.001),  # vary from 0 to 0.08 step 0.001
 }    
-
+BinaryStrategy(dbf, tern_comp, phase_keys, conds_tern)
 print(f"Phases considered in the ternary plot: {filtered_phases_tern}")
 print(f"Components considered in the ternary plot: {tern_comp}")
 print(f"Number of phases in the ternary plot: {len(filtered_phases_tern)}")

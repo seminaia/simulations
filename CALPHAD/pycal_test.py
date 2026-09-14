@@ -8,7 +8,7 @@ import pandas as pd
 from pycalphad.property_framework.metaproperties import IsolatedPhase
 # Load database
 
-f = "Fe-C.TDB"
+f = "steel_database_fix.tdb"
 with open(f, 'r',encoding='latin-1') as file:
     content = file.read()
 dbf = Database(content)

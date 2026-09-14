@@ -13,14 +13,12 @@ S = 201.2            # J/mol/K (ΔS° for CH3OH -> CO + 2H2)
 T_C = np.linspace(0, 1000, 500)
 T_K = T_C + 273.15
 
-# Gibbs energy and equilibrium potential for OR1
 G = H - S * T_K                      # J/mol
 E_eq = G / (n * F)                   # V
 
 # Feasibility boundary
 Phi_boundary = E_eq
 
-# Plot the T–Φ feasibility map
 plt.figure(figsize=(8, 5))
 plt.plot(T_C, Phi_boundary, 'b-', linewidth=2,
          label=r'$\Phi = E_{\mathrm{eq,OR1}}(T)$')

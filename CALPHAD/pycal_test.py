@@ -23,7 +23,6 @@ conds_tern = {
     v.N: 1,
     v.X('C'): (0, 0.8, 0.1),  # vary from 0 to 0.08 step 0.001
 }    
-BinaryStrategy(dbf, tern_comp, phase_keys, conds_tern)
 print(f"Phases considered in the ternary plot: {filtered_phases_tern}")
 print(f"Components considered in the ternary plot: {tern_comp}")
 print(f"Number of phases in the ternary plot: {len(filtered_phases_tern)}")
@@ -32,5 +31,8 @@ dof_tern = len(tern_comp) - len(filtered_phases_tern) + 2
 print(f"Degrees of freedom for the ternary plot: {dof_tern}")
 fig = plt.figure(figsize=(8, 6))
 ax = fig.gca()
-binplot(dbf, tern_comp,phase_keys, conds_tern,plot_kwargs={'ax':ax})
+bin_strat= BinaryStrategy(dbf, tern_comp, phase_keys, conds_tern)
+bin_strat.generate_automatic_starting_points()
+bin_strat.do_map()
+plot = plot_binary(bin_strat,x=v.X('C'),y=v.T)
 plt.show()

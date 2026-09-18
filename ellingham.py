@@ -8,6 +8,7 @@ Fluorides, Chlorides, Hydrides, Sulfides, Tellurides, Selenides,
 Iodides and Bromides.
 
 Data:
+    Excel data in kcal/mol and K
   * O2, N2, F2 and Cl2 reference lines and salt data — Reed, T.B., 1971.
     Free Energy of Formation of Binary Compounds. MIT Press, Cambridge, Mass.
   * Carbides — Coltters, R.G., 1985. Thermodynamics of binary metallic
@@ -56,6 +57,7 @@ import pandas as pd
 DEFAULT_ELEMENTS = "Al,Fe,Sn,Cu,Y,Zr,Ca,C"   # comma-separated symbols, or "all"
 DEFAULT_TEMP_C = 1000.0                      # °C for Richardson lines / P_eq marks
 DEFAULT_PRESSURE_PA = 101325.0               # Pa, global partial pressure shift
+DEFAULT_FAMILIES = "oxides,carbides,hydrides"
 
 # ----------------------------------------------------------------------
 # Plot style
@@ -92,9 +94,6 @@ def filter_anion_dict(anion_dict, allowed_elements):
     return {phase: filter_by_elements(arr, allowed_elements)
             for phase, arr in anion_dict.items()}
 
-# ----------------------------------------------------------------------
-# Element reference: Symbol -> [Name, molar mass]
-# ----------------------------------------------------------------------
 molarmass_bin = {
     'Ac': ['Actinium', 227], 'Ag': ['Silver', 107.8682], 'Al': ['Aluminum', 26.9815],
     'Am': ['Americium', 243], 'Ar': ['Argon', 39.948], 'As': ['Arsenic', 74.9216],
@@ -139,8 +138,17 @@ molarmass_bin = {
 # ======================================================================
 DATA_WORKBOOK = Path(__file__).resolve().parent / 'data' / 'ellingham' / 'ellingham_data.xlsx'
 WORKBOOK_COLUMNS = ['phase_code', 'T0', 'T1', 'G0', 'G1', 'reaction', 'label_offset', 'element']
-PHASE_CODES = ('ss', 'ls', 'gs', 'sl', 'll', 'gl', 'sg', 'lg', 'gg')
+PHASE_CODES = ('ss', 'ls', 'gs', 'sl', 'll', 'gl', 'sg', 'lg', 'gg', 'aux')
 
+def boudouard_reaction(T):
+    """C + CO2 = 2CO 
+    log(K_eq) = 9141/T - 0.000224*T -9.595 
+    from Wikipedia """
+    R=8.314/1000  # kJ/(mol·K)
+    logK = lambda T: 9141/(T) - 0.000224*(T) -9.595
+    K_eq = 10**logK(T)
+    G_f = -R * (T) * np.log(K_eq) # Gibbs free energy in kJ/mol
+    return G_f
 
 def empty_phase_dict():
     return {phase_code: EMPTY() for phase_code in PHASE_CODES}
@@ -181,20 +189,21 @@ def load_family_phase_arrays(workbook_path, family_names):
 
 
 # ----------------------------------------------------------------------
-# CONVERSION — K to degC, kcal to kJ (label offsets stay UNSCALED)
+# CONVERSION 
+# Excel data is assumed to be in kcal/mol and K; this function converts to kJ/mol and °C.
 # ----------------------------------------------------------------------
 def convert_units(*arrays, gibbs_already_kj=False):
-    """K -> degC always; kcal -> kJ only if the sheet's G values aren't
+    """kcal -> kJ only if the sheet's G values aren't
+    K to C
     already in kJ. The carbides sheet (transcribed straight from Coltters
-    1985 in kJ/mol C) sets gibbs_already_kj=True to skip that second
-    conversion — applying it there would inflate every ΔG° ~4x."""
+    1985 in kJ/mol C)."""
     gibbs_scale = 1.0 if gibbs_already_kj else 4.184
     for arr in arrays:
         if arr.size == 0:
             continue
         numeric = arr[:, 0:4].astype(float)
-        numeric[:, 0:2] -= 273.15        # K -> degC
-        numeric[:, 2:4] *= gibbs_scale   # kcal -> kJ (skipped for carbides)
+        numeric[:, 0:2] -= 273.15
+        numeric[:, 2:4] *= gibbs_scale
         arr[:, :4] = numeric
         if arr.shape[1] > 5:
             arr[:, 5] = arr[:, 5].astype(float)
@@ -232,6 +241,7 @@ def ensure_family_phase_data(family_names):
         phases = loaded[family]
         convert_units(*phases.values(), gibbs_already_kj=(family == 'carbides'))
         FAMILIES[family]['phases'] = phases
+
 
 
 # ----------------------------------------------------------------------
@@ -274,6 +284,7 @@ def plot_family(ax, phases, color, title, ylabel, compound,
                 xlabel='Temperature (°C)'):
     """Draw one Ellingham diagram. `compound` names the legend box
     ('oxide', 'sulfide', ...)."""
+    
     for phase, arr in phases.items():
         if arr.size == 0:
             continue
@@ -284,20 +295,16 @@ def plot_family(ax, phases, color, title, ylabel, compound,
                     color=color, ls=st['ls'], alpha=st['alpha'],
                     marker='.', markersize=2.25)
 
-    # ss reaction labels (as in the original figure), auto-decluttered so
-    # densely-packed families (many auto-generated label_offset=0 entries)
-    # don't render as an unreadable pile of overlapping text.
     ss_rows = list(phases.get('ss', EMPTY()))
     label_fontsize = 8 if len(ss_rows) <= 20 else (7 if len(ss_rows) <= 40 else 6)
     label_entries = [[float(row[0]) - 25, float(row[2]) + float(row[5]), row[4]]
                       for row in ss_rows]
-    placed = declutter_label_positions(label_entries, min_gap=18)
+    placed = declutter_label_positions(label_entries, min_gap=30)
     for row, (label_x, label_y, text) in zip(ss_rows, placed):
+        label_x += 273.15
         anchor_y = float(row[2])
         if abs(label_y - anchor_y) > 6:
-            # Thin leader line so a decluttered label can still be traced
-            # back to the point it describes.
-            ax.plot([label_x + 25, float(row[0])], [label_y, anchor_y],
+            ax.plot([label_x, float(row[0])], [label_y, anchor_y],
                     color=color, alpha=0.35, linewidth=0.6, zorder=1)
         ax.text(label_x, label_y, text,
                 horizontalalignment='right', verticalalignment='center',
@@ -305,11 +312,10 @@ def plot_family(ax, phases, color, title, ylabel, compound,
                 bbox=dict(boxstyle='round,pad=0.1', facecolor='white',
                            edgecolor='none', alpha=0.7))
 
-    # ticks, limits, grid
-    xticks = list(range(0, 2001, 200))
-    yticks = np.arange(-1300, 100, 100)
-    ax.set_xlim([-800, 2000]); ax.set_xticks(xticks)
-    ax.set_ylim([-1300, 50]);  ax.set_yticks(yticks)
+    xticks = list(range(0, 2001, 100))
+    yticks = np.arange(-2500, 500, 100)
+    ax.set_xlim([-500, 2000]); 
+    ax.set_ylim([-2500, 500]);  ax.set_yticks(yticks)
     for line in xticks:
         ax.axvline(line, color='0.5', alpha=0.5, zorder=-9)
     ax.axvline(0, color='k'); ax.axhline(0, color='k')
@@ -319,58 +325,58 @@ def plot_family(ax, phases, color, title, ylabel, compound,
     ax.set_ylabel(ylabel)
 
     # ---- legend box: metal state x compound state ----
-    rectpos = [900, 1970, -1290, -1060]
-    rectpos1 = [900, 1970, -1400, -1300]
+    rectpos = [0, 1000, -2400, -2000]
+    rectpos1 = [0, 1000, -2400, -2000]
     ax.add_patch(patches.Rectangle(
         (rectpos[0], rectpos[2]),
-        rectpos[1] - rectpos[0], rectpos[3] - rectpos[2],
+        rectpos[1] - rectpos[0], rectpos[3] - rectpos[2]+50,
         facecolor='#ffffff', fill=True, edgecolor='k', linewidth=1))
 
-    ax.text(rectpos[0] + (rectpos[1]-rectpos[0])/2 + 155, rectpos[3]-30,
+    ax.text((rectpos[1]-rectpos[0])/2 +50 , rectpos[3],
             'Metal', ha='center', fontsize=9, fontweight='bold')
-    ax.text(rectpos[0] + (rectpos[1]-rectpos[0])/4 + 170, rectpos[3]-65,
+    ax.text((rectpos[1]-rectpos[0])/4 + 50, rectpos[3]-50,
             'Solid', ha='center', fontsize=9)
-    ax.text(rectpos[0] + (rectpos[1]-rectpos[0])/2 + 155, rectpos[3]-65,
+    ax.text((rectpos[1]-rectpos[0])/2 +50, rectpos[3]-50,
             'Liquid', ha='center', fontsize=9)
-    ax.text(rectpos[0] + 3*(rectpos[1]-rectpos[0])/4 + 140, rectpos[3]-65,
+    ax.text(3*(rectpos[1]-rectpos[0])/4 +50, rectpos[3]-50,
             'Gas', ha='center', fontsize=9)
-    ax.text(rectpos[0]+70, rectpos[3]-200, 'Compound', ha='center',
+    ax.text(rectpos[0]+50, rectpos[3]-300, 'Compound', ha='center',
             fontsize=9, rotation=90, fontweight='bold')
-    ax.text(rectpos[0]+290, rectpos[3]-110, 'Solid', ha='right', fontsize=9)
-    ax.text(rectpos[0]+290, rectpos[3]-155, 'Liquid', ha='right', fontsize=9)
-    ax.text(rectpos[0]+290, rectpos[3]-200, 'Gas', ha='right', fontsize=9)
+    ax.text(rectpos[0]+200, rectpos[3]-100, 'Solid', ha='right', fontsize=9)
+    ax.text(rectpos[0]+200, rectpos[3]-200, 'Liquid', ha='right', fontsize=9)
+    ax.text(rectpos[0]+200, rectpos[3]-300, 'Gas', ha='right', fontsize=9)
 
     # line-style key (uses the family colour and compound name)
     c = color
     key = [
-        (1260, '-',  1.0, f'Metal solid, {compound} solid'),
-        (1520, '--', 1.0, f'Metal liquid, {compound} solid'),
-        (1780, ':',  1.0, f'Metal gas, {compound} solid'),
-        (1260, '-',  0.6, f'Metal solid, {compound} liquid'),
-        (1520, '--', 0.6, f'Metal liquid, {compound} liquid'),
-        (1780, ':',  0.6, f'Metal gas, {compound} liquid'),
-        (1260, '-',  0.3, f'Metal solid, {compound} gas'),
-        (1520, '--', 0.3, f'Metal liquid, {compound} gas'),
-        (1780, ':',  0.3, f'Metal gas, {compound} gas'),
+        ((rectpos[1]-rectpos[0])/2, rectpos[3]-100,'-',  1.0, f'Metal solid, {compound} solid'),
+        ((rectpos[1]-rectpos[0])/4, rectpos[3]-100,'--', 1.0, f'Metal liquid, {compound} solid'),
+        ((rectpos[1]-rectpos[0])*3/4, rectpos[3]-100, ':',  1.0, f'Metal gas, {compound} solid'),
+        ((rectpos[1]-rectpos[0])/2, rectpos[3]-200, '-',  0.6, f'Metal solid, {compound} liquid'),
+        ((rectpos[1]-rectpos[0])/4, rectpos[3]-200, '--', 0.6, f'Metal liquid, {compound} liquid'),
+        ((rectpos[1]-rectpos[0])*3/4, rectpos[3]-200, ':',  0.6, f'Metal gas, {compound} liquid'),
+        ((rectpos[1]-rectpos[0])/2, rectpos[3]-300, '-',  0.3, f'Metal solid, {compound} gas'),
+        ((rectpos[1]-rectpos[0])/4, rectpos[3]-300, '--', 0.3, f'Metal liquid, {compound} gas'),
+        ((rectpos[1]-rectpos[0])*3/4, rectpos[3]-300, ':',  0.3, f'Metal gas, {compound} gas'),
     ]
-    for i, (x0, ls, a, label) in enumerate(key):
-        y = [-1160, -1208, -1255][i // 3]
-        ax.plot([x0, x0 + 140], [y, y], color=c, ls=ls, alpha=a, label=label)
+    for i, (x0, y0, ls, a, label) in enumerate(key):
+        y = [y0, y0]
+        ax.plot([x0, x0 + 100], y, color=c, ls=ls, alpha=a, label=label)
 
     # ---- sources box ----
-    ax.text(rectpos1[0]+300, rectpos1[3]-100, 'Sources',
-            fontsize=9, fontweight='bold')
-    ax.text(rectpos1[0]+300, rectpos1[3]-110,
-            r'$O_2$, $N_2$, $F_2$ and $Cl_2$ data from:', fontsize=9, va='top')
-    ax.text(rectpos1[0]+300, rectpos1[3]-120,
+    ax.text(rectpos1[0]+1000, rectpos1[3], 'Sources:',
+            fontsize=8, fontweight='bold')
+    ax.text(rectpos1[0]+1000, rectpos1[3]-10,
+            r'$O_2$, $N_2$, $F_2$ and $Cl_2$ data from:', fontsize=8, va='top')
+    ax.text(rectpos1[0]+1000, rectpos1[3]-20,
             '\nReed, T.B., 1971. Free energy of \nformation of binary compounds. '
             '\nMIT Press, Cambridge, Mass.',
             fontsize=8, va='top', fontstyle='italic')
-    ax.text(rectpos1[0]+300, rectpos1[3]-130, '\n\n\n\nC data from:',
-            fontsize=9, va='top')
-    ax.text(rectpos1[0]+300, rectpos1[3]-140,
+    ax.text(rectpos1[0]+1000, rectpos1[3]-30, '\n\n\n\nC data from:',
+            fontsize=8, va='top')
+    ax.text(rectpos1[0]+1000, rectpos1[3]-40,
             '\n\n\n\n\nColtters, R.G., 1985. Thermodynamics \nof binary metallic '
-            'carbides: A review. \nMaterials Science and Engineering \n76, 1–50.',
+            'carbides: A review. \nMaterials Science and Engineering 76, 1–50.',
             fontsize=8, va='top', fontstyle='italic')
 
 def save_family_figure(name):
@@ -381,9 +387,7 @@ def save_family_figure(name):
     fig, ax = plt.subplots(figsize=(10, 8))
     plot_family(ax, fam['phases'], fam['color'], name.capitalize(),
                 ylabel, fam['compound'])
-    add_pressure_nomograph(ax, T_right_C=2000, eq_kind=fam['eq_kind'], gas_plain=fam['gas_plain'], name=name)
-    if name == 'carbides':
-        add_boudouard_line(ax)
+    add_pressure_nomograph(ax, T_right=2000, eq_kind=fam['eq_kind'], gas_plain=fam['gas_plain'], gas_label=fam['gas'])
     add_family_gas_references(ax, name)
     plt.tight_layout()
     out = f'ellingham_{name}.pdf'
@@ -399,7 +403,7 @@ def apply_pressure_shift(phases, pressure):
     
     shifted_phases = {}
     for phase, arr in phases.items():
-        if arr.size == 0:
+        if arr.size == 0 or phase == 'aux':
             shifted_phases[phase] = arr
             continue
         new_arr = arr.copy()
@@ -415,61 +419,41 @@ def add_family_gas_references(ax, name):
     appropriate for `name`:
       - oxides:  both H and C lines, plus CO/CO2 and H2/H2O ratio scales
                  (in addition to the existing P(O2) scale) — the full
-                 classic combined-Ellingham-diagram nomograph.
-      - carbides: the C line only (2CO+O2=2CO2), alongside the existing
-                 Boudouard line and carbon-activity scale.
+                 classic combined-Ellingham-diagram nomograph. Also draws
+                 the Boudouard reaction (C + CO2 = 2CO) from the carbides
+                 sheet's 'aux' row, since it's the same CO/CO2 gas
+                 equilibrium the oxide diagram's C reference line and
+                 P_CO/P_CO2 scale are calibrated against.
+      - carbides: the C line only (2CO+O2=2CO2). The Boudouard reaction
+                 is drawn from its own 'aux' row in the carbides sheet
+                 by plot_family(), alongside the carbon-activity scale.
       - hydrides: the H line only (2H2+O2=2H2O).
     All other families are left untouched.
     """
     if name == 'oxides':
         add_reference_gas_line(ax, 'H')
         add_reference_gas_line(ax, 'C')
+        add_reference_gas_line(ax, 'CO')
         add_ratio_nomograph(ax, 'H', r'$P_{H_2}/P_{H_2O}$', outward_offset=55)
-        add_ratio_nomograph(ax, 'C', r'$P_{CO}/P_{CO_2}$', outward_offset=115)
+        add_ratio_nomograph(ax, 'CO', r'$P_{CO}/P_{CO_2}$', outward_offset=115)
     elif name == 'carbides':
         add_reference_gas_line(ax, 'C')
     elif name == 'hydrides':
         add_reference_gas_line(ax, 'H')
 
 
-def add_boudouard_line(ax, T_right_C=2000, T_left_C=-800, color='black'):
-    """Draws the Boudouard reaction (C + CO2 = 2CO) as a fixed reference
-    line on the carbides diagram. This gas-phase equilibrium sets the
-    CO/CO2 ratio needed to reach a given carbon activity, so plotting it
-    alongside the metal-carbide lines lets a user see, e.g., which
-    CO/CO2 gas mixture would carburize/decarburize a given metal at a
-    chosen temperature.
-
-    Coefficients (ΔG° in kJ = 170.7 - 0.1745*T[K]) are the standard
-    literature values for this reaction (e.g. Gaskell, Introduction to
-    the Thermodynamics of Materials); ΔG° crosses zero near 705 °C, the
-    well-known Boudouard equilibrium temperature.
-    """
-    T0_K, T1_K = T_left_C + 273.15, T_right_C + 273.15
-    G0 = 170.7 - 0.1745 * T0_K
-    G1 = 170.7 - 0.1745 * T1_K
-
-    ax.plot([T_left_C, T_right_C], [G0, G1], color=color, linestyle='-.',
-            linewidth=1.5, alpha=0.85, zorder=6, clip_on=True)
-    ax.text(T_right_C - 40, G1 + 25, r'Boudouard: $C + CO_2 = 2CO$',
-            ha='right', va='bottom', fontsize=8, fontweight='bold', color=color,
-            bbox=dict(boxstyle='round,pad=0.15', facecolor='white', edgecolor=color, alpha=0.85))
-
-
-# Classic Ellingham "auxiliary gas" reference lines: 2H2+O2=2H2O ("H" point)
-# and 2CO+O2=2CO2 ("C" point). Both are anchored at T=0 K using the
-# standard enthalpies of formation the user specified (-245 and -565 kJ),
-# with slopes from standard entropy data (NIST/CODATA, 298 K) for the same
-# reactions: ΔS°(2H2+O2=2H2O) ≈ -88.8 J/K, ΔS°(2CO+O2=2CO2) ≈ -172.9 J/K,
-# giving ΔG°(T) = intercept + slope·T[K] (kJ).
 REFERENCE_GAS_LINES = {
-    'H': dict(intercept=-245.0, slope=0.08883,
+    'H': dict(g0=-119.3*4.184, g1=26.9, T0=0,T1=3400,
               reaction=r'$2H_2 + O_2 = 2H_2O$', color='#3b6fd4'),
-    'C': dict(intercept=-565.0, slope=0.17289,
+    'CO2': dict(g0=-135.0*4.184, g1=4.7, T0=0,T1=3400,
               reaction=r'$2CO + O_2 = 2CO_2$', color='#444444'),
+    'CO': dict(g0=-53.4*4.184, g1=-195.9*4.184, T0=0,T1=3400,
+              reaction=r'$2C + O_2 = 2CO$', color="#808080"),
+    'C': dict(g0=boudouard_reaction(-273), g1=boudouard_reaction(3400), T0=0, T1=3400,reaction=r'$C + CO_2 = 2CO$', color='k',)
 }
 
-def add_reference_gas_line(ax, point_label, T_right_C=2000, T_left_C=-273.15):
+
+def add_reference_gas_line(ax, point_label, T_right=2000, T_left=0):
     """Draws one of the classic auxiliary Ellingham reference lines (H or C)
     across the diagram, plus its anchor point/label at T = 0 K. These are
     fixed thermodynamic reference lines (not tied to any particular marked
@@ -477,23 +461,22 @@ def add_reference_gas_line(ax, point_label, T_right_C=2000, T_left_C=-273.15):
     """
     line = REFERENCE_GAS_LINES[point_label]
     color = line['color']
-    T0_K, T1_K = T_left_C + 273.15, T_right_C + 273.15
-    G0 = line['intercept'] + line['slope'] * T0_K
-    G1 = line['intercept'] + line['slope'] * T1_K
+    G0 = line['g0'] + (line['g1'] - line['g0']) / (line['T1'] - line['T0']) * (T_left - line['T0'])
+    G1 = line['g0'] + (line['g1'] - line['g0']) / (line['T1'] - line['T0']) * (T_right - line['T0'])
 
-    ax.plot([T_left_C, T_right_C], [G0, G1], color=color, linestyle='-.',
+    ax.plot([T_left, T_right], [G0, G1], color=color, linestyle='-.',
             linewidth=1.4, alpha=0.85, zorder=6, clip_on=True)
-    ax.plot(T_left_C, G0, 'o', color=color, markersize=7, zorder=10)
-    ax.annotate(point_label, (T_left_C, G0), textcoords='offset points',
+    ax.plot(T_left, G0, 'o', color=color, markersize=7, zorder=10)
+    ax.annotate(point_label, (T_left, G0), textcoords='offset points',
                 xytext=(9, 0), fontsize=10, fontweight='bold', color=color,
                 va='center',
                 bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor=color, alpha=0.85))
-    ax.text(T_right_C - 40, G1 + 20, line['reaction'],
+    ax.text(T_right - 40, G1 + 20, line['reaction'],
             ha='right', va='bottom', fontsize=8, fontweight='bold', color=color,
             bbox=dict(boxstyle='round,pad=0.15', facecolor='white', edgecolor=color, alpha=0.85))
 
 
-def add_ratio_nomograph(ax, point_label, ratio_label, T_right_C=2000, T_left_C=-800, outward_offset=55):
+def add_ratio_nomograph(ax, point_label, ratio_label, T_right=2000, T_left=0, outward_offset=55):
     """
     Draws a gas-ratio nomograph (H2/H2O or CO/CO2) on an extra right-hand
     axis, offset outward from the main P(O2) scale. Calibrated using the
@@ -501,20 +484,15 @@ def add_ratio_nomograph(ax, point_label, ratio_label, T_right_C=2000, T_left_C=-
 
         ln(P_X/P_XO) = (ΔG_line(T_right) - G) / (2·R·T_right)
 
-    which follows directly from combining the metal-oxide equilibrium
-    (ΔG_MO(T) = RT ln P_O2) with the buffer reaction's equilibrium constant
-    (e.g. 2CO+O2=2CO2), so a marked oxide's ΔG° position at T_right can be
-    read directly as the CO/CO2 or H2/H2O ratio that buffers the same P(O2).
     """
     line = REFERENCE_GAS_LINES[point_label]
     color = line['color']
     R_kJ = 0.008314
-    T_right_K = T_right_C + 273.15
-    G_line_right = line['intercept'] + line['slope'] * T_right_K
+    G_line_right = line['g0'] + (line['g1'] - line['g0']) / (line['T1'] - line['T0']) * (T_right - line['T0'])
 
-    major_exps = [-8, -6, -4, -2, -1, 0, 1, 2]
+    major_exps = [-60,-55,-50,-45,-40, -35,-30,-25,-20,-15,-10,-5, 0, 5, 10, 15, 20,25,30,35,40,45,50,55,60]
     ratios = [10.0**e for e in major_exps]
-    G_major = [G_line_right - 2 * R_kJ * T_right_K * np.log(r) for r in ratios]
+    G_major = [G_line_right - R_kJ * T_right * np.log(r) for r in ratios]
 
     ymin, ymax = ax.get_ylim()
     ax2 = ax.twinx()
@@ -531,39 +509,13 @@ def add_ratio_nomograph(ax, point_label, ratio_label, T_right_C=2000, T_left_C=-
             [f'{r:.0e}' if (r < 0.01 or r >= 100) else f'{r:g}' for r in r_valid],
             fontsize=7)
 
-    # Fan out from the H/C anchor point (at T=0K, ΔG=line's intercept)
-    # through EVERY tick - including ones whose right-edge value falls
-    # outside the visible range - spanning the whole plot, so any curve's
-    # ratio can be read directly without a straightedge.
-    pivot_T = -273.15
-    pivot_G = line['intercept']
-
-    # For ticks that don't get a right-axis label, the line instead exits
-    # through the top or bottom border - label the ratio value right
-    # there so it's still readable without the outward-offset scale.
-    for r, g in zip(ratios, G_major):
-        if ymin <= g <= ymax:
-            continue
-        slope = (g - pivot_G) / (T_right_C - pivot_T)
-        if slope == 0:
-            continue
-        edge_G = ymax if g > ymax else ymin
-        T_cross = pivot_T + (edge_G - pivot_G) / slope
-        if T_left_C < T_cross < T_right_C:
-            va = 'bottom' if edge_G == ymin else 'top'
-            label = f'{r:.0e}' if (r < 0.01 or r >= 100) else f'{r:g}'
-            ax.annotate(label, (T_cross, edge_G), textcoords='offset points',
-                        xytext=(0, 3 if va == 'bottom' else -3),
-                        fontsize=6, color=color, ha='center', va=va,
-                        clip_on=True, zorder=6)
-
     ax2.set_ylabel(ratio_label, fontsize=9, color=color)
     ax2.tick_params(axis='y', colors=color, labelsize=7)
     ax2.spines['right'].set_color(color)
     return ax2
 
 
-def add_pressure_nomograph(ax, T_right_C=2000, T_left_C=-800, minor_step=1, eq_kind='pressure', gas_plain='O2', name=None):
+def add_pressure_nomograph(ax, T_right=2000, T_left=0, minor_step=1, eq_kind='pressure', gas_plain='O2', gas_label=None):
     """
     Draws the pressure/activity nomograph on the right axis with minor ticks
     spaced evenly in the exponent (log10 scale).
@@ -574,17 +526,16 @@ def add_pressure_nomograph(ax, T_right_C=2000, T_left_C=-800, minor_step=1, eq_k
                 101325 Pa) or 'activity' for carbides, where the reaction
                 quotient is a dimensionless carbon activity a(C) referenced
                 to pure graphite (reference state = 1, not 101325 Pa).
-    name:       family name; only 'oxides' gets the 'O' origin marker, since
-                that letter specifically denotes O2 (the classic Ellingham
-                origin point) and is meaningless on every other family's
-                diagram (nitrides, carbides, hydrides, ...).
+    gas_label:  the family's own reacting gas/solid species (e.g. 'O$_2$',
+                'N$_2$', 'C'), drawn at the pivot point (T=0K, ΔG=0) so the
+                marker always names the species that scale is actually for,
+                instead of a generic/misleading 'O'.
     """
     R_kJ = 0.008314
-    T_right_K = T_right_C + 273.15
     reference = 1.0 if eq_kind == 'activity' else 101325.0
 
     # Major tick exponents (powers of 10)
-    major_exps = [-40, -30, -20, -10, -5, 0, 5, 10]
+    major_exps = [-60,-55,-50,-45,-40, -35, -30, -25, -20, -15, -10, -5, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
     P_major = [10**e for e in major_exps]
     
     # Minor ticks: evenly spaced in the exponent between major ticks
@@ -597,46 +548,52 @@ def add_pressure_nomograph(ax, T_right_C=2000, T_left_C=-800, minor_step=1, eq_k
             P_minor.append(10**e)
     
     # Calculate positions using inverse of exp calculation
-    G_major = [R_kJ * T_right_K * np.log(P / reference) for P in P_major]
-    G_minor = [R_kJ * T_right_K * np.log(P / reference) for P in P_minor]
+    G_major = [R_kJ * T_right * np.log(P / reference) for P in P_major]
+    G_minor = [R_kJ * T_right * np.log(P / reference) for P in P_minor]
     
     ymin, ymax = ax.get_ylim()
     
+    # Create twin axis
+    ax2 = ax.twinx()
+    ax2.set_ylim(ymin, ymax)
     
     # Filter to visible range
     valid_major = [(P, G) for P, G in zip(P_major, G_major) if ymin <= G <= ymax]
     valid_minor = [G for G in G_minor if ymin <= G <= ymax]
     
+    if valid_major:
+        P_valid, G_valid = zip(*valid_major)
+        ax2.set_yticks(list(G_valid))
+        ax2.set_yticklabels([f'{P:.0e}' for P in P_valid], fontsize=8)
+    if valid_minor:
+        ax2.set_yticks(list(valid_minor), minor=True)
 
-    pivot_T, pivot_G = -273.15, 0.0
 
-    for P, G in zip(P_major, G_major):
-        if ymin <= G <= ymax:
-            continue
-        slope = (G - pivot_G) / (T_right_C - pivot_T)
-        if slope == 0:
-            continue
-        edge_G = ymax if G > ymax else ymin
-        T_cross = pivot_T + (edge_G - pivot_G) / slope
-        if T_left_C < T_cross < T_right_C:
-            va = 'bottom' if edge_G == ymin else 'top'
-            ax.annotate(f'{P:.0e}', (T_cross, edge_G), textcoords='offset points',
-                        xytext=(0, 3 if va == 'bottom' else -3),
-                        fontsize=6.5, color='#555555', ha='center', va=va,
-                        clip_on=True, zorder=6)
+
+    pivot_T, pivot_G = 0.0, 0.0
     
-    if name == 'oxides':
-        ax.plot(-273.15, 0, 'ko', markersize=7, zorder=10)
-        ax.annotate('O', (-273.15, 0), textcoords="offset points",
+    if eq_kind == 'activity':
+        ax2.set_ylabel(r'Carbon activity $a$(C)', fontsize=10, color='#333333')
+    else:
+        ax2.set_ylabel(rf'Equilibrium $P$({gas_plain}) (Pa)', fontsize=10, color='#333333')
+    ax2.tick_params(axis='y', colors='#333333')
+    
+    if gas_label:
+        ax.plot(pivot_T, pivot_G, 'ko', markersize=7, zorder=10)
+        ax.annotate(gas_label, (pivot_T, pivot_G), textcoords="offset points",
                     xytext=(8, 8), fontsize=11, fontweight='bold',
                     bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='black', alpha=0.8))
-
-
-def add_markings_for_elements(ax, phases, elements_list, temp_c, family_color, eq_kind='pressure'):
-
+        
+def add_markings_for_elements(ax, phases, elements_list, temp, family_color, eq_kind='pressure'):
+    """
+    Draws Richardson lines from O and marks the equilibrium point for each
+    element. Returns a list of (element, dG_std, value_str) rows describing
+    ΔG° and the corresponding equilibrium quantity — a gas partial pressure
+    (Pa) for every family except carbides, which react with solid carbon
+    and so get a carbon *activity* instead — for use in a results table
+    """
     R_kJ = 0.008314
-    T_K = temp_c + 273.15
-    T_O = -273.15
+    T_O = 0.0
     G_O = 0.0
     T_right = 2000.0  # Matches the right edge of the plot
 
@@ -648,30 +605,34 @@ def add_markings_for_elements(ax, phases, elements_list, temp_c, family_color, e
             for row in arr:
                 if element_from_reaction(row[4]).lower() == element.lower():
                     T0, T1 = float(row[0]), float(row[1])
-                    if T0 <= temp_c <= T1:
+                    if T0 <= temp <= T1:
                         target_row = row
                         break
             if target_row is not None: break
         
         if target_row is None:
-            print(f" Could not find valid segment for '{element}' at {temp_c}°C.")
+            print(f"Could not find valid segment for '{element}' at {temp}°C.")
             continue
         
         T0, T1, G0, G1 = float(target_row[0]), float(target_row[1]), float(target_row[2]), float(target_row[3])
         
         if T1 == T0: dG_std = G0
-        else: dG_std = G0 + (G1 - G0) * (temp_c - T0) / (T1 - T0)
+        else: dG_std = G0 + (G1 - G0) * (temp - T0) / (T1 - T0)
 
+        # ΔG° = RT ln(Q) where Q is the reaction quotient at equilibrium:
+        # Q = P_anion (Pa, relative to the 101325 Pa standard state) for
+        # every gas-forming family, or Q = a_C (dimensionless carbon
+        # activity) for carbides.
         if eq_kind == 'activity':
-            value = np.exp(dG_std / (R_kJ * T_K))
+            value = np.exp(dG_std / (R_kJ * temp))
             value_str = f'{value:.2e}' if value < 1e-2 else f'{value:.3f}'
         else:
-            value = 101325 * np.exp(dG_std / (R_kJ * T_K))
+            value = 101325 * np.exp(dG_std / (R_kJ * temp))
             value_str = f'{value:.2e}' if value < 1e-3 else f'{value:.1f}'
         table_rows.append((element.upper(), dG_std, value_str))
 
         # Calculate Richardson line
-        slope = (dG_std - G_O) / (temp_c - T_O)
+        slope = (dG_std - G_O) / (temp - T_O)
         G_right = slope * (T_right - T_O)
         
         # Draw the line with clip_on=False so it touches the exact right spine
@@ -679,17 +640,15 @@ def add_markings_for_elements(ax, phases, elements_list, temp_c, family_color, e
                 linewidth=1.5, alpha=0.7, zorder=5, clip_on=False)
         
         # Mark the exact point on the curve
-        ax.plot(temp_c, dG_std, 'o', color=family_color, markersize=8, zorder=10, 
+        ax.plot(temp, dG_std, 'o', color=family_color, markersize=8, zorder=10, 
                 markeredgecolor='white', markeredgewidth=1.5)
                 
-        # Add a small square marker EXACTLY where the line hits the right axis 
-        # to visually prove the alignment with the nomograph
         ax.plot(T_right, G_right, 's', color=family_color, markersize=5, zorder=11, clip_on=False)
 
     return table_rows
 
 
-def render_equilibrium_table(table_ax, table_rows, eq_kind, gas_label, temp_c, family_color):
+def render_equilibrium_table(table_ax, table_rows, eq_kind, gas_label, temp, family_color):
     """Render the ΔG°/equilibrium-quantity results in a 3-column table
     (Element, ΔG°, equilibrium quantity) instead of cluttering the chart
     with callout boxes."""
@@ -701,7 +660,7 @@ def render_equilibrium_table(table_ax, table_rows, eq_kind, gas_label, temp_c, f
     col_labels = ['Element', 'ΔG°\n(kJ/mol)', quantity_header]
     cell_text = [[element, f'{dG_std:.1f}', value_str] for element, dG_std, value_str in table_rows]
 
-    table_ax.set_title(f'Equilibrium values\nat {temp_c:g} °C', fontsize=10, fontweight='bold', pad=14)
+    table_ax.set_title(f'Equilibrium values\nat {temp:g} °C', fontsize=10, fontweight='bold', pad=14)
     table = table_ax.table(cellText=cell_text, colLabels=col_labels,
                             colWidths=[0.28, 0.32, 0.40],
                             loc='upper center', cellLoc='center', bbox=[0, 0.05, 1, 0.8])
@@ -743,8 +702,8 @@ def main():
         help=f"Comma-separated element symbols, e.g. Al,Fe,Ti, or 'all'. Default: {DEFAULT_ELEMENTS}"
     )
     parser.add_argument(
-        '--families', type=str, default='all',
-        help='Comma-separated family names, e.g. oxides,sulfides. Default: all'
+        '--families', type=str, default=DEFAULT_FAMILIES,
+        help=f'Comma-separated family names, e.g. oxides,sulfides. Default: {DEFAULT_FAMILIES}'
     )
     parser.add_argument(
         '--phases', type=str, default=None,
@@ -809,7 +768,10 @@ def main():
             filtered_phases = {phase: arr for phase, arr in filtered_phases.items() if phase in allowed_phases}
 
         if allowed_elements is not None:
-            filtered_phases = {phase: filter_by_elements(arr, allowed_elements) for phase, arr in filtered_phases.items()}
+            filtered_phases = {
+                phase: (arr if phase == 'aux' else filter_by_elements(arr, allowed_elements))
+                for phase, arr in filtered_phases.items()
+            }
 
         if all(arr.size == 0 for arr in filtered_phases.values()):
             print(f"Skipping '{name}' – no matching reactions.")
@@ -819,7 +781,7 @@ def main():
         print(f"Generating '{name}' diagram...")
 
         p_str = f'{args.pressure:.0e}' if args.pressure != 101325 else '101325'
-        title = f"{name.capitalize()} Formation (Base P = {p_str} Pa)"
+        title = rf"{name.capitalize()} Formation ($P_0$ = {p_str} Pa)"
         ylabel = r'Standard free energy of formation ($\Delta G_f^\circ$) kJ/mol ' + fam['gas']
 
         has_marking = effective_temp is not None and mark_elements
@@ -837,9 +799,7 @@ def main():
             table_ax = None
 
         plot_family(ax, final_phases, fam['color'], title, ylabel, fam['compound'])
-        add_pressure_nomograph(ax, T_right_C=2000, eq_kind=fam['eq_kind'], gas_plain=fam['gas_plain'], name=name)
-        if name == 'carbides':
-            add_boudouard_line(ax)
+        add_pressure_nomograph(ax, T_right=2000, eq_kind=fam['eq_kind'], gas_plain=fam['gas_plain'], gas_label=fam['gas'])
         add_family_gas_references(ax, name)
 
         if has_marking:

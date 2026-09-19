@@ -315,7 +315,7 @@ def plot_family(ax, phases, color, title, ylabel, compound,
             continue
         st = STYLES[phase]
         for row in arr:
-            ax.plot([float(row[0]), float(row[1])],
+            ax.plot([float(row[0]+273.15), float(row[1]+273.15)],
                     [float(row[2]), float(row[3])],
                     color=color, ls=st['ls'], alpha=st['alpha'],
                     marker='.', markersize=2.25)
@@ -442,8 +442,8 @@ def apply_pressure_shift(phases, pressure):
             shifted_phases[phase] = arr
             continue
         new_arr = arr.copy()
-        T0_K = new_arr[:, 0].astype(float) + 273.15
-        T1_K = new_arr[:, 1].astype(float) + 273.15
+        T0_K = new_arr[:, 0].astype(float) 
+        T1_K = new_arr[:, 1].astype(float)
         new_arr[:, 2] = new_arr[:, 2].astype(float) - R_kJ * T0_K * ln_P
         new_arr[:, 3] = new_arr[:, 3].astype(float) - R_kJ * T1_K * ln_P
         shifted_phases[phase] = new_arr

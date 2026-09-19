@@ -54,7 +54,7 @@ import pandas as pd
 # ----------------------------------------------------------------------
 # Edit these to change what runs when no CLI flags are given. Any of them
 # can still be overridden on the command line, e.g. `--elements all`.
-DEFAULT_ELEMENTS = "Al,Fe,Sn,Cu,Y,Zr,Ca,C"   # comma-separated symbols, or "all"
+DEFAULT_ELEMENTS = "Al,Sn,Cu,Y,Zr,Ca,C"   # comma-separated symbols, or "all"
 DEFAULT_TEMP_C = 1000.0                      # °C for Richardson lines / P_eq marks
 DEFAULT_PRESSURE_PA = 101325.0               # Pa, global partial pressure shift
 DEFAULT_FAMILIES = "oxides,carbides,hydrides"
@@ -260,25 +260,50 @@ STYLES = {
 }
 
 
-def declutter_label_positions(entries, min_gap):
-    """Greedily push overlapping (y, ...) label positions apart.
+def declutter_label_positions(entries, min_gap, x_tolerance=250):
+    """Separate overlapping labels, but only when they'd actually collide.
 
-    `entries` is a list of [x, y, text]; only `y` is adjusted. Labels are
-    processed from the top (highest y) down, and each one is pulled below
-    the previous one if they'd be closer than `min_gap`. Returns a new list
-    of [x, adjusted_y, text] in the original input order.
+    Two guards:
+      * Identical (x, y, text) entries are dropped before placement, so a
+        reaction pasted twice in Excel can't stack into a column of
+        same-name labels drifting down the plot.
+      * A label is only pushed down if it is within `x_tolerance` of an
+        already-placed label *and* within `min_gap` vertically. Labels on
+        opposite sides of the diagram no longer shove each other.
+
+    `entries` is a list of [x, y, text]; only `y` is modified. Returns a
+    new list in the original input order.
     """
-    order = sorted(range(len(entries)), key=lambda i: entries[i][1], reverse=True)
-    adjusted = [list(e) for e in entries]
-    previous_y = None
-    for i in order:
-        y = adjusted[i][1]
-        if previous_y is not None and previous_y - y < min_gap:
-            y = previous_y - min_gap
-        adjusted[i][1] = y
-        previous_y = y
-    return adjusted
+    # 1) Drop exact duplicates (rounded so float noise doesn't defeat us).
+    seen = set()
+    unique_entries = []
+    for e in entries:
+        key = (round(float(e[0]), 3), round(float(e[1]), 3), str(e[2]))
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_entries.append(e)
 
+    # 2) Greedy placement, x-aware.
+    order = sorted(range(len(unique_entries)),
+                   key=lambda i: unique_entries[i][1], reverse=True)
+    adjusted = [list(e) for e in unique_entries]
+    placed = []  # (x, y) of labels already positioned
+
+    for i in order:
+        x = float(adjusted[i][0])
+        y = float(adjusted[i][1])
+        moved = True
+        while moved:
+            moved = False
+            for px, py in placed:
+                if abs(x - px) < x_tolerance and abs(y - py) < min_gap:
+                    y = py - min_gap
+                    moved = True
+        adjusted[i][1] = y
+        placed.append((x, y))
+
+    return adjusted
 
 def plot_family(ax, phases, color, title, ylabel, compound,
                 xlabel='Temperature (°C)'):
@@ -294,12 +319,22 @@ def plot_family(ax, phases, color, title, ylabel, compound,
                     [float(row[2]), float(row[3])],
                     color=color, ls=st['ls'], alpha=st['alpha'],
                     marker='.', markersize=2.25)
-
     ss_rows = list(phases.get('ss', EMPTY()))
+    seen_labels = set()
+    ss_rows_unique = []
+    for row in ss_rows:
+        label = str(row[4])
+        if label in seen_labels:
+            continue
+        seen_labels.add(label)
+        ss_rows_unique.append(row)
+    ss_rows = ss_rows_unique
+
     label_fontsize = 8 if len(ss_rows) <= 20 else (7 if len(ss_rows) <= 40 else 6)
     label_entries = [[float(row[0]) - 25, float(row[2]) + float(row[5]), row[4]]
-                      for row in ss_rows]
+                     for row in ss_rows]
     placed = declutter_label_positions(label_entries, min_gap=30)
+        
     for row, (label_x, label_y, text) in zip(ss_rows, placed):
         label_x += 273.15
         anchor_y = float(row[2])
@@ -435,6 +470,7 @@ def add_family_gas_references(ax, name):
         add_reference_gas_line(ax, 'C')
         add_reference_gas_line(ax, 'CO')
         add_ratio_nomograph(ax, 'H', r'$P_{H_2}/P_{H_2O}$', outward_offset=55)
+        add_ratio_nomograph(ax, 'C', r'$a_C$', outward_offset=175)
         add_ratio_nomograph(ax, 'CO', r'$P_{CO}/P_{CO_2}$', outward_offset=115)
     elif name == 'carbides':
         add_reference_gas_line(ax, 'C')
@@ -663,7 +699,7 @@ def render_equilibrium_table(table_ax, table_rows, eq_kind, gas_label, temp, fam
     table_ax.set_title(f'Equilibrium values\nat {temp:g} °C', fontsize=10, fontweight='bold', pad=14)
     table = table_ax.table(cellText=cell_text, colLabels=col_labels,
                             colWidths=[0.28, 0.32, 0.40],
-                            loc='upper center', cellLoc='center', bbox=[0, 0.05, 1, 0.8])
+                            loc='upper right', cellLoc='center', bbox=[0, 0.05, 1, 0.8])
     table.auto_set_font_size(False)
     table.set_fontsize(9)
     for (row, _col), cell in table.get_celld().items():
@@ -787,10 +823,10 @@ def main():
         has_marking = effective_temp is not None and mark_elements
         if has_marking:
             fig = plt.figure(figsize=(13, 9))
-            gs = fig.add_gridspec(1, 2, width_ratios=[4, 1], wspace=0.12)
+            gs = fig.add_gridspec(1, 2, width_ratios=[4, 1], wspace=0.35)
             ax = fig.add_subplot(gs[0])
             table_ax = fig.add_subplot(gs[1])
-            fig.subplots_adjust(left=0.06, right=0.97, top=0.90, bottom=0.08)
+            fig.subplots_adjust(left=0.06, right=1, top=0.90, bottom=0.08)
             if name == 'oxides':
                 pos = ax.get_position()
                 ax.set_position([pos.x0, pos.y0, pos.width * 0.80, pos.height])

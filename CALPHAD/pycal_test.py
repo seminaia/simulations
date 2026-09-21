@@ -21,10 +21,10 @@ print("All phase keys from the database:", phase_keys)
 filtered_phases_tern = filter_phases(dbf, tern_comp, phase_keys)  # Filter phases based on components
 print("Filtered phases for the ternary plot:", list(filtered_phases_tern))
 conds_tern = {
-    v.T: (800, 1800,10),  # vary from 1600 to 2000 step 10
+    v.T: (800, 1800,100),  # vary from 1600 to 2000 step 10
     v.P: 101325,
     v.N: 1,
-    v.W('C'): (0, 0.2, 0.01),  # vary from 0 to 0.08 step 0.001
+    v.X('C'): (0, 0.2, 0.01),  # vary from 0 to 0.08 step 0.001
 }    
 print(f"Phases considered in the binary plot: {filtered_phases_tern}")
 print(f"Components considered in the binary plot: {tern_comp}")
@@ -34,7 +34,7 @@ dof_tern = len(tern_comp) - len(filtered_phases_tern)
 print(f"Degrees of freedom for the binary plot: {dof_tern}")
 bin_strat= BinaryStrategy(dbf, tern_comp, phase_keys, conds_tern)
 bin_strat.do_map()
-ax = plot_binary(bin_strat,x=v.W('C'),y=v.T)
+ax = plot_binary(bin_strat,x=v.X('C'),y=v.T)
 fig = ax.figure
 ax.set_title("Binary Phase Diagram for FE-C System")
 ax.set_xlabel("C Mole Fraction")

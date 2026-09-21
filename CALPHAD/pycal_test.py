@@ -11,7 +11,7 @@ from pycalphad.property_framework.metaproperties import IsolatedPhase
 f1 = "Fe-C.TDB"
 f2 = "mmc1.TDB"
 f3 = "mf-steel-3g.tdb"
-f4 = "COST507-modified.tdb"
+f4 = "cost507.tdb"
 with open(f4, 'r',encoding='latin-1') as file:
     content = file.read()
 dbf = Database(content)

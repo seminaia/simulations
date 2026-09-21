@@ -11,7 +11,8 @@ from pycalphad.property_framework.metaproperties import IsolatedPhase
 f1 = "Fe-C.TDB"
 f2 = "mmc1.TDB"
 f3 = "mf-steel-3g.tdb"
-with open(f1, 'r',encoding='latin-1') as file:
+f4 = "COST507-modified.tdb"
+with open(f4, 'r',encoding='latin-1') as file:
     content = file.read()
 dbf = Database(content)
 tern_comp = ['FE', 'C', 'VA']

@@ -54,10 +54,10 @@ import pandas as pd
 # ----------------------------------------------------------------------
 # Edit these to change what runs when no CLI flags are given. Any of them
 # can still be overridden on the command line, e.g. `--elements all`.
-DEFAULT_ELEMENTS = "Al,Sn,Cu,Y,Zr,Ca,C"   # comma-separated symbols, or "all"
+DEFAULT_ELEMENTS = "Al,Sn,Cu,Y,Zr,Ca,Cr"   # comma-separated symbols, or "all"
 DEFAULT_TEMP_C = 1000.0                      # °C for Richardson lines / P_eq marks
 DEFAULT_PRESSURE_PA = 101325.0               # Pa, global partial pressure shift
-DEFAULT_FAMILIES = "oxides,carbides,hydrides"
+DEFAULT_FAMILIES = "oxides,carbides,hydrides,sulfides"
 
 # ----------------------------------------------------------------------
 # Plot style
@@ -469,6 +469,8 @@ def add_family_gas_references(ax, name):
         add_reference_gas_line(ax, 'H')
         add_reference_gas_line(ax, 'C')
         add_reference_gas_line(ax, 'CO')
+        add_reference_gas_line(ax, 'CCO2')
+        add_reference_gas_line(ax, 'CO2')
         add_ratio_nomograph(ax, 'H', r'$P_{H_2}/P_{H_2O}$', outward_offset=55)
         add_ratio_nomograph(ax, 'C', r'$a_C$', outward_offset=175)
         add_ratio_nomograph(ax, 'CO', r'$P_{CO}/P_{CO_2}$', outward_offset=115)
@@ -479,13 +481,16 @@ def add_family_gas_references(ax, name):
 
 
 REFERENCE_GAS_LINES = {
-    'H': dict(g0=-119.3*4.184, g1=26.9, T0=0,T1=3400,
+    'H': dict(g0=-119.3*4.184, g1=-26.9*4.184, T0=0,T1=3400,
               reaction=r'$2H_2 + O_2 = 2H_2O$', color='#3b6fd4'),
-    'CO2': dict(g0=-135.0*4.184, g1=4.7, T0=0,T1=3400,
+    'CO2': dict(g0=-135.0*4.184, g1=4.7*4.184, T0=0,T1=3400,
               reaction=r'$2CO + O_2 = 2CO_2$', color='#444444'),
     'CO': dict(g0=-53.4*4.184, g1=-195.9*4.184, T0=0,T1=3400,
               reaction=r'$2C + O_2 = 2CO$', color="#808080"),
-    'C': dict(g0=boudouard_reaction(-273), g1=boudouard_reaction(3400), T0=0, T1=3400,reaction=r'$C + CO_2 = 2CO$', color='k',)
+    'CCO2': dict(g0=-94.2*4.184, g1=-95.9*4.184, T0=0,T1=3400,
+              reaction=r'$2C + O_2 = 2CO2$', color="#3D3C3C"),
+    'C': dict(g0=boudouard_reaction(-273), g1=boudouard_reaction(3400), T0=0, T1=3400,
+              reaction=r'$C + CO_2 = 2CO$', color='k'),
 }
 
 
@@ -503,10 +508,6 @@ def add_reference_gas_line(ax, point_label, T_right=2000, T_left=0):
     ax.plot([T_left, T_right], [G0, G1], color=color, linestyle='-.',
             linewidth=1.4, alpha=0.85, zorder=6, clip_on=True)
     ax.plot(T_left, G0, 'o', color=color, markersize=7, zorder=10)
-    ax.annotate(point_label, (T_left, G0), textcoords='offset points',
-                xytext=(9, 0), fontsize=10, fontweight='bold', color=color,
-                va='center',
-                bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor=color, alpha=0.85))
     ax.text(T_right - 40, G1 + 20, line['reaction'],
             ha='right', va='bottom', fontsize=8, fontweight='bold', color=color,
             bbox=dict(boxstyle='round,pad=0.15', facecolor='white', edgecolor=color, alpha=0.85))

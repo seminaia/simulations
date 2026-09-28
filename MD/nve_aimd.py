@@ -33,6 +33,7 @@ from ase.optimize import BFGS
 from ase.units import Bohr
 from ase.visualize import view
 from gpaw import GPAW, restart
+from ase.spacegroup import crystal
 
 # ── Parameters ────────────────────────────────────────────────────────────────
 TEMPERATURE  = 1200        # K
@@ -42,7 +43,7 @@ N_EQUIL      = 200         # NVT pre-thermalisation steps
 N_PROD       = 2000        # NVE production steps  (2 ps)
 LOG_INTERVAL = 10
 ECUT_EV      = 500
-KPTS         = (2, 2, 2)
+KPTS         = (1, 1, 1)
 SUPERCELL    = 1
 SCREEN       = 0.25 * Bohr
 
@@ -62,28 +63,29 @@ MIX_PLOT_FILE  = "nve_results.png"
 print("=" * 60)
 print("Building LiF and BeF2 supercells")
 print("=" * 60)
+charges = {'Be':2, 'F':-1, 'Li':1}
+magmoms = {'Be': 1, 'F':-1,'Li':1}
+a_bef2 = 4.67
+c_bef2 = 5.18
+bef2_cell =[(a_bef2, 0, 0),
+             (-a_bef2/2, a_bef2*np.sqrt(3)/2, 0),
+             (0, 0, c_bef2)]
+lif_atoms  = bulk('LiF', crystalstructure='rocksalt', a=3.97, cubic=True)
+lif_atoms: Atoms = lif_atoms.repeat([1, 1, 3])  # 8 → 24 atoms = 12 formula units
+lif_charges = [charges[s] for s in lif_atoms.get_chemical_symbols()]
+lif_magmoms = [magmoms[s] for s in lif_atoms.get_chemical_symbols()]
+lif_atoms.set_initial_charges(lif_charges)
+lif_atoms.set_initial_magnetic_moments(lif_magmoms)
+lif_cell_params = lif_atoms.cell.cellpar()
 
-lif_atoms  = bulk('LiF', crystalstructure='rocksalt', a=4.03, cubic=True)
-lif_atoms.set_initial_charges([-1, 1] * (len(lif_atoms) // 2))
-lif_atoms.set_initial_magnetic_moments([1, -1, 1, -1, 0.5, -0.5, 0.5, -0.5])
-_bef2_cell = [[4.77, 0, 0],
-              [-4.77/2, 4.77*np.sqrt(3)/2, 0],
-              [0, 0, 5.18]]
-bef2_atoms = Atoms(
-    symbols=['Be', 'Be', 'F', 'F', 'F', 'F'],
-    scaled_positions=[
-        (0.0, 0.0, 0.0),
-        (1/3, 2/3, 0.5),
-        (0.2, 0.4, 0.25),
-        (0.8, 0.6, 0.75),
-        (0.4, 0.2, 0.75),
-        (0.6, 0.8, 0.25),
-    ],
-    cell=_bef2_cell,
-    pbc=True)
-bef2_atoms = bef2_atoms.repeat([1, 1, 2])  # 6 → 12 atoms
-bef2_atoms.set_initial_charges([2, 2, -1, -1, -1, -1] * 2)
-bef2_atoms.set_initial_magnetic_moments([2, 2, -1, -1, -1, -1] * 2)
+
+bef2_atoms = crystal('BeF2', basis=[(0.465848, 0, 1/3), (0.41116, 0.277282, 0.222273)], spacegroup=152, cellpar = [a_bef2,a_bef2,c_bef2,90,90,120], pbc=True)
+bef2_atoms: Atoms = bef2_atoms.repeat((1,1,2))
+bef2_charges = [charges[s] for s in bef2_atoms.get_chemical_symbols()]
+bef2_magmoms = [magmoms[s] for s in bef2_atoms.get_chemical_symbols()]
+bef2_atoms.set_initial_charges(bef2_charges)
+bef2_atoms.set_initial_magnetic_moments(bef2_magmoms)
+bef2_cell_params = bef2_atoms.cell.cellpar()
 
 print(f"LiF  : {len(lif_atoms)} atoms  cell={np.diag(lif_atoms.cell)} Å")
 print(f"BeF2 : {len(bef2_atoms)} atoms  cell={np.diag(bef2_atoms.cell)} Å")
@@ -93,7 +95,7 @@ print(f"BeF2 : {len(bef2_atoms)} atoms  cell={np.diag(bef2_atoms.cell)} Å")
 def make_gpaw(txt='-', screen=SCREEN, ecut=ECUT_EV, hund=False) -> GPAW:
     return GPAW(
         convergence={"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-6},
-        eigensolver={"name": "dav", "niter": 5},
+        eigensolver={"name": "davidson", "niter": 5},
         hund=hund,
         kpts=KPTS,
         maxiter=1000,
@@ -230,7 +232,7 @@ print("=" * 60)
 
 pbe_params = {
     "convergence": {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-6},
-    "eigensolver": {"name": "dav", "niter": 5},
+    "eigensolver": {"name": "davidson", "niter": 5},
     "kpts": {"gamma": True, "size": KPTS},
     "maxiter": 1000,
     "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
@@ -242,7 +244,7 @@ pbe_params = {
 }
 hse_params = {
     "convergence": {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-6},
-    "eigensolver": {"name": "dav", "niter": 5},
+    "eigensolver": {"name": "davidson", "niter": 5},
     "kpts": {"gamma": True, "size": (1, 1, 1)},
     "maxiter": 1000,
     "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
@@ -255,10 +257,8 @@ hse_params = {
 
 lif_relax  = relax(lif_atoms,  pbe_params, fmax=0.01, fixcell=False,
                    logname=LIF_RLX_LOG, gpwname=LIF_GPW_FILE)
-view(lif_relax, repeat=(2, 2, 2))
 bef2_relax = relax(bef2_atoms, pbe_params, fmax=0.01, fixcell=False,
                    logname=BEF2_RLX_LOG, gpwname=BEF2_GPW_FILE)
-view(bef2_relax, repeat=(2, 2, 2))
 
 lif_relax.write("LiF_aimd_relaxed.xyz")
 bef2_relax.write("BeF2_aimd_relaxed.xyz")
@@ -269,7 +269,7 @@ print(f"Step 2: NVT pre-thermalisation  T={TEMPERATURE} K  steps={N_EQUIL}")
 print("=" * 60)
 
 mix = stack(lif_relax, bef2_relax, maxstrain=1, distance=2.5)
-mix.calc = relax(mix, hse_params, fmax=0.01, fixcell=True,
+mix.calc = relax(mix, pbe_params, fmax=0.01, fixcell=True,
                  logname='mix_relax.log', gpwname='mix_relax.gpw')
 view(mix, repeat=(2, 2, 2))
 

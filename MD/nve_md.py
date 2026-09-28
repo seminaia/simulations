@@ -25,7 +25,6 @@ collect_interval = 10            # collect data every this many steps
 traj_output = 'nve_check.traj'    # optional trajectory file
 plot_output = 'nve_energy_drift.png'
 
-
 atoms.calc = calc
 
 # Optionally view the structure

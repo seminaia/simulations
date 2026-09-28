@@ -54,7 +54,7 @@ import pandas as pd
 # ----------------------------------------------------------------------
 # Edit these to change what runs when no CLI flags are given. Any of them
 # can still be overridden on the command line, e.g. `--elements all`.
-DEFAULT_ELEMENTS = "Al,Sn,Cu,Y,Zr,Ca,Cr"   # comma-separated symbols, or "all"
+DEFAULT_ELEMENTS = "Al,Sn,Cu,Y,Zr,Ca,Cr,W,Mo,Co,Ni"   # comma-separated symbols, or "all"
 DEFAULT_TEMP_C = 1000.0                      # °C for Richardson lines / P_eq marks
 DEFAULT_PRESSURE_PA = 101325.0               # Pa, global partial pressure shift
 DEFAULT_FAMILIES = "oxides,carbides,hydrides,sulfides"

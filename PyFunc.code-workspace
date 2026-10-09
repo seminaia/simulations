@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "PyFunc"
+		},
+		{
+			"name": "simulations",
+			"path": "."
+		}
+	],
+	"settings": {
+		"[latex]": {
+			"editor.defaultFormatter": "James-Yu.latex-workshop"
+		}
+	}
+}

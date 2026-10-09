@@ -29,87 +29,8 @@ from gpaw import GPAW, PW, restart
 import pickle
 from ase.filters import FrechetCellFilter
 from ase.optimize import BFGS, QuasiNewton
-# ── Relaxation helper ─────────────────────────────────────────────────────────
-def relax(
-    atoms: Atoms,
-    calculator_params: Dict[str, Any],
-    fmax: float = 0.01,
-    fixcell: bool = True,
-    logname: str = 'opt.log',
-    trajname: str | None = None,
-    gpwname: str = 'rlx.gpw',
-) -> Atoms:
-    orig_atoms = atoms
-    done_file = gpwname.replace('.gpw', '.traj')
-    if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
-        try:
-            atoms, _ = restart(gpwname)
-            if len(atoms) != len(orig_atoms):
-                print(f"Cached GPW has {len(atoms)} atoms but current structure has {len(orig_atoms)}. Starting fresh.")
-                atoms = orig_atoms
-            atoms.calc = GPAW(**calculator_params)
-            print(f"Restarted positions from {gpwname}")
-        except Exception as e:
-            print(f"Restart failed ({e}), starting fresh.")
-            atoms.calc = GPAW(**calculator_params)
-    else:
-        atoms.calc = GPAW(**calculator_params)
-        print("Starting fresh calculation")
-    opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
-    print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/Å")
-    bfgs = BFGS(opt_atoms, logfile=logname, trajectory=trajname)
-        
-    def _relax_log():
-        raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
-        fmax_cur = float(np.max(np.linalg.norm(raw.get_forces(), axis=1)))
-        epot = raw.get_potential_energy() / len(raw)
-        print(f"[{datetime.now():%H:%M:%S}]  relax step {bfgs.nsteps:4d}  "
-              f"Epot={epot:.4f} eV/atom  fmax={fmax_cur:.4f} eV/Å")
-        
-    bfgs.attach(_relax_log, interval=1)
-    bfgs.run(fmax=fmax, steps=500)
-    if isinstance(opt_atoms, FrechetCellFilter):
-        opt_atoms = opt_atoms.atoms
-    try:
-        opt_atoms.calc.write(gpwname, mode='all')
-        print(f"Saved to {gpwname}")
-    except Exception as e:
-        print(f"Warning: could not save state: {e}")
-    ase_write(done_file, opt_atoms)
-    print(f"Converged structure saved to {done_file}")
-    forces = opt_atoms.get_forces()
-    print(f"Max force: {np.max(np.linalg.norm(forces, axis=1)):.6f} eV/Å")
-    relaxed = opt_atoms
-
-    orig_atoms.set_cell(relaxed.get_cell(), scale_atoms=False)
-    orig_atoms.set_positions(relaxed.get_positions())
-    cell = relaxed.cell.cellpar()
-    print(f"""  Lattice: a={cell[0]:.4f} b={cell[1]:.4f} c={cell[2]:.4f} Å,
-          α={cell[3]:.2f} β={cell[4]:.2f} γ={cell[5]:.2f}° Volume={relaxed.get_volume():.2f} Å³""")
-    return relaxed
 
 
-base_params = {
-    "convergence": {"density": 1e-4,
-                    "eigenstates": 1e-8,
-                    "energy": 1e-6, 
-                    "forces": 1e-4},
-    "eigensolver": {"name": "cg", 
-                    "niter": 5},
-    "maxiter": 500,
-    "mixer": {"backend": "pulay", 
-              "beta": 0.1,
-              "method": "fullspin",
-              "nmaxold": 5,
-              "weight": 100},
-    "mode": {"ecut": 520, "name": "pw"},
-    "nbands": "nao",
-    "symmetry": "off",
-    "occupations": {"name": "fermi-dirac",
-                    "width": 0.01},
-    "txt": None,  # Will be set per material
-    "xc": "PBE"
-}
 w_params = base_params.copy()
 w_params["txt"] = "W_rlx.txt"
 w_params["occupations"] = {"name": "fermi-dirac", "width": 0.1}
@@ -139,20 +60,10 @@ si_rlx_atoms = relax(si_atoms,
 if isinstance(si_rlx_atoms, FrechetCellFilter):
     si_rlx_atoms = si_rlx_atoms.atoms
 
-#lno_rlx_atoms = relax(LNO_atoms, 
-#                           calculator_params,
-#                           fmax=0.01,
-#                           fixcell=False, 
-#                           logname='lno_opt.log',
-#                           trajname='lno_opt.traj',
-#                           gpwname='lno_rlx.gpw')
-#view(lno_rlx_atoms, repeat=(2, 2, 2))
-#if isinstance(lno_rlx_atoms, FrechetCellFilter):
-#    lno_rlx_atoms = lno_rlx_atoms.atoms
+
 print("Calculating potential energy...")
 print(f"Potential energy of W: {w_rlx_atoms.get_potential_energy():.3f} eV")
 print(f"Potential energy of Si: {si_rlx_atoms.get_potential_energy():.3f} eV")
-#print(f"Potential energy of La2NiO4: {lno_rlx_atoms.get_potential_energy():.3f} eV")
 LiF_atoms = Atoms('LiF', positions=[[0, 0, 0], [1.5, 1.5, 1.5]], cell=[3, 3, 3], pbc=True)
 LiF_atoms.calc = GPAW(**base_params)
 LiF_atoms.get_potential_energy()  

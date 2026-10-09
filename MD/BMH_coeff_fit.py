@@ -1,24 +1,20 @@
 """
-Born-Mayer-Huggins potential fitting using GPAW DFT
+Born-Mayer-Huggins-Fume-Toshi potential fitting using GPAW DFT
 ====================================================
 Fits BMH short-range parameters (A, ρ, C, D) for each ion pair
-in LiF·BeF₂+H by scanning dimer energies with GPAW PBE/PW.
-
   Full BMH potential (LAMMPS born/coul/long):
       V(r) = A·exp((σ−r)/ρ) − C/r⁶ + D/r⁸   +   k·q₁·q₂/r
-             └──────────── short-range ───────┘   └─ Ewald ─┘
+             Born-Mayer-Huggins + Lennards-Jones + coulombic interactions
 
   pair_coeff i j  A(eV)  ρ(Å)  σ(Å)  C(eV·Å⁶)  D(eV·Å⁸)
     σ = contact/collision diameter (Å); sets the energy scale of the repulsion
 
 Method (reference subtraction):
   E_sr(r) = [E_DFT(r) − E_DFT(r_max)] − k·q₁q₂·(1/r − 1/r_max)
-
-  Removes the ionic-state asymptote (E_DFT → -(IE−EA) ≠ 0 for Li-F, Be-F),
-  so E_sr → 0 at r_max. Fit pure BMH to E_sr; parameters go directly to LAMMPS.
+  Fit pure BMH to E_sr; parameters go directly to LAMMPS.
   σ is fixed from Shannon ionic radii; A is back-computed as A = B·exp(−σ/ρ).
 
-Cation–cation pairs (Li–Li, Li–Be, Be–Be, H–H, H–Li, H–Be)
+Cation–cation pairs 
 are purely Coulombic → A = C = D = 0 in LAMMPS.
 """
 import os
@@ -30,51 +26,47 @@ from scipy.optimize import curve_fit
 from scipy.constants import epsilon_0, e
 from ase.units import eV, Ang, Bohr
 from ase import Atoms
-from gpaw import GPAW, PW, FermiDirac, Mixer
-from gpaw_helpers import relax, assign_magmoms, pbe_params, mgga_params, hse_params
+from gpaw import GPAW
+from gpaw_helpers import relax, assign_magmoms, pbe_params, mgga_params, hse_params, lcy_pbe_params
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 # Ionic charges (must match LAMMPS charge_map in classical_md.py)
-CHARGES = {'Li': +1.0, 'Be': +2.0, 'F': -1.0, 'H': +1.0}
+CHARGES = {'Na': +1.0, 'Al': +3.0, 'F': -1.0}
 
 # LAMMPS type ordering — must match specorder in classical_md.py
-SPECORDER = ['Li', 'Be', 'F', 'H']
+SPECORDER = ['Na', 'Al', 'F']
 
 # Pairs that need short-range DFT scanning.
-# H⁺ (proton, q=+1): only H–F has meaningful short-range interaction.
-# All cation–cation pairs are purely Coulombic → not listed here. 
 
 SCAN_PAIRS = {
-    ('Li', 'F'): (0, 0),
-    ('Be', 'F'): (0, 1),
-    ('F',  'F'): (0, 0),
-    ('H',  'F'): (0, 0),
+    ('Na', 'F'): (0, 1),
+    ('Al', 'F'): (0, 1),
+    ('F',  'F'): (0, 1),
+    ('Na', 'Na'): (0, 1),
+    ('Na', 'Al'): (0, 1),
+    ('Al', 'Al'): (0, 1),
 }
 
 # Contact distance σ (Å) per pair — sum of Shannon ionic radii (6-coord).
 # σ is fixed during fitting; only B = A·exp(σ/ρ) and ρ are free parameters.
 # After fitting, A is recovered via A = B·exp(−σ/ρ).
-# Shannon radii (Å): Li⁺=0.76, Be²⁺=0.45, F⁻=1.33, H⁺≈0 (bare proton).
+# Shannon radii (Å): Na⁺=1.10, Al³⁺=0.53, F⁻=1.14.
 SIGMA_CONTACT = {
-    ('Li', 'F'):  2.09,   # Li⁺(0.76) + F⁻(1.33)
-    ('Be', 'F'):  1.78,   # Be²⁺(0.45) + F⁻(1.33)
-    ('F',  'F'):  2.66,   # F⁻(1.33) + F⁻(1.33)
-    ('H',  'F'):  1.33,   # H⁺(≈0) + F⁻(1.33)
+    ('Na', 'F'):  2.24,   # Na⁺(1.10) + F⁻(1.14)
+    ('Al', 'F'):  1.67,   # Al³⁺(0.53) + F⁻(1.14)
+    ('F',  'F'):  2.28,   # F⁻(1.14) + F⁻(1.14)
+    ('Na', 'Na'):  2.20,   # Na⁺(1.10) + Na⁺(1.10)
+    ('Na', 'Al'):  1.63,   # Na⁺(1.10) + Al³⁺(0.53)
+    ('Al', 'Al'):  1.06,   # Al³⁺(0.53) + Al³⁺(0.53)
 }
 
 MAGMOMS = {
-    ('Li', 'F'): [0,0],
-    ('Be', 'F'): [0,1],
+    ('Na', 'F'): [0,0],
+    ('Al', 'F'): [0,1],
     ('F',  'F'): [0,0],
-    ('H',  'F'): [0,0],  
 }
 
-IONIZATION_POTENTIAL = {
-    ('Li', 'F'): 11.3,
-    ('Be', 'F'): 9.3,
-    ('F',  'F'): 15.7,
-    ('H',  'F'): 16.3,
-}
+
 SIGMA_DEFAULT = 1.0   # Å fallback for pairs not in SIGMA_CONTACT
 
 # r grid for dimer scan — expressed as fractions of the pair's contact distance σ
@@ -85,7 +77,7 @@ N_R        = 7     # number of separation points per pair
 
 # GPAW plane-wave settings
 ECUT_EV =500   # eV
-VACUUM  = 6.0 * Ang   # Å vacuum on each side of the dimer
+VACUUM  = 3.0 * Ang   # Å vacuum on each side of the dimer
 
 # Coulomb constant  k_e  in eV·Å  (= e/(4πε₀) in SI, converted to eV·Å)
 K_COULOMB = e * 1e10 / (4 * np.pi * epsilon_0)
@@ -106,15 +98,15 @@ def dimer_atoms(sym1, sym2, r, magmoms=None, vacuum=VACUUM):
 def get_energy(atoms, log_tag, hunds=False):
     """Return potential energy (eV), loading from .gpw checkpoint if available."""
     import os
-    gpw_file = f'gpaw_{log_tag}.gpw'
+    gpw_file = f'{log_tag}.gpw'
     if os.path.exists(gpw_file) and os.path.getsize(gpw_file) > 0:
         print(f"    Loading from checkpoint: {gpw_file}")
         calc = GPAW(gpw_file)
         atoms.calc = calc
         return calc.get_potential_energy(atoms), calc.get_homo_lumo()
-    #bulk_pbe_params = pbe_params(txt=f'gpaw_{log_tag}.txt')
-    bulk_mgga_params = mgga_params(txt=f'gpaw_{log_tag}.txt')
-    calc = GPAW(**bulk_mgga_params)
+    bulk_pbe_params = lcy_pbe_params(txt=f'{log_tag}.txt')
+    #bulk_mgga_params = mgga_params(txt=f'{log_tag}.txt')
+    calc = GPAW(**bulk_pbe_params)
     atoms.calc = calc
     energy = calc.get_potential_energy(atoms)
     e_homo, e_lumo = calc.get_homo_lumo()
@@ -292,10 +284,9 @@ def main():
         r_lo = max(R_FRAC_MIN * sigma_pair, R_ABS_MIN)
         r_hi = R_FRAC_MAX * sigma_pair
         r_values = np.linspace(r_lo, r_hi, N_R)
-        IP = IONIZATION_POTENTIAL.get(pair, IONIZATION_POTENTIAL.get((sym2, sym1), None))
         magmoms = MAGMOMS.get(pair, MAGMOMS.get((sym2, sym1), (0, 0)))
         print(f"\n{'='*60}")
-        print(f"Pair  {sym1}–{sym2}  Ionization potential: {IP:.1f} eV" 
+        print(f"Pair  {sym1}–{sym2}  "
               f"(q₁={CHARGES.get(sym1,0):+.0f}, q₂={CHARGES.get(sym2,0):+.0f})  "
               f"σ={sigma_pair:.3f} Å  r=[{r_lo:.2f}, {r_hi:.2f}] Å, "
               f"Cutoff: {ECUT_EV} eV")
@@ -353,6 +344,7 @@ def main():
         plt.title(f'Fit for {sym1}–{sym2}')
         plt.legend(fontsize=7)
         plt.savefig(f'BMH_fit_{sym1}_{sym2}.png', dpi=300)
+        plt.show()
 
     # ── LAMMPS pair_coeff table ───────────────────────────────────────────────
     # pair_style born/coul/long: pair_coeff i j  A  rho  sigma  C  D

@@ -1,7 +1,4 @@
 """
-Shared GPAW helpers for TiO2 defect workflows.
-
-Used by: defect_tio2.py, comp_phases.py
 """
 
 import os
@@ -17,7 +14,7 @@ from ase.io import write as ase_write
 from ase.optimize import BFGS
 from ase.units import Bohr
 from gpaw import GPAW, restart
-
+from gpaw.poisson import PoissonSolver
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
@@ -52,6 +49,7 @@ def relax(
     gpwname: str = 'rlx.gpw',
 ) -> Atoms:
     orig_atoms = atoms
+    orig_atoms.center(vacuum=6.0)
     struct_out = gpwname.replace('.gpw', '.traj')
 
     if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
@@ -72,7 +70,6 @@ def relax(
     opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
     print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/A")
     bfgs = BFGS(opt_atoms, logfile=logname, trajectory=trajname)
-
     def _log():
         raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
         fmax_cur = float(np.max(np.linalg.norm(opt_atoms.get_forces(), axis=1)))
@@ -113,7 +110,8 @@ ECUT_EV = 520
 SCREEN = 0.2 * Bohr  # HSE06 screening (A^-1)
 
 BASE_PARAMS = {
-    "eigensolver": {"name": "dav", "niter": 5},
+    "eigensolver": {"name": "davidson", "niter": 5},
+    "h": 0.25,
     "maxiter": 1000,
     "mixer": {"backend": "pulay", "beta": 0.05, "method": "difference", "nmaxold": 5, "weight": 50.0},
     "mode": {"name": "pw", "ecut": ECUT_EV},
@@ -126,16 +124,27 @@ BASE_PARAMS = {
 def pbe_params(**overrides) -> Dict[str, Any]:
     p = BASE_PARAMS.copy()
     p["convergence"] = {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-4}
-    p["xc"] = "PBE"
+    p["xc"] = f"PBE"
     p["kpts"] = {"gamma": True, "density": 2.5}
     p.update(overrides)
     return p
 
+def lcy_pbe_params(**overrides) -> Dict[str, Any]:
+    p = BASE_PARAMS.copy()
+    p["eigensolver"] = {"name": "rmm-diis", "niter": 5}
+    p["convergence"] = {"density": 1e-8, "eigenstates": 1e-10, "energy": 1e-6, "forces": 1e-4}
+    p["xc"] = f"LCY-PBE:omega=0.75"
+    p["kpts"] = {"gamma": True}
+    p["parallel"] = {"sl_auto": True, "augment_grids": True}
+    p["mode"] = {"name": "fd"}
+    p["poissonsolver"] = PoissonSolver(use_charge_center=True)
+    p.update(overrides)
+    return p
 
 def mgga_params(**overrides) -> Dict[str, Any]:
     p = BASE_PARAMS.copy()
     p["convergence"] = {"density": 1e-6, "eigenstates": 1e-8, "energy": 1e-4, "forces": 1e-2}
-    p["xc"] = "MGGA_X_R2SCAN+MGGA_C_R2SCAN"
+    p["xc"] = "HYB_MGGA_XC_R2SCAN0"
     p["kpts"] = {"gamma": True, "density": 1.5}
     p.update(overrides)
     return p

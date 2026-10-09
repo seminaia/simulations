@@ -34,7 +34,9 @@ from ase.optimize import BFGS
 from ase.units import Bohr
 from ase.visualize import view
 from ase.spacegroup import crystal
-from gpaw import GPAW, restart
+from gpaw import GPAW
+from gpaw_helpers import relax, lcy_pbe_params
+
 
 # ── Parameters ────────────────────────────────────────────────────────────────
 TEMPERATURE  = 1200        # K
@@ -49,10 +51,10 @@ SUPERCELL    = 1
 SCREEN       = 0.2 * Bohr
 
 # ── File names ────────────────────────────────────────────────────────────────
-LIF_GPW_FILE   = "LiF_aimd_relax.gpw"
-LIF_RLX_LOG    = "LiF_aimd_relax_opt.log"
-BEF2_GPW_FILE  = "BeF2_aimd_relax.gpw"
-BEF2_RLX_LOG   = "BeF2_aimd_relax_opt.log"
+NAF_GPW_FILE   = "NaF_aimd_relax.gpw"
+NAF_RLX_LOG    = "NaF_aimd_relax_opt.log"
+ALF3_GPW_FILE  = "AlF3_aimd_relax.gpw"
+ALF3_RLX_LOG   = "AlF3_aimd_relax_opt.log"
 
 MIX_TRAJ_EQUIL = "nvt_mix_equil.traj"
 MIX_LOG_EQUIL  = "nvt_mix_equil.log"
@@ -83,122 +85,39 @@ print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] Logging to {PROGRESS_LOG}  —  tai
 
 # ── Build structures ──────────────────────────────────────────────────────────
 print("=" * 60)
-print("Building LiF and BeF2 supercells")
+print("Building NaF and AlF3 supercells")
 print("=" * 60)
-charges = {'Be':2, 'F':-1, 'Li':1}
-magmoms = {'Be': 1, 'F':-1,'Li':1}
-a_bef2 = 4.67
-c_bef2 = 5.18
-bef2_cell =[(a_bef2, 0, 0),
-             (-a_bef2/2, a_bef2*np.sqrt(3)/2, 0),
-             (0, 0, c_bef2)]
-lif_atoms  = bulk('LiF', crystalstructure='rocksalt', a=3.97, cubic=True)
-lif_atoms: Atoms = lif_atoms.repeat([1, 1, 3])  # 8 → 24 atoms = 12 formula units
-lif_charges = [charges[s] for s in lif_atoms.get_chemical_symbols()]
-lif_magmoms = [magmoms[s] for s in lif_atoms.get_chemical_symbols()]
-lif_atoms.set_initial_charges(lif_charges)
-lif_atoms.set_initial_magnetic_moments(lif_magmoms)
-lif_cell_params = lif_atoms.cell.cellpar()
-
-bef2_atoms = crystal('BeF2', basis=[(0.465848, 0, 1/3), (0.41116, 0.277282, 0.222273)], spacegroup=152, cellpar = [a_bef2,a_bef2,c_bef2,90,90,120], pbc=True)
-bef2_atoms: Atoms = bef2_atoms.repeat((1,1,2))
-bef2_charges = [charges[s] for s in bef2_atoms.get_chemical_symbols()]
-bef2_magmoms = [magmoms[s] for s in bef2_atoms.get_chemical_symbols()]
-bef2_atoms.set_initial_charges(bef2_charges)
-bef2_atoms.set_initial_magnetic_moments(bef2_magmoms)
-bef2_cell_params = bef2_atoms.cell.cellpar()
+charges = {'Al':3, 'F':-1, 'Na':1}
+magmoms = {'Al': 1, 'F':-1,'Na':1}
+a_naf = 4.57
+naf_crystal = crystal('NaF',basis=[(0,0,0),(0,0,0.5)],spacegroup=225,cellpar=[a_naf, a_naf, a_naf, 90, 90, 90],pbc=False,size=(1, 1, 1))
+naf_charges = [charges[s] for s in naf_crystal.get_chemical_symbols()]
+naf_magmoms = [magmoms[s] for s in naf_crystal.get_chemical_symbols()]
+naf_crystal.set_initial_charges(naf_charges)
+naf_crystal.set_initial_magnetic_moments(naf_magmoms)
+naf_cell_params = naf_crystal.cell.cellpar()
+view(naf_crystal)
+a_alf3 = 4.87
+c_alf3 = 12.47
+alf3_crystal = crystal("AlF3", basis=[(1/3,2/3,2/3),(1/3,0.254145,0.416667)], spacegroup=167, cellpar=[a_alf3, a_alf3, c_alf3, 90, 90, 120], pbc=False, size=(1, 1, 1))
+alf3_charges = [charges[s] for s in alf3_crystal.get_chemical_symbols()]
+alf3_magmoms = [magmoms[s] for s in alf3_crystal.get_chemical_symbols()]
+alf3_crystal.set_initial_charges(alf3_charges)
+alf3_crystal.set_initial_magnetic_moments(alf3_magmoms)
+alf3_cell_params = alf3_crystal.cell.cellpar()
+view(alf3_crystal)
 
 print(f"""
-LiF  : {len(lif_atoms)} atoms  a={lif_cell_params[0]:.2f} b={lif_cell_params[1]:.2f} c={lif_cell_params[2]:.2f},
-        alpha={lif_cell_params[3]:.2f} beta={lif_cell_params[4]:.2f} gamma={lif_cell_params[5]:.2f},
-        initial Volumes: {lif_atoms.get_volume():.2f} Å³, 
-        Chemical Symbol Order: {lif_atoms.get_chemical_symbols()},
-        initial magmoms:       {lif_atoms.get_initial_magnetic_moments()},
-        initial charges:       {lif_atoms.get_initial_charges()}""")
+NaF  : {len(naf_crystal)} atoms  a={naf_cell_params[0]:.2f} b={naf_cell_params[1]:.2f} c={naf_cell_params[2]:.2f},
+        alpha={naf_cell_params[3]:.2f} beta={naf_cell_params[4]:.2f} gamma={naf_cell_params[5]:.2f},
+        initial Volumes: {naf_crystal.get_volume():.2f} Å³,
+""")
 print(f"""
-BeF2 : {len(bef2_atoms)} atoms  a={bef2_cell_params[0]:.2f} b={bef2_cell_params[1]:.2f} c={bef2_cell_params[2]:.2f},
-        alpha={bef2_cell_params[3]:.2f} beta={bef2_cell_params[4]:.2f} gamma={bef2_cell_params[5]:.2f},
-        initial Volumes: {bef2_atoms.get_volume():.2f} Å³,
-        Chemical Symbol Order: {bef2_atoms.get_chemical_symbols()},
-        initial magmoms:       {bef2_atoms.get_initial_magnetic_moments()},
-        initial charges:       {bef2_atoms.get_initial_charges()}"""
-)
+AlF3 : {len(alf3_crystal)} atoms  a={alf3_cell_params[0]:.2f} b={alf3_cell_params[1]:.2f} c={alf3_cell_params[2]:.2f},
+        alpha={alf3_cell_params[3]:.2f} beta={alf3_cell_params[4]:.2f} gamma={alf3_cell_params[5]:.2f},
+        initial Volumes: {alf3_crystal.get_volume():.2f} Å³,
+        )""")
 
-# ── GPAW calculator factory ───────────────────────────────────────────────────
-def make_gpaw(txt='-', screen=SCREEN, ecut=ECUT_EV, hund=False) -> GPAW:
-    return GPAW(
-        convergence={"density": 1e-5, "eigenstates": 1e-7, "energy": 1e-4},
-        eigensolver={"name": "dav", "niter": 5},
-        hund=hund,
-        kpts=KPTS,
-        maxiter=1000,
-        mixer={"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
-        mode={"name": "pw", "ecut": ecut},
-        nbands="nao",
-        occupations={"name": "fermi-dirac", "width": 0.1},
-        parallel={"sl_auto": True, "augment_grids": True, "band": 2},
-        txt=txt,
-        xc={"name": "HYB_GGA_XC_HSE06", "omega": screen, "fraction": 0.25},
-    )
-
-# ── Relaxation helper ─────────────────────────────────────────────────────────
-def relax(
-    atoms: Atoms,
-    calculator_params: Dict[str, Any],
-    fmax: float = 0.01,
-    fixcell: bool = True,
-    logname: str = 'opt.log',
-    trajname: str | None = None,
-    gpwname: str = 'rlx.gpw',
-) -> Atoms:
-    orig_atoms = atoms
-    done_file = gpwname.replace('.gpw', '.traj')
-    if os.path.exists(gpwname) and os.path.getsize(gpwname) > 100:
-        try:
-            atoms, _ = restart(gpwname)
-            if len(atoms) != len(orig_atoms):
-                print(f"Cached GPW has {len(atoms)} atoms but current structure has {len(orig_atoms)}. Starting fresh.")
-                atoms = orig_atoms
-            atoms.calc = GPAW(**calculator_params)
-            print(f"Restarted positions from {gpwname}")
-        except Exception as e:
-            print(f"Restart failed ({e}), starting fresh.")
-            atoms.calc = GPAW(**calculator_params)
-    else:
-        atoms.calc = GPAW(**calculator_params)
-        print("Starting fresh calculation")
-    opt_atoms = atoms if fixcell else FrechetCellFilter(atoms)
-    print(f"Relaxation mode: {'fixed cell' if fixcell else 'variable cell'}  fmax={fmax} eV/Å")
-    bfgs = BFGS(opt_atoms, logfile=logname, trajectory=trajname)
-        
-    def _relax_log():
-        raw = opt_atoms.atoms if isinstance(opt_atoms, FrechetCellFilter) else opt_atoms
-        fmax_cur = float(np.max(np.linalg.norm(raw.get_forces(), axis=1)))
-        epot = raw.get_potential_energy() / len(raw)
-        print(f"[{datetime.now():%H:%M:%S}]  relax step {bfgs.nsteps:4d}  "
-              f"Epot={epot:.4f} eV/atom  fmax={fmax_cur:.4f} eV/Å")
-        
-    bfgs.attach(_relax_log, interval=1)
-    bfgs.run(fmax=fmax, steps=500)
-    if isinstance(opt_atoms, FrechetCellFilter):
-        opt_atoms = opt_atoms.atoms
-    try:
-        opt_atoms.calc.write(gpwname, mode='all')
-        print(f"Saved to {gpwname}")
-    except Exception as e:
-        print(f"Warning: could not save state: {e}")
-    ase_write(done_file, opt_atoms)
-    print(f"Converged structure saved to {done_file}")
-    forces = opt_atoms.get_forces()
-    print(f"Max force: {np.max(np.linalg.norm(forces, axis=1)):.6f} eV/Å")
-    relaxed = opt_atoms
-
-    orig_atoms.set_cell(relaxed.get_cell(), scale_atoms=False)
-    orig_atoms.set_positions(relaxed.get_positions())
-    cell = relaxed.cell.cellpar()
-    print(f"""  Lattice: a={cell[0]:.4f} b={cell[1]:.4f} c={cell[2]:.4f} Å,
-          α={cell[3]:.2f} β={cell[4]:.2f} γ={cell[5]:.2f}° Volume={relaxed.get_volume():.2f} Å³""")
-    return relaxed
 
 
 def diffusion_cm2s(msd, time_ps):
@@ -269,71 +188,27 @@ print("\n" + "=" * 60)
 print("Step 1: Geometry relaxation (BFGS, fmax=0.01 eV/Å)")
 print("=" * 60)
 
-pbe_params = {
-    "convergence": {"density":1e-8, "eigenstates":1e-10, "energy": 1e-6, "forces":1e-4},
-    "eigensolver": {"name": "dav", "niter": 5},
-    "kpts": {"gamma": True, "size": KPTS},
-    "maxiter": 1000,
-    "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
-    "mode": {"name": "pw", "ecut": ECUT_EV},
-    "nbands": "nao",
-    "parallel": {"sl_auto": True, "augment_grids": True},
-<<<<<<< HEAD
-    "occupations": {"name": "fermi-dirac", "width": 0.01},
-=======
-    "occupations": {"name": "fermi-dirac", "width": 0.1},
->>>>>>> 82602b2512afa3360ad53e137ef1b2d35730b51f
-    "txt": "pbe_relax.log",
-    "xc": "PBE",
-}
-hse_params = {
-    "convergence": {"density": 1e-6, "eigenstates": 1e-8, "energy": 1e-4, "forces": 1e-2},
-    "eigensolver": {"name": "dav", "niter": 5},
-    "kpts": {"gamma": True, "size": (1, 1, 1)},
-    "maxiter": 1000,
-    "mixer": {"backend": "pulay", "beta": 0.25, "method": "fullspin", "nmaxold": 5, "weight": 50.0},
-    "mode": {"name": "pw", "ecut": ECUT_EV},
-    "nbands": "nao",
-<<<<<<< HEAD
-    "occupations": {"name": "fermi-dirac", "width": 0.01},
-    "parallel": {"sl_auto": True, "augment_grids": True},
-=======
-    "occupations": {"name": "fermi-dirac", "width": 0.1},
-    "parallel": {"sl_auto": True, "augment_grids": True, "band": 2},
->>>>>>> 82602b2512afa3360ad53e137ef1b2d35730b51f
-    "txt": "hse_relax.log",
-    "xc": {"name": "HYB_GGA_XC_HSE06", "omega": SCREEN, "fraction": 0.25, "backend": "pw"},
-}
-
-mix_params = pbe_params.copy()
-mix_params["txt"] = "mix_relax.log"
-mix_params["mode"] = "fd"
-mix_params["kpts"] = (1, 1, 1)
-mix_params["eigensolver"] = "cg"
-mix_params["mixer"] = {"backend": "pulay", "beta": 0.25, "method": "separate", "nmaxold": 5, "weight": 50.0}
-mix_params["parallel"] = {"sl_auto": True, "augment_grids": True}
-
-lif_relax  = relax(lif_atoms,  pbe_params, fmax=0.01, fixcell=False,
-                   logname=LIF_RLX_LOG, gpwname=LIF_GPW_FILE)
-view(lif_relax, repeat=(2, 2, 2))
-lif_relax.write("LiF_aimd_relaxed.xyz")
-lif_relax_cellparams = lif_relax.cell.cellpar()
+naf_relax  = relax(naf_crystal,  lcy_pbe_params(txt="naf_relax.txt"), fmax=0.01, fixcell=False,
+                   logname=NAF_RLX_LOG, gpwname=NAF_GPW_FILE)
+view(naf_relax, repeat=(2, 2, 2))
+naf_relax.write("NaF_aimd_relaxed.xyz")
+naf_relax_cellparams = naf_relax.cell.cellpar()
 print(f"""
-Relaxed LiF  Epot = {lif_relax.get_potential_energy()/len(lif_relax):.4f} eV/atom
-       a= {lif_relax_cellparams[0]:.2f}, b={lif_relax_cellparams[1]:.2f}, c={lif_relax_cellparams[2]:.2f}, 
-       alpha={lif_relax_cellparams[3]:.2f}, beta={lif_relax_cellparams[4]:.2f}, gamma = {lif_relax_cellparams[5]:.2f}
-       Relaxed Volume = {lif_relax.get_volume():.2f} Å³ """)
+Relaxed NaF  Epot = {naf_relax.get_potential_energy()/len(naf_relax):.4f} eV/atom
+       a= {naf_relax_cellparams[0]:.2f}, b={naf_relax_cellparams[1]:.2f}, c={naf_relax_cellparams[2]:.2f}, 
+       alpha={naf_relax_cellparams[3]:.2f}, beta={naf_relax_cellparams[4]:.2f}, gamma = {naf_relax_cellparams[5]:.2f}
+       Relaxed Volume = {naf_relax.get_volume():.2f} Å³ """)
 
-bef2_relax = relax(bef2_atoms, pbe_params, fmax=0.01, fixcell=False,
-                   logname=BEF2_RLX_LOG, gpwname=BEF2_GPW_FILE)
-view(bef2_relax, repeat=(2, 2, 2))
-bef2_relax.write("BeF2_aimd_relaxed.xyz")
-bef2_relax_cellparams = bef2_relax.cell.cellpar()
+alf3_relax = relax(alf3_crystal, lcy_pbe_params(txt="alf3_relax.txt"), fmax=0.01, fixcell=False,
+                   logname=ALF3_RLX_LOG, gpwname=ALF3_GPW_FILE)
+view(alf3_relax, repeat=(2, 2, 2))
+alf3_relax.write("AlF3_aimd_relaxed.xyz")
+alf3_relax_cellparams = alf3_relax.cell.cellpar()
 print(f""" 
-Relaxed BeF2  Epot = {bef2_relax.get_potential_energy()/len(bef2_relax):.4f} eV/atom
-       a= {bef2_relax_cellparams[0]:.2f}, b={bef2_relax_cellparams[1]:.2f}, c={bef2_relax_cellparams[2]:.2f}, 
-       alpha={bef2_relax_cellparams[3]:.2f}, beta={bef2_relax_cellparams[4]:.2f}, gamma = {bef2_relax_cellparams[5]:.2f}
-       Relaxed Volume = {bef2_relax.get_volume()} Å³
+Relaxed AlF3  Epot = {alf3_relax.get_potential_energy()/len(alf3_relax):.4f} eV/atom
+       a= {alf3_relax_cellparams[0]:.2f}, b={alf3_relax_cellparams[1]:.2f}, c={alf3_relax_cellparams[2]:.2f}, 
+       alpha={alf3_relax_cellparams[3]:.2f}, beta={alf3_relax_cellparams[4]:.2f}, gamma = {alf3_relax_cellparams[5]:.2f}
+       Relaxed Volume = {alf3_relax.get_volume()} Å³
        """)
 
 # ── Step 2: NVT equilibration ─────────────────────────────────────────────────
@@ -341,10 +216,8 @@ print("\n" + "=" * 60)
 print(f"Step 2: NVT equilibration  T={TEMPERATURE} K  steps={N_EQUIL}")
 print("=" * 60)
 
-mix = stack(lif_relax, bef2_relax, maxstrain=1, distance=2.5)
-mix.calc = GPAW(**mix_params)
+mix = stack(naf_relax, alf3_relax, maxstrain=1, distance=2.5)
 view(mix, repeat=(2, 2, 2))
-
 MaxwellBoltzmannDistribution(mix, temperature_K=TEMPERATURE)
 Stationary(mix)
 ZeroRotation(mix)

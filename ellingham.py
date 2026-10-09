@@ -54,7 +54,7 @@ import pandas as pd
 # ----------------------------------------------------------------------
 # Edit these to change what runs when no CLI flags are given. Any of them
 # can still be overridden on the command line, e.g. `--elements all`.
-DEFAULT_ELEMENTS = "Al,Sn,Cu,Y,Zr,Ca,Cr,W,Mo,Co,Ni"   # comma-separated symbols, or "all"
+DEFAULT_ELEMENTS = "Al,Sn,Sb,Cu,Cr,W,Mo,Co,Ni"   # comma-separated symbols, or "all"
 DEFAULT_TEMP_C = 1000.0                      # °C for Richardson lines / P_eq marks
 DEFAULT_PRESSURE_PA = 101325.0               # Pa, global partial pressure shift
 DEFAULT_FAMILIES = "oxides,carbides,hydrides,sulfides"
@@ -136,7 +136,11 @@ molarmass_bin = {
 # and element. The XLS parser regenerates all XLS-backed families while
 # preserving the manually-transcribed carbides sheet.
 # ======================================================================
-DATA_WORKBOOK = Path(__file__).resolve().parent / 'data' / 'ellingham' / 'ellingham_data.xlsx'
+_DATA_DIR = Path(__file__).resolve().parent / 'data' / 'ellingham'
+DATA_WORKBOOK = next(
+    (p for ext in ('.xlsx', '.xlsm', '.xls', '.ods') if (p := _DATA_DIR / f'ellingham_data{ext}').exists()),
+    _DATA_DIR / 'ellingham_data.xlsx',
+)
 WORKBOOK_COLUMNS = ['phase_code', 'T0', 'T1', 'G0', 'G1', 'reaction', 'label_offset', 'element']
 PHASE_CODES = ('ss', 'ls', 'gs', 'sl', 'll', 'gl', 'sg', 'lg', 'gg', 'aux')
 
@@ -155,10 +159,17 @@ def empty_phase_dict():
 
 
 def load_family_phase_arrays(workbook_path, family_names):
-    """Load only the requested family sheets from the XLSX workbook."""
+    """Load only the requested family sheets from an Excel (.xlsx/.xlsm/.xls) or .ods workbook."""
     family_names = list(dict.fromkeys(family_names))
     loaded = {}
-    with pd.ExcelFile(workbook_path) as workbook:
+    workbook_path = Path(workbook_path)
+    engines = {'.xlsx': 'openpyxl', '.xlsm': 'openpyxl', '.xls': 'xlrd', '.ods': 'odf'}
+    suffix = workbook_path.suffix.lower()
+    if suffix not in engines:
+        raise ValueError(
+            f"Unsupported workbook type '{workbook_path.suffix}'; expected one of {', '.join(engines)}"
+        )
+    with pd.ExcelFile(workbook_path, engine=engines[suffix]) as workbook:
         for family in family_names:
             frame = workbook.parse(sheet_name=family)
             missing_columns = [column for column in WORKBOOK_COLUMNS if column not in frame.columns]
@@ -333,7 +344,7 @@ def plot_family(ax, phases, color, title, ylabel, compound,
     label_fontsize = 8 if len(ss_rows) <= 20 else (7 if len(ss_rows) <= 40 else 6)
     label_entries = [[float(row[0]) - 25, float(row[2]) + float(row[5]), row[4]]
                      for row in ss_rows]
-    placed = declutter_label_positions(label_entries, min_gap=30)
+    placed = declutter_label_positions(label_entries, min_gap=10)
         
     for row, (label_x, label_y, text) in zip(ss_rows, placed):
         label_x += 273.15

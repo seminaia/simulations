@@ -122,7 +122,7 @@ print(f"  Combined cell: {combined_cell}")
 #  VISUALIZE THE COMBINED STRUCTURE
 # ============================================================
 print("\nOpening visualization window...")
-view(combined_atoms)
+#view(combined_atoms)
 
 # ── Assign formal ionic charges ────────────────────────────────────────────────
 charge_map = {'Li': 1.0, 'Be': 2.0, 'F': -1.0}

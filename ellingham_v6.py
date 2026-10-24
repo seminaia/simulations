@@ -22,6 +22,8 @@ Usage:
     python ellingham_v6.py --rebuild-data                  # regenerate the clean xlsx
     python ellingham_v6.py --elements Fe --show            # open a window too
 """
+
+
 import argparse
 import re
 import sys
@@ -40,7 +42,7 @@ from ellingham_v6_data import load_clean
 # ----------------------------------------------------------------------
 # User-editable defaults (any can be overridden on the command line)
 # ----------------------------------------------------------------------
-DEFAULT_ELEMENTS = "Al,Sn,Sb,Cu,Cr,W,Mo,Co,Ni"   # comma-separated symbols, or "all"
+DEFAULT_ELEMENTS = "Al,Sn,Sb,Cu,Mo,Ni"   # comma-separated symbols, or "all"
 DEFAULT_TMAX_K = 2000.0                  # right edge of the diagram (K)
 DEFAULT_TEMP_C = 1000.0                  # temperature (°C) for the equilibrium lines/table
 R_KJ = 8.314462618e-3                    # kJ/(mol K)
@@ -163,22 +165,17 @@ def plot(reactions, curves, tmax, gas_scales=True, temp_c=None, title='Ellingham
     ax.set_xlim(LEFT_MARGIN_K, tmax)
 
     # reaction labels in the empty left-hand margin, joined to each line start
-    print('   curves drawn; placing labels...', flush=True)
     label_y = spread([e[1] for e in entries], 0.016 * (ymax - ymin))
-    print('   labels placed; annotating...', flush=True)
     for (x0, y0, text), y_l, c in zip(entries, label_y, entry_colour):
         ax.annotate(text, xy=(x0, y0), xytext=(LEFT_MARGIN_K + 10, y_l), fontsize=9,
                     color=c, ha='left', va='center', annotation_clip=False,
                     arrowprops=dict(arrowstyle='-', color=c, alpha=0.35, lw=0.5,
                                     shrinkA=1, shrinkB=0))
 
-    print(f'   ylim = ({ymin:.0f}, {ymax:.0f}); drawing nomograph...', flush=True)
     if gas_scales:
         for key in ('H', 'C', 'CO', 'CCO2', 'CO2'):
             add_reference_gas_line(ax, key, T_right=tmax)
-    print('   P(O2) scale...', flush=True)
     add_pressure_nomograph(ax, T_right=tmax, gas_plain='O2', gas_label=r'O$_2$')
-    print('   ratio scales...', flush=True)
     if gas_scales:
         add_ratio_nomograph(ax, 'H', r'$P_{H_2}/P_{H_2O}$', T_right=tmax, outward_offset=55)
         add_ratio_nomograph(ax, 'CO', r'$P_{CO}/P_{CO_2}$', T_right=tmax, outward_offset=115)
@@ -223,9 +220,7 @@ def main():
     if not args.show:
         plt.switch_backend('Agg')
 
-    print('-> Loading data (first run builds the clean workbook; can take a minute)...', flush=True)
     reactions, curves = load_clean(rebuild=args.rebuild_data)
-    print(f'-> Loaded {len(reactions)} reactions, {len(curves)} points', flush=True)
     if args.elements.lower() != 'all':
         wanted = {e.strip().capitalize() for e in args.elements.split(',') if e.strip()}
         reactions = reactions[reactions['Metal'].isin(wanted)]
@@ -237,13 +232,11 @@ def main():
     if reactions.empty:
         raise SystemExit('No reactions matched those elements.')
     curves = curves[curves['Reaction_ID'].isin(reactions['Reaction_ID'])]
-    print(f'-> {len(reactions)} reactions')
 
-    print('-> Drawing...', flush=True)
     fig = plot(reactions, curves, args.tmax, gas_scales=not args.no_gas_scales,
                temp_c=None if args.no_temp_mark else args.temp)
     print('-> Saving...', flush=True)
-    out = Path(args.out) if args.out else HERE / f'ellingham_v6_{tag}.pdf'
+    out = Path(args.out) if args.out else HERE / f'ellingham_v6.pdf'
     fig.savefig(out, dpi=300, bbox_inches='tight')
     print(f'Saved: {out}')
     if args.show:

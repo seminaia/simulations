@@ -8,7 +8,8 @@ from reaktoro import (
 )
 
 
-SEARCH_ELEMENTS = ("Sn","Fe","C","O")
+# First-pass database screening for carbon dissolved in liquid tin.
+SEARCH_ELEMENTS = ("Sn", "C", "O")
 
 
 DATABASES = [

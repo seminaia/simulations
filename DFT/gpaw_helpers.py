@@ -9,7 +9,6 @@ import sys
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List
-
 import numpy as np
 from ase import Atoms
 from ase.filters import FrechetCellFilter
@@ -26,17 +25,44 @@ sys.stderr.reconfigure(line_buffering=True)
 #  Magnetic moments
 # ---------------------------------------------------------------------------
 
+def assign_magmoms(
+    atoms: Atoms,
+    MAGMOM_MAP: Dict[str, float],
+    magnetization: str,
+    seed: int | None = 0,
+) -> None:
+    """Assign collinear initial moments for FM, AFM, NM, or PM calculations.
 
-def assign_magmoms(atoms: Atoms, MAGMOM_MAP: Dict[str, float]) -> None:
-    counters: Dict[str, int] = defaultdict(int)
+    PM uses random signs with element-specific moment magnitudes as a
+    reproducible disordered-local-moment approximation.
+    """
+    counters = defaultdict(int)
     moms: List[float] = []
-    for sym in atoms.get_chemical_symbols():
-        mag = MAGMOM_MAP.get(sym, 0.1)
-        sign = 1 if counters[sym] % 2 == 0 else -1
-        moms.append(sign * mag)
-        counters[sym] += 1
-    atoms.set_initial_magnetic_moments(moms)
 
+    magnetization = magnetization.upper()
+
+    if magnetization == 'AFM':
+        for sym in atoms.get_chemical_symbols():
+            mag = MAGMOM_MAP.get(sym, 0.1)
+            sign = 1 if counters[sym] % 2 == 0 else -1
+            moms.append(sign * mag)
+            counters[sym] += 1
+
+    elif magnetization == 'FM':
+        for sym in atoms.get_chemical_symbols():
+            mag = MAGMOM_MAP.get(sym, 0.1)
+            moms.append(mag)
+
+    elif magnetization == 'NM':
+        moms = [0.0] * len(atoms)
+    
+    elif magnetization == 'PM':
+        rng = np.random.default_rng(seed)
+        for sym in atoms.get_chemical_symbols():
+            mag = MAGMOM_MAP.get(sym, 0.0)
+            moms.append(float(rng.choice((-mag, mag))) if mag else 0.0)
+
+    atoms.set_initial_magnetic_moments(moms)
 
 # ---------------------------------------------------------------------------
 #  Relaxation
@@ -113,7 +139,7 @@ ECUT_EV = 520
 SCREEN = 0.2 * Bohr  # HSE06 screening (A^-1)
 
 BASE_PARAMS = {
-    "eigensolver": {"name": "rmm-diis", "niter": 5},
+    "eigensolver": {"name": "dav", "niter": 5},
     "maxiter": 1000,
     "mixer": {"backend": "pulay", "beta": 0.05, "method": "difference", "nmaxold": 5, "weight": 50.0},
     "mode": {"name": "pw", "ecut": ECUT_EV},

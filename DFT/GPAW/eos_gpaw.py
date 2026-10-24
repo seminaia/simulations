@@ -9,15 +9,14 @@ import matplotlib.pyplot as plt
 from ase.spacegroup import crystal
 from gpaw_helpers import assign_magmoms, mgga_params
 
-symbols = {'Fe': 'Fe'}
-magmom_map = {'Fe': 2.0}
+symbols = {'Cu': 'Cu'}
 a_bcc = 2.86
 
-print(f"\nStarting EOS scans for {symbols['Fe']}...\n")
+print(f"\nStarting EOS scans for {symbols['Cu']}...\n")
 
 # Build starting structures
 afm_bcc_atoms = crystal(
-    symbols=[symbols['Fe']],
+    symbols=[symbols['Cu']],
     basis=[(0, 0, 0)],
     spacegroup=229,
     cellpar=[a_bcc, a_bcc, a_bcc, 90, 90, 90]
@@ -25,7 +24,7 @@ afm_bcc_atoms = crystal(
 assign_magmoms(afm_bcc_atoms, magmom_map, magnetization='AFM')
 
 fm_bcc_atoms = crystal(
-    symbols=[symbols['Fe']],
+    symbols=[symbols['Cu']],
     basis=[(0, 0, 0)],
     spacegroup=229,
     cellpar=[a_bcc, a_bcc, a_bcc, 90, 90, 90]
@@ -44,7 +43,7 @@ results = {}
 
 for mag_label, atoms0 in configs.items():
     print(f"\n{'='*60}")
-    print(f"Starting EOS scan for Fe ({mag_label})")
+    print(f"Starting EOS scan for Cu ({mag_label})")
     print(f"{'='*60}")
     outdir = f"{mag_label.lower()}_eos"
     os.makedirs(outdir, exist_ok=True)

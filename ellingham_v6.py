@@ -42,7 +42,7 @@ from ellingham_v6_data import load_clean
 # ----------------------------------------------------------------------
 # User-editable defaults (any can be overridden on the command line)
 # ----------------------------------------------------------------------
-DEFAULT_ELEMENTS = "Al,Sn,Sb,Cu,Mo,Ni"   # comma-separated symbols, or "all"
+DEFAULT_ELEMENTS = "Sn,Sb,Bi"   # comma-separated symbols, or "all"
 DEFAULT_TMAX_K = 2000.0                  # right edge of the diagram (K)
 DEFAULT_TEMP_C = 1000.0                  # temperature (°C) for the equilibrium lines/table
 R_KJ = 8.314462618e-3                    # kJ/(mol K)

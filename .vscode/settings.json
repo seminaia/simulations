@@ -26,7 +26,7 @@
     "workbench.commandPalette.preserveInput": false,
     "workbench.externalBrowser": "firefox",
     "workbench.preferredDarkColorTheme": "Dark Modern",
-    "workbench.iconTheme": "vs-seti",
+    "workbench.iconTheme": "vscode-modern-icons",
     "workbench.settings.alwaysShowAdvancedSettings": false,
     "workbench.settings.openDefaultKeybindings": true,
     "workbench.settings.useSplitJSON": true,

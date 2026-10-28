@@ -36,7 +36,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from ellingham import (add_pressure_nomograph, add_ratio_nomograph,
-                       add_reference_gas_line)
+                       add_reference_gas_line, ensure_family_phase_data,
+                       FAMILIES)
 from ellingham_v6_data import load_clean
 
 # ----------------------------------------------------------------------
@@ -48,6 +49,12 @@ DEFAULT_TEMP_C = 1000.0                  # temperature (°C) for the equilibrium
 R_KJ = 8.314462618e-3                    # kJ/(mol K)
 LINE_COLOUR = '#1f4e9c'                  # every reaction line and label
 LEFT_MARGIN_K = -700.0                   # room on the left for the reaction labels
+PHASE_NAMES = {'s': 'solid', 'l': 'liquid', 'g': 'gas'}
+PHASE_STYLES = {
+    'ss': ('-', 1.0), 'ls': ('--', 1.0), 'gs': (':', 1.0),
+    'sl': ('-', 0.6), 'll': ('--', 0.6), 'gl': (':', 0.6),
+    'sg': ('-', 0.3), 'lg': ('--', 0.3), 'gg': (':', 0.3),
+}
 
 HERE = Path(__file__).resolve().parent
 
@@ -66,6 +73,43 @@ plt.rcParams.update({
 def mathify(reaction):
     """'4Fe3O4 + O2 = 6Fe2O3' -> mathtext with subscripts (digits after a letter)."""
     return re.sub(r'(?<=[A-Za-z])(\d+(?:\.\d+)?)', r'$_{\1}$', reaction)
+
+
+def reaction_key(reaction):
+    """Normalize plain-text and mathtext reaction labels for matching."""
+    text = str(reaction).replace('$', '').replace('\\', '')
+    text = re.sub(r'frac\{([^{}]+)\}\{([^{}]+)\}', r'\1/\2', text)
+    text = re.sub(r'_\{([^{}]+)\}', r'\1', text)
+    text = re.sub(r'\((\d+/\d+)\)', r'\1', text)
+    return re.sub(r'\s+', '', text).lower()
+
+
+def phase_segments_by_reaction(phase_data):
+    segments = {}
+    for phase_code, rows in phase_data.items():
+        if phase_code not in PHASE_STYLES:
+            continue
+        for row in rows:
+            segments.setdefault(reaction_key(row[4]), []).append(
+                (phase_code, float(row[0]) + 273.15, float(row[1]) + 273.15)
+            )
+    return segments
+
+
+def phase_segments_by_metal(phase_data):
+    segments = {}
+    for phase_code, rows in phase_data.items():
+        if phase_code not in PHASE_STYLES:
+            continue
+        for row in rows:
+            match = re.search(r'[A-Z][a-z]?', str(row[4]))
+            if match is None:
+                continue
+            metal = match.group()
+            segments.setdefault(metal, []).append(
+                (phase_code, float(row[0]) + 273.15, float(row[1]) + 273.15)
+            )
+    return segments
 
 
 def spread(ys, min_gap):
@@ -120,7 +164,77 @@ def render_table(table_ax, rows, temp_c):
             cell.set_text_props(color=rows[r - 1][3] if col == 0 else 'black')
 
 
-def plot(reactions, curves, tmax, gas_scales=True, temp_c=None, title='Ellingham diagram — oxides'):
+def mark_phase_transitions(ax, phase_data, elements, tmax, curves_by_reaction):
+    """Mark actual metal/oxide phase-code changes on the diagram."""
+    if not phase_data:
+        return
+
+    segments_by_reaction = {}
+    wanted = {element.lower() for element in elements}
+    for phase_code, rows in phase_data.items():
+        if phase_code == 'aux' or len(phase_code) != 2:
+            continue
+        for row in rows:
+            reaction = str(row[4])
+            metal = re.search(r'[A-Z][a-z]?', reaction)
+            if metal is None or metal.group().lower() not in wanted:
+                continue
+            key = (metal.group(), reaction_key(reaction))
+            segments_by_reaction.setdefault(key, []).append(
+                (float(row[0]), float(row[1]), phase_code)
+            )
+
+    transitions = []
+    for (metal, reaction), segments in segments_by_reaction.items():
+        segments.sort()
+        for previous, current in zip(segments, segments[1:]):
+            temperature, previous_end, previous_code = previous
+            current_start, _current_end, current_code = current
+            if abs(previous_end - current_start) > 1e-3 or previous_code == current_code:
+                continue
+            temperature = current_start
+            if 0 <= temperature + 273.15 <= tmax:
+                transitions.append(
+                    (temperature, metal, reaction, previous_code, current_code)
+                )
+
+    for temperature, metal, reaction, previous_code, current_code in transitions:
+        curve = curves_by_reaction.get(reaction_key(reaction))
+        if curve is None:
+            continue
+        curve_temperature, curve_dg, curve_color = curve
+        temperature_k = temperature + 273.15
+        if not (curve_temperature[0] <= temperature_k <= curve_temperature[-1]):
+            continue
+        dg = float(np.interp(temperature_k, curve_temperature, curve_dg))
+        labels = []
+        for name, before, after in (
+            ('metal', previous_code[0], current_code[0]),
+            ('oxide', previous_code[1], current_code[1]),
+        ):
+            if before != after:
+                labels.append(
+                    f'{name} {PHASE_NAMES[before]}→{PHASE_NAMES[after]}'
+                )
+        if not labels:
+            continue
+        ax.plot(temperature_k, dg, marker='o', markersize=7,
+                markerfacecolor=curve_color, markeredgecolor='white',
+                markeredgewidth=1.2, zorder=8)
+        ax.annotate(
+            f'{metal}: ' + ' / '.join(labels),
+            (temperature_k, dg),
+            xytext=(5, 7),
+            textcoords='offset points',
+            fontsize=7,
+            color='#444444',
+            bbox=dict(boxstyle='round,pad=0.15', facecolor='white',
+                      edgecolor=curve_color, alpha=0.8),
+        )
+
+
+def plot(reactions, curves, tmax, gas_scales=True, temp_c=None,
+         title='Ellingham diagram — oxides', phase_data=None):
     fig = plt.figure(figsize=(22, 12))
     gs = fig.add_gridspec(1, 2, width_ratios=[4, 1.5], wspace=0.3)
     ax = fig.add_subplot(gs[0])
@@ -134,8 +248,9 @@ def plot(reactions, curves, tmax, gas_scales=True, temp_c=None, title='Ellingham
     entries = []   # [x, y, text] for the label declutterer
     entry_colour = []
     by_id = []
-    melt_info = []
-    info = reactions.set_index('Reaction_ID')
+    curves_by_reaction = {}
+    phase_segments = phase_segments_by_reaction(phase_data or {})
+    phase_segments_for_metal = phase_segments_by_metal(phase_data or {})
     for grp in curves.groupby('Reaction_ID', sort=False):    
         grp = grp[1]
         grp = grp.sort_values('T_K')
@@ -150,7 +265,24 @@ def plot(reactions, curves, tmax, gas_scales=True, temp_c=None, title='Ellingham
             T = np.concatenate([[0.0], T])
             dG = np.concatenate([[intercept], dG])
         c = LINE_COLOUR
-        ax.plot(T, dG, color=c, lw=1.5)
+        reaction = reaction_key(grp['Reaction'].iloc[0])
+        metal = str(grp['Metal'].iloc[0])
+        styled_segments = phase_segments.get(reaction)
+        if not styled_segments:
+            styled_segments = phase_segments_for_metal.get(metal, [])
+        if styled_segments:
+            for phase_code, start, end in styled_segments:
+                start = max(start, T[0])
+                end = min(end, T[-1], tmax)
+                if start >= end:
+                    continue
+                y = np.interp([start, end], T, dG)
+                linestyle, alpha = PHASE_STYLES[phase_code]
+                ax.plot([start, end], y, color=c, ls=linestyle,
+                        alpha=alpha, lw=1.5)
+        else:
+            ax.plot(T, dG, color=c, lw=1.5)
+        curves_by_reaction[reaction] = (T, dG, c)
         by_id.append((mathify(grp['Reaction'].iloc[0]), c, T, dG))
         entries.append([0.0, float(dG[0]), mathify(grp['Reaction'].iloc[0])])
         entry_colour.append(c)
@@ -163,7 +295,6 @@ def plot(reactions, curves, tmax, gas_scales=True, temp_c=None, title='Ellingham
     ymax = 120.0
     ax.set_ylim(ymin, ymax)
     ax.set_xlim(LEFT_MARGIN_K, tmax)
-
     # reaction labels in the empty left-hand margin, joined to each line start
     label_y = spread([e[1] for e in entries], 0.016 * (ymax - ymin))
     for (x0, y0, text), y_l, c in zip(entries, label_y, entry_colour):
@@ -232,9 +363,12 @@ def main():
     if reactions.empty:
         raise SystemExit('No reactions matched those elements.')
     curves = curves[curves['Reaction_ID'].isin(reactions['Reaction_ID'])]
+    ensure_family_phase_data(['oxides'])
+    phase_data = FAMILIES['oxides']['phases']
 
     fig = plot(reactions, curves, args.tmax, gas_scales=not args.no_gas_scales,
-               temp_c=None if args.no_temp_mark else args.temp)
+               temp_c=None if args.no_temp_mark else args.temp,
+               phase_data=phase_data)
     print('-> Saving...', flush=True)
     out = Path(args.out) if args.out else HERE / f'ellingham_v6.pdf'
     fig.savefig(out, dpi=300, bbox_inches='tight')

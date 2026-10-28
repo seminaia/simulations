@@ -9,14 +9,15 @@ cat("R version:", R.version.string, "\n")
 cat("Working directory:", getwd(), "\n")
 cat("VS Code session temp dir:", tempdir(), "\n")
 
-# Check if essential VS Code R packages are installed
+# Check if essential VS Code R packages are iq()nstalled
 # (These help with syntax highlighting, autocomplete, etc.)
 pkgs <- c("languageserver", "httpgd", "jsonlite")
 installed <- pkgs %in% installed.packages()[,"Package"]
 if (!all(installed)) {
   cat("\n⚠️ Recommended VS Code R packages missing:\n")
   cat(paste(" -", pkgs[!installed]), sep = "\n")
-  cat("\nInstall them with: install.packages(c('languageserver', 'httpgd'))\n")
+  cat("Installing missing packages...\n")
+  install.packages(c(pkgs[!installed]))
 } else {
   cat("\n✅ All recommended VS Code R packages are installed.\n")
 }
